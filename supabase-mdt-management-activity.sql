@@ -71,3 +71,24 @@ end$$;
 drop trigger if exists gw_mdt_time_activity on public.gw_mdt_time_audit;
 create trigger gw_mdt_time_activity after insert on public.gw_mdt_time_audit
 for each row execute function public.gw_mdt_time_activity_trigger();
+
+-- Include adjustments recorded before delegated PIN-based auditing.
+create or replace function public.gw_mdt_time_history(p_token text)
+returns table(employee_name text,actor_name text,minutes integer,reason text,created_at timestamptz)
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if not public.gw_mdt_can(p_token,'time_history') then raise exception 'Access denied'; end if;
+ return query
+ select t.employee_name,t.actor_name,t.minutes,t.reason,t.created_at
+ from (
+  select e.name as employee_name,coalesce(ae.name,'Boss') as actor_name,
+   a.minutes,a.reason,a.created_at
+  from public.gw_mdt_time_audit a
+  join public.gw_employees e on e.id=a.employee_id
+  left join public.gw_employees ae on ae.id=a.actor_employee_id
+  union all
+  select e.name,'Boss (previous records)'::text,a.minutes,a.reason,a.created_at
+  from public.gw_time_adjustments a
+  join public.gw_employees e on e.id=a.employee_id
+ ) t order by t.created_at desc limit 500;
+end$$;
