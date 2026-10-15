@@ -125,3 +125,44 @@ document.querySelector('#logout')?.addEventListener('click',()=>{bossAllowed=fal
 db.auth.onAuthStateChange(()=>setTimeout(checkBoss,0));
 checkBoss();
 roster().then(refresh).catch(e=>{msg('Employee service not configured yet: '+e.message);holder.hidden=true;});
+
+
+/* Full-page Store MDT navigation */
+const siteNav=document.querySelector('#gwSiteNav');
+const siteHost=document.querySelector('#gwSiteMdtHost');
+const siteSidebar=document.querySelector('#gwSiteSidebar');
+const siteToggle=document.querySelector('#gwSiteToggle');
+if(siteNav&&siteHost){
+ const shell=document.querySelector('.shell');
+ const showSite=async page=>{
+  siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
+  if(page==='clock'){button.click();return;}
+  if(page==='admin'){document.querySelector('#adminBtn')?.click();return;}
+  const pos=page==='pos';
+  shell.hidden=!pos;siteHost.hidden=pos;
+  if(pos)return;
+  mdt.setAttribute('open','');
+  mdtMessage.textContent='Checking management access…';
+  if(!await checkBoss()){
+   mdtContent.replaceChildren(make('h3','Management sign-in required'),make('p','Sign in with your Boss account using Admin or Store Settings, then return to this page.'));
+   mdtMessage.textContent='Boss access required.';
+   return;
+  }
+  mdtMessage.textContent='Loading store information…';
+  try{await loadStaff();await switchPage(page);if(page!=='sales')mdtMessage.textContent='';}
+  catch(err){mdtContent.replaceChildren();mdtMessage.textContent=err.message;}
+ };
+ siteHost.append(mdt);
+ mdt.setAttribute('open','');
+ mdt.querySelector('.gw-mdt-sidebar').hidden=true;
+ mdt.querySelector('#gwMdtClose').hidden=true;
+ mdtButton.hidden=true;
+ mdtButton.style.display='none';
+ siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.addEventListener('click',()=>showSite(b.dataset.sitePage)));
+ siteToggle?.addEventListener('click',()=>{
+  const collapsed=siteSidebar.classList.toggle('collapsed');
+  siteToggle.setAttribute('aria-expanded',String(!collapsed));
+  siteToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');
+ });
+ document.querySelector('#logout')?.addEventListener('click',()=>showSite('pos'));
+}
