@@ -6,6 +6,8 @@ const dlg=document.createElement('dialog');dlg.id='gwEmployeeDialog';
 dlg.innerHTML=`<div class="dialogHead"><h2>EMPLOYEE TIME CLOCK</h2><button id="gwEmpClose" class="outline">✕</button></div><div id="gwEmpView"></div><p id="gwEmpMsg" role="status"></p>`;
 document.body.append(dlg);
 const view=dlg.querySelector('#gwEmpView'),msg=s=>dlg.querySelector('#gwEmpMsg').textContent=s;
+const clockStatus=document.querySelector('#gwClockStatus');
+function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);}}
 dlg.querySelector('#gwEmpClose').onclick=()=>dlg.close();
 const button=document.createElement('button');button.className='outline';button.textContent='◷ Employee';button.onclick=async()=>{dlg.showModal();await refresh();};document.querySelector('header .actions')?.append(button);
 const select=document.createElement('select');select.id='gwSaleEmployee';select.setAttribute('aria-label','Employee credited for this sale');
@@ -17,7 +19,8 @@ function updateAttribution(){holder.hidden=!!me;if(me)select.value='';}
 async function refresh(){
  view.replaceChildren();msg('');
  try{
- if(token){const rows=await call('gw_pin_me',{p_token:token});me=rows?.[0]||null;if(!me){token='';sessionStorage.removeItem(key);}}
+ if(token){const rows=await call('gw_pin_me',{p_token:token});me=rows?.[0]||null;if(!me){token='';sessionStorage.removeItem(key);updateClockStatus();}}
+ updateClockStatus();
  if(!me){
  const label=document.createElement('label');label.textContent='Employee';
  const employee=document.createElement('select');for(const e of employees)employee.add(new Option(e.name,e.id));label.append(employee);
@@ -35,7 +38,7 @@ async function refresh(){
  const status=document.createElement('p');status.textContent=me.clocked_in?'● Currently clocked in':'○ Currently clocked out';
  const clock=document.createElement('button');clock.className='primary';clock.textContent=me.clocked_in?'Clock out':'Clock in';
  clock.onclick=async()=>{clock.disabled=true;try{const result=await call('gw_clock',{p_token:token,p_clock_in:!me.clocked_in});await refresh();msg(result);}catch(e){msg(e.message);clock.disabled=false;}};
- const logout=document.createElement('button');logout.textContent='Sign out';logout.onclick=async()=>{try{await call('gw_pin_logout',{p_token:token});}finally{token='';me=null;sessionStorage.removeItem(key);await refresh();}};
+ const logout=document.createElement('button');logout.textContent='Sign out';logout.onclick=async()=>{try{await call('gw_pin_logout',{p_token:token});}finally{token='';me=null;sessionStorage.removeItem(key);updateClockStatus();await refresh();}};
  view.append(title,status,clock,logout);
  }
  updateAttribution();
@@ -103,6 +106,7 @@ async function adjustTime(e){
 }
 function renderMdt(){
  mdtContent.replaceChildren();
+ if(mdtPage==='time'){const clockCard=make('div',undefined,'gw-mdt-stat');clockCard.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const openClock=make('button','Open Time Clock','primary');openClock.onclick=()=>button.click();clockCard.append(openClock);mdtContent.append(clockCard);}
  const active=staffRows.filter(e=>e.active!==false),onDuty=active.filter(e=>e.clocked_in).length;
  if(mdtPage==='sales'){renderSales();}else if(mdtPage==='overview'){
   const cards=make('div',undefined,'gw-mdt-stats');
@@ -127,42 +131,50 @@ checkBoss();
 roster().then(refresh).catch(e=>{msg('Employee service not configured yet: '+e.message);holder.hidden=true;});
 
 
-/* Full-page Store MDT navigation */
+/* Full-page Store MDT navigation and permission-aware menu */
 const siteNav=document.querySelector('#gwSiteNav');
 const siteHost=document.querySelector('#gwSiteMdtHost');
 const siteSidebar=document.querySelector('#gwSiteSidebar');
 const siteToggle=document.querySelector('#gwSiteToggle');
 if(siteNav&&siteHost){
  const shell=document.querySelector('.shell');
- const showSite=async page=>{
+ const restricted=['overview','employees','sales'];
+ let currentPage='pos';
+ const navButton=p=>siteNav.querySelector('[data-site-page="'+p+'"]');
+ async function refreshNavigation(){
+  await checkBoss();
+  for(const p of restricted)navButton(p).hidden=!bossAllowed;
+  navButton('admin').hidden=!bossAllowed;
+  // Everyone can reach the time clock; staff adjustments remain Boss-only.
+  const adminBtn=document.querySelector('#adminBtn');
+  if(adminBtn)adminBtn.textContent=bossAllowed?'⚙ Admin':'Sign in';
+  if(!bossAllowed&&restricted.concat('admin').includes(currentPage))await showSite('pos');
+ }
+ async function showSite(page){
+  if(page==='admin'){if(!bossAllowed)return;document.querySelector('#adminBtn')?.click();return;}
+  if(restricted.includes(page)&&!bossAllowed)return;
+  currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
-  if(page==='clock'){button.click();return;}
-  if(page==='admin'){document.querySelector('#adminBtn')?.click();return;}
-  const pos=page==='pos';
-  shell.hidden=!pos;siteHost.hidden=pos;
+  const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
-  mdt.setAttribute('open','');
-  mdtMessage.textContent='Checking management access…';
-  if(!await checkBoss()){
-   mdtContent.replaceChildren(make('h3','Management sign-in required'),make('p','Sign in with your Boss account using Admin or Store Settings, then return to this page.'));
-   mdtMessage.textContent='Boss access required.';
-   return;
-  }
   mdtMessage.textContent='Loading store information…';
-  try{await loadStaff();await switchPage(page);if(page!=='sales')mdtMessage.textContent='';}
-  catch(err){mdtContent.replaceChildren();mdtMessage.textContent=err.message;}
- };
- siteHost.append(mdt);
- mdt.setAttribute('open','');
+  try{
+   if(page==='time'&&!bossAllowed){mdtPage='time';staffRows=[];mdtContent.replaceChildren();const card=make('div',undefined,'gw-mdt-stat');card.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const launch=make('button','Open Time Clock','primary');launch.onclick=()=>button.click();card.append(launch);mdtContent.append(card);}
+   else{await loadStaff();await switchPage(page);}
+   if(page!=='sales')mdtMessage.textContent='';
+  }catch(err){mdtContent.replaceChildren();mdtMessage.textContent=err.message;}
+ }
+ siteHost.append(mdt);mdt.setAttribute('open','');
  mdt.querySelector('.gw-mdt-sidebar').hidden=true;
  mdt.querySelector('#gwMdtClose').hidden=true;
- mdtButton.hidden=true;
- mdtButton.style.display='none';
+ mdtButton.hidden=true;mdtButton.style.display='none';
+ button.hidden=true;button.style.display='none';
  siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.addEventListener('click',()=>showSite(b.dataset.sitePage)));
- siteToggle?.addEventListener('click',()=>{
-  const collapsed=siteSidebar.classList.toggle('collapsed');
-  siteToggle.setAttribute('aria-expanded',String(!collapsed));
-  siteToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');
- });
- document.querySelector('#logout')?.addEventListener('click',()=>showSite('pos'));
+ siteToggle?.addEventListener('click',()=>{const collapsed=siteSidebar.classList.toggle('collapsed');siteToggle.setAttribute('aria-expanded',String(!collapsed));siteToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');});
+ document.querySelector('#logout')?.addEventListener('click',()=>{bossAllowed=false;refreshNavigation();});
+ db.auth.onAuthStateChange(()=>setTimeout(refreshNavigation,100));
+ document.querySelector('#login')?.addEventListener('click',()=>setTimeout(refreshNavigation,800));
+ document.querySelector('#adminBtn')?.addEventListener('click',()=>setTimeout(refreshNavigation,500));
+ document.querySelector('#gwEmpClose')?.addEventListener('click',()=>{updateClockStatus();if(currentPage==='time')showSite('time');});
+ refreshNavigation();updateClockStatus();
 }
