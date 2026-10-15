@@ -7,6 +7,8 @@ dlg.innerHTML=`<div class="dialogHead"><h2>EMPLOYEE TIME CLOCK</h2><button id="g
 document.body.append(dlg);
 const view=dlg.querySelector('#gwEmpView'),msg=s=>dlg.querySelector('#gwEmpMsg').textContent=s;
 const clockStatus=document.querySelector('#gwClockStatus');
+const weeklyHours=document.querySelector('#gwWeeklyHours');
+async function refreshWeeklyHours(){if(!weeklyHours)return;if(!token||!me){weeklyHours.textContent='This Week: —';return;}try{const hours=await call('gw_my_weekly_hours',{p_token:token});weeklyHours.textContent='This Week: '+Number(hours||0).toFixed(2)+' hrs';}catch(e){weeklyHours.textContent='This Week: unavailable';}}
 function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);}}
 dlg.querySelector('#gwEmpClose').onclick=()=>dlg.close();
 const button=document.createElement('button');button.className='outline';button.textContent='◷ Employee';button.onclick=async()=>{dlg.showModal();await refresh();};document.querySelector('header .actions')?.append(button);
@@ -20,7 +22,7 @@ async function refresh(){
  view.replaceChildren();msg('');
  try{
  if(token){const rows=await call('gw_pin_me',{p_token:token});me=rows?.[0]||null;if(!me){token='';sessionStorage.removeItem(key);updateClockStatus();}}
- updateClockStatus();
+ updateClockStatus();await refreshWeeklyHours();
  if(!me){
  const label=document.createElement('label');label.textContent='Employee';
  const employee=document.createElement('select');for(const e of employees)employee.add(new Option(e.name,e.id));label.append(employee);
@@ -185,5 +187,5 @@ if(siteNav&&siteHost){
  document.querySelector('#login')?.addEventListener('click',()=>setTimeout(refreshNavigation,800));
  document.querySelector('#adminBtn')?.addEventListener('click',()=>setTimeout(refreshNavigation,500));
  document.querySelector('#gwEmpClose')?.addEventListener('click',()=>{updateClockStatus();if(currentPage==='time')showSite('time');});
- refreshNavigation();updateClockStatus();
+ refreshNavigation();updateClockStatus();refreshWeeklyHours();
 }
