@@ -151,12 +151,19 @@ if(siteNav&&siteHost){
   if(!bossAllowed&&restricted.concat('admin').includes(currentPage))await showSite('pos');
  }
  async function showSite(page){
-  if(page==='admin'){if(!bossAllowed)return;document.querySelector('#adminBtn')?.click();return;}
+  if(page==='admin'&&!bossAllowed)return;
   if(restricted.includes(page)&&!bossAllowed)return;
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
+  if(page==='admin'){
+   mdtContent.replaceChildren(make('h2','Store Administration'),make('p','Manage the catalog, delivery zones, settings, branding and images.'));
+   const controls=make('div',undefined,'gw-mdt-actions');
+   const catalog=make('button','Products, Delivery Zones & Settings','primary');catalog.onclick=()=>document.querySelector('#adminBtn')?.click();
+   const branding=make('button','Branding & Images','outline');branding.onclick=()=>document.querySelector('#gwSettings')?.showModal();
+   controls.append(catalog,branding);mdtContent.append(controls);mdtMessage.textContent='';return;
+  }
   mdtMessage.textContent='Loading store information…';
   try{
    if(page==='time'&&!bossAllowed){mdtPage='time';staffRows=[];mdtContent.replaceChildren();const card=make('div',undefined,'gw-mdt-stat');card.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const launch=make('button','Open Time Clock','primary');launch.onclick=()=>button.click();card.append(launch);mdtContent.append(card);}
