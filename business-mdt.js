@@ -12,14 +12,14 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
  try{
   if(page==='history'){
    const filter=make('div',undefined,'gw-mdt-actions'),from=document.createElement('input'),to=document.createElement('input'),search=document.createElement('input');
-   from.type='date';to.type='date';search.type='search';search.placeholder='Search employee or fulfillment';
+   from.type='date';to.type='date';search.type='search';search.placeholder='Search employee, amount, or fulfillment';
    filter.append(from,to,search);host.insertBefore(filter,status);
    const list=box(),download=make('button','Export Filtered CSV','outline');filter.append(download);
    const reload=async()=>{status.textContent='Loading sales…';try{
     const rows=await rpc('gw_mdt_sales_history',{p_from:from.value?new Date(from.value+'T00:00:00').toISOString():null,p_to:to.value?new Date(new Date(to.value+'T00:00:00').getTime()+86400000).toISOString():null,p_employee:null});
-    const filtered=()=>rows.filter(s=>(s.employee_name+' '+s.fulfillment).toLowerCase().includes(search.value.toLowerCase()));
+    const sorted=[...rows].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));const filtered=()=>sorted.filter(s=>(String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')).toLowerCase().includes(search.value.toLowerCase()));
     download.onclick=()=>exportCsv('green-wonderland-sales-history.csv',['Employee','Amount','Items','Fulfillment','Date'],filtered().map(s=>[s.employee_name,s.total,s.item_count,s.fulfillment,s.created_at]));
-    const draw=()=>{list.replaceChildren();let total=0;let count=0;for(const s of filtered()){total+=Number(s.total||0);count++;line(list,s.employee_name+' · '+cash(s.total),dateText(s.created_at)+' · '+s.item_count+' items · '+s.fulfillment);}status.textContent=count+' sales · '+cash(total)+' total';if(!count)line(list,'No matching sales','Try changing your filters.');};search.oninput=draw;draw();
+    const draw=()=>{list.replaceChildren();let total=0;let count=0;for(const s of filtered()){total+=Number(s.total||0);count++;line(list,cash(s.total)+' · '+(s.employee_name||'Unknown employee'),dateText(s.created_at)+' · '+s.item_count+' items · '+s.fulfillment);}status.textContent=count+' recorded sales · '+cash(total)+' total · Newest first';if(!count)line(list,'No matching sales','Try changing your filters.');};search.oninput=draw;draw();
    }catch(e){status.textContent=e.message;}};
    from.onchange=reload;to.onchange=reload;await reload();
   }else if(page==='announcements'){
