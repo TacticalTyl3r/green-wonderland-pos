@@ -50,14 +50,35 @@ window.gwRecordSale=async sale=>{
 };
 // Store MDT: uses existing Boss-authorized RPCs. No schema change required.
 const mdtButton=document.createElement('button');mdtButton.className='outline';mdtButton.textContent='▦ Store MDT';mdtButton.hidden=false;document.querySelector('header .actions')?.append(mdtButton);
-const mdt=document.createElement('dialog');mdt.id='gwMdt';mdt.innerHTML='<div class="dialogHead"><div><small>GREEN WONDERLAND / MANAGEMENT</small><h2>STORE MDT</h2></div><button class="outline" id="gwMdtClose">✕</button></div><div class="gw-mdt-tabs"><button data-page="overview" class="active">Overview</button><button data-page="employees">Employees</button><button data-page="time">Time Management</button></div><div id="gwMdtContent"></div><p id="gwMdtMessage" role="status"></p>';document.body.append(mdt);
+const mdt=document.createElement('dialog');mdt.id='gwMdt';mdt.innerHTML='<div class="dialogHead"><div><small>GREEN WONDERLAND / MANAGEMENT</small><h2>STORE MDT</h2></div><button class="outline" id="gwMdtClose">✕</button></div><div class="gw-mdt-tabs"><button data-page="overview" class="active">Overview</button><button data-page="employees">Employees</button><button data-page="time">Time Management</button><button data-page="sales">Sales & Earnings</button></div><div id="gwMdtContent"></div><p id="gwMdtMessage" role="status"></p>';document.body.append(mdt);
 mdt.querySelector('#gwMdtClose').onclick=()=>mdt.close();
 const mdtContent=mdt.querySelector('#gwMdtContent'),mdtMessage=mdt.querySelector('#gwMdtMessage');
-let mdtPage='overview',staffRows=[],bossAllowed=false;
+let mdtPage='overview',staffRows=[],salesRows=[],bossAllowed=false;
 const formatHours=n=>(Number(n||0)/60).toFixed(2);
 const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
 async function checkBoss(){try{const {data:{session}}=await db.auth.getSession();if(!session){bossAllowed=false;}else{const {data,error}=await db.rpc('gw_is_boss');bossAllowed=!error&&data===true;}mdtButton.hidden=false;}catch(e){bossAllowed=false;mdtButton.hidden=false;}return bossAllowed;}
 async function loadStaff(){staffRows=await call('gw_staff_report');return staffRows;}
+async function loadSales(){salesRows=await call('gw_mdt_sales_report');}
+const cash=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
+function renderSales(){
+ const cards=make('div',undefined,'gw-mdt-stats');
+ for(const [label,key] of [['Today','today_sales'],['This Week','weekly_sales'],['Lifetime','lifetime_sales']]){
+ const box=make('div',undefined,'gw-mdt-stat');
+ box.append(make('small',label+' Sales / Earnings'),make('strong',cash(salesRows.reduce((a,e)=>a+Number(e[key]||0),0))));
+ cards.append(box);
+ }
+ mdtContent.append(cards,make('h3','Employee Sales & Earnings'),make('p','Employees earn 100% of recorded sales. Weekly reporting starts Monday. Figures are based on browser-submitted sales.'));
+ const list=make('div',undefined,'gw-mdt-roster');
+ const ranked=[...salesRows].sort((a,b)=>Number(b.lifetime_sales)-Number(a.lifetime_sales));
+ ranked.forEach((e,i)=>{
+ const row=make('div',undefined,'gw-mdt-employee'),details=make('div'),amounts=make('div',undefined,'gw-mdt-sales-figures');
+ details.append(make('strong',(i+1)+'. '+e.employee_name),make('p',e.employee_role+' · '+e.total_orders+' orders'));
+ for(const [label,key] of [['Today','today_sales'],['Week','weekly_sales'],['Lifetime','lifetime_sales']]){const item=make('div');item.append(make('small',label),make('strong',cash(e[key])));amounts.append(item);}
+ row.append(details,amounts);list.append(row);
+ });
+ if(!ranked.length)list.append(make('p','No employees found.'));
+ mdtContent.append(list);
+}
 function employeeForm(e){
  const form=make('form',undefined,'gw-mdt-form');
  const title=make('h3',e?'Edit Employee':'Add Employee');form.append(title);
@@ -82,7 +103,7 @@ async function adjustTime(e){
 function renderMdt(){
  mdtContent.replaceChildren();
  const active=staffRows.filter(e=>e.active!==false),onDuty=active.filter(e=>e.clocked_in).length;
- if(mdtPage==='overview'){
+ if(mdtPage==='sales'){renderSales();}else if(mdtPage==='overview'){
   const cards=make('div',undefined,'gw-mdt-stats');
   for(const [label,value] of [['Active Employees',active.length],['Currently Clocked In',onDuty],['Recorded Staff Hours',formatHours(staffRows.reduce((sum,e)=>sum+Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0),0))]]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',String(value)));cards.append(card);}mdtContent.append(cards);
   mdtContent.append(make('h3','Store Management'),make('p','Manage employee records and shift adjustments from one place. Sales reports and inventory management will be added in future updates.'));
@@ -94,7 +115,7 @@ function renderMdt(){
   for(const e of staffRows){const row=make('div',undefined,'gw-mdt-employee');const info=make('div');info.append(make('strong',e.name),make('p',e.role+' · '+(e.active===false?'Inactive':e.clocked_in?'On duty':'Off duty')+' · '+formatHours(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))+' hours'));const actions=make('div',undefined,'gw-mdt-actions');if(mdtPage==='employees'){const edit=make('button','Edit / PIN','outline');edit.onclick=()=>employeeForm(e);actions.append(edit);}const adjust=make('button','Adjust Time','outline');adjust.onclick=()=>adjustTime(e);actions.append(adjust);row.append(info,actions);table.append(row);}if(!staffRows.length)table.append(make('p','No employees found. Add your first employee to get started.'));mdtContent.append(table);
  }
 }
-function switchPage(page){mdtPage=page;mdt.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));renderMdt();}
+async function switchPage(page){mdtPage=page;mdt.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='sales'){mdtMessage.textContent='Loading sales…';try{await loadSales();mdtMessage.textContent='';}catch(e){mdtContent.replaceChildren();mdtMessage.textContent='Sales report unavailable: '+e.message;return;}}renderMdt();}
 mdt.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>switchPage(b.dataset.page));
 mdtButton.onclick=async()=>{mdt.showModal();mdtMessage.textContent='Checking management access…';if(!await checkBoss()){mdtContent.replaceChildren(make('h3','Management sign-in required'),make('p','Sign in using the Admin button with your Boss account, then reopen Store MDT. If already signed in, sign out and sign back in to refresh your session.'));mdtMessage.textContent='Your current website session does not have Boss access.';return;}mdtMessage.textContent='Loading employees…';try{await loadStaff();mdtMessage.textContent='';switchPage('overview');}catch(e){mdtMessage.textContent=e.message;}};
 document.querySelector('#adminBtn')?.addEventListener('click',()=>setTimeout(checkBoss,400));
