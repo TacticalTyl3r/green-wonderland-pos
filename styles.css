@@ -51,3 +51,5 @@
 #gwSiteMdtHost #gwMdt .gw-mdt-main{overflow:visible;padding:28px}
 #gwSiteMdtHost #gwMdt>.dialogHead{background:var(--panel2)}
 @media(max-width:720px){.gw-site-sidebar{width:70px;flex-basis:70px}.gw-site-brand span,.gw-site-label,.gw-site-arrow,.gw-site-toggle span{display:none}.gw-site-sidebar #gwSiteNav button{justify-content:center;padding:8px 0}#gwSiteMdtHost{padding:10px}#gwSiteMdtHost #gwMdt .gw-mdt-main{padding:14px}.gw-site-content .shell{padding:12px}}
+
+#gwSiteNav button[hidden]{display:none!important}.gw-clock-status{padding:9px 12px;border:1px solid var(--line);border-radius:8px;color:var(--muted);white-space:nowrap}.gw-clock-status.on-duty{color:var(--accent);border-color:var(--accent)}.gw-site-content .shell[hidden],#gwSiteMdtHost[hidden]{display:none!important}@media(max-width:760px){.gw-clock-status{font-size:11px;white-space:normal}}
