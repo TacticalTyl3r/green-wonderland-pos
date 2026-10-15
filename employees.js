@@ -1,3 +1,4 @@
+import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=1';
 import {renderBusinessPage} from './business-mdt.js?v=1';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
