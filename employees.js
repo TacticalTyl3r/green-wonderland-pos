@@ -268,6 +268,7 @@ if(siteNav&&siteHost){
   mdtMessage.textContent='Loading store information…';
   try{
    if(page!=='sales')await loadStaff(page);
+   if(page==='overview'&&canFeature('sales_earnings')){try{await loadSales();}catch(e){salesRows=[];console.warn('Sales summary unavailable',e);}}
    await switchPage(page);
    if(page!=='sales')mdtMessage.textContent='';
   }catch(err){mdtContent.replaceChildren();mdtMessage.textContent=err.message;}
