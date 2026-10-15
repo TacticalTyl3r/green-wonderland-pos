@@ -160,7 +160,7 @@ function renderMdt(){
  if(mdtPage==='sales'){renderSales();}else if(mdtPage==='overview'){
   const cards=make('div',undefined,'gw-mdt-stats');
   for(const [label,value] of [['Active Employees',active.length],['Currently Clocked In',onDuty],['Recorded Staff Hours',formatHours(staffRows.reduce((sum,e)=>sum+Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0),0))],...(canFeature('sales_earnings')?[['Sales This Week',cash(salesRows.reduce((sum,e)=>sum+Number(e.weekly_sales||0),0))],['Top Seller',salesRows.length?[...salesRows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0))[0].employee_name:'None']]:[] )]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',String(value)));cards.append(card);}mdtContent.append(cards);
-  mdtContent.append(make('h3','Store Management'),make('p','Manage employee records and shift adjustments from one place. Sales & Earnings is available in the main sidebar. Inventory management is planned for a future update.'));
+  mdtContent.append(make('h3','Store Management'),make('p','Manage employee records and shift adjustments from one place. Sales & Earnings is available in the main sidebar. View performance, sales, employee activity, and announcements from the navigation.'));
   if(canFeature('employees')){const jump=make('button','Open Employee Roster','primary');jump.onclick=()=>document.querySelector('[data-site-page="employees"]')?.click();mdtContent.append(jump);}if(canFeature('dashboard')){const activity=make('button','Management Activity','outline');activity.onclick=showActivityLog;mdtContent.append(activity);}
  }else{
   const head=make('div',undefined,'gw-mdt-head');head.append(make('h3',mdtPage==='employees'?'Employee Roster':'Employee Hours'));
