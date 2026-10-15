@@ -16,11 +16,45 @@ function renderCart(){const l=lines();$('count').textContent=`${l.reduce((n,x)=>
 function ingredientSummary(){const map=new Map();for(const {p,qty} of lines())for(const item of (Array.isArray(p.ingredients)?p.ingredients:[])){if(!item?.name)continue;const key=`${item.name}|${item.unit||''}`;const v=map.get(key)||{name:item.name,unit:item.unit||'',qty:0};v.qty+=Number(item.qty||0)*qty;map.set(key,v)}return [...map.values()];}
 function renderIngredients(){const items=ingredientSummary();$('ingredients').innerHTML=items.length?items.map(x=>`<div class="record">${esc(x.name)} — <b>${x.qty} ${esc(x.unit)}</b></div>`).join(''):'<div class="empty">No ingredient recipes assigned to selected products.</div>';}
 let sharedHistory=[],historyLoading=false,historyError='',historyLoaded=false;
+function receiptText(s){
+ const date=s.created_at?new Date(s.created_at).toLocaleString():'Unknown date';
+ return ['GREEN WONDERLAND | SALES RECEIPT','━━━━━━━━━━━━━━━━━━━━',
+ 'Employee: '+(s.employee_name||'Unknown employee'),
+ 'Date: '+date,
+ 'Sale total: '+money(s.total),
+ 'Items: '+Number(s.item_count||0),
+ 'Fulfillment: '+(s.fulfillment||'Not specified'),
+ '━━━━━━━━━━━━━━━━━━━━',
+ 'Thank you for shopping at Green Wonderland!'].join('\\n');
+}
+function showSaleReceipt(s){
+ const dlg=document.createElement('dialog');dlg.className='gw-choice-dialog gw-receipt-dialog';
+ const title=document.createElement('h3');title.textContent='GREEN WONDERLAND';
+ const subtitle=document.createElement('p');subtitle.textContent='SALES RECEIPT';
+ const details=document.createElement('div');details.className='gw-receipt-details';
+ const fields=[['Employee',s.employee_name||'Unknown employee'],['Date',s.created_at?new Date(s.created_at).toLocaleString():'Unknown'],['Items',Number(s.item_count||0)],['Fulfillment',s.fulfillment||'Not specified'],['Total',money(s.total)]];
+ for(const [name,value] of fields){const row=document.createElement('div');const label=document.createElement('span');label.textContent=name;const val=document.createElement('strong');val.textContent=String(value);row.append(label,val);details.append(row);}
+ const note=document.createElement('p');note.className='gw-receipt-note';note.textContent='Product-level details are not available for this recorded sale.';
+ const actions=document.createElement('div');actions.className='gw-receipt-actions';
+ const copy=document.createElement('button');copy.type='button';copy.className='primary';copy.textContent='Copy for Discord';
+ copy.onclick=async()=>{try{await navigator.clipboard.writeText(receiptText(s));copy.textContent='✓ Copied!';}catch(e){const area=document.createElement('textarea');area.value=receiptText(s);area.readOnly=true;dlg.append(area);area.focus();area.select();copy.textContent='Select and copy receipt text';}};
+ const close=document.createElement('button');close.type='button';close.className='outline';close.textContent='Close';close.onclick=()=>dlg.close();
+ actions.append(copy,close);dlg.append(title,subtitle,details,note,actions);
+ dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
+}
 function renderHistory(){
  if(tab!=='history')return;
- if(historyLoading){$('history').innerHTML='<div class="empty">Loading all recorded sales…</div>';return;}
- if(historyError){$('history').innerHTML='<div class="empty">'+esc(historyError)+'</div>';return;}
- $('history').innerHTML=sharedHistory.length?sharedHistory.map(h=>`<div class="record"><b>${money(h.total)}</b> · ${esc(h.employee_name||'Unknown employee')}<small>${esc(new Date(h.created_at).toLocaleString())} · ${Number(h.item_count||0)} items · ${esc(h.fulfillment||'')}</small></div>`).join(''):'<div class="empty">No recorded sales found.</div>';
+ const host=$('history');host.replaceChildren();
+ if(historyLoading){host.textContent='Loading all recorded sales…';return;}
+ if(historyError){host.textContent=historyError;return;}
+ if(!sharedHistory.length){host.textContent='No recorded sales found.';return;}
+ for(const s of sharedHistory){
+  const button=document.createElement('button');button.type='button';button.className='record gw-history-sale';
+  const top=document.createElement('strong');top.textContent=money(s.total)+' · '+(s.employee_name||'Unknown employee');
+  const info=document.createElement('small');info.textContent=(s.created_at?new Date(s.created_at).toLocaleString():'Unknown date')+' · '+Number(s.item_count||0)+' items · '+(s.fulfillment||'');
+  const hint=document.createElement('span');hint.className='gw-history-hint';hint.textContent='View receipt ›';
+  button.append(top,info,hint);button.onclick=()=>showSaleReceipt(s);host.append(button);
+ }
 }
 async function loadSharedHistory(){
  if(!db){historyError='Shared sales history requires the live database.';renderHistory();return;}
