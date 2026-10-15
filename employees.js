@@ -9,7 +9,7 @@ const view=dlg.querySelector('#gwEmpView'),msg=s=>dlg.querySelector('#gwEmpMsg')
 const clockStatus=document.querySelector('#gwClockStatus');
 const weeklyHours=document.querySelector('#gwWeeklyHours');
 async function refreshWeeklyHours(){if(!weeklyHours)return;if(!token||!me){weeklyHours.textContent='This Week: —';return;}try{const hours=await call('gw_my_weekly_hours',{p_token:token});weeklyHours.textContent='This Week: '+Number(hours||0).toFixed(2)+' hrs';}catch(e){weeklyHours.textContent='This Week: unavailable';}}
-function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);}}
+function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);clockStatus.classList.toggle('off-duty',!me?.clocked_in);}}
 dlg.querySelector('#gwEmpClose').onclick=()=>dlg.close();
 const button=document.createElement('button');button.className='outline';button.textContent='◷ Employee';button.onclick=async()=>{dlg.showModal();await refresh();};document.querySelector('header .actions')?.append(button);
 const select=document.createElement('select');select.id='gwSaleEmployee';select.setAttribute('aria-label','Employee credited for this sale');
@@ -143,12 +143,20 @@ if(siteNav&&siteHost){
  const topHeader=shell.querySelector('header');
  if(topHeader){const content=document.querySelector('.gw-site-content');content?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');const ribbon=shell.querySelector('.ribbon');if(ribbon){content?.insertBefore(ribbon,shell);ribbon.classList.add('gw-global-ribbon');}}
  const restricted=['overview','employees','sales'];
+ const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
+ const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.textContent='Products & Settings';
+ const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.textContent='Branding & Images';
+ adminSubmenu.append(catalogLink,brandingLink);navButtonAdminPlaceholder();
+ function navButtonAdminPlaceholder(){siteNav.querySelector('[data-site-page="admin"]')?.after(adminSubmenu);}
+ catalogLink.onclick=()=>document.querySelector('#adminBtn')?.click();
+ brandingLink.onclick=()=>{const settings=Array.from(document.querySelectorAll('header .actions button')).find(b=>b.textContent.includes('Settings'));settings?.click();};
  let currentPage='pos';
  const navButton=p=>siteNav.querySelector('[data-site-page="'+p+'"]');
  async function refreshNavigation(){
   await checkBoss();
   for(const p of restricted)navButton(p).hidden=!bossAllowed;
   navButton('admin').hidden=!bossAllowed;
+  if(!bossAllowed)adminSubmenu.hidden=true;
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
   if(adminBtn)adminBtn.textContent=bossAllowed?'⚙ Admin':'Sign in';
@@ -161,7 +169,8 @@ if(siteNav&&siteHost){
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
-  if(page==='admin'){
+  if(page==='admin'){adminSubmenu.hidden=!adminSubmenu.hidden;return;}
+  if(page==='admin-legacy'){
    mdtContent.replaceChildren(make('h2','Store Administration'),make('p','Manage the catalog, delivery zones, settings, branding and images.'));
    const controls=make('div',undefined,'gw-mdt-actions');
    const catalog=make('button','Products, Delivery Zones & Settings','primary');catalog.onclick=()=>document.querySelector('#adminBtn')?.click();
@@ -178,6 +187,7 @@ if(siteNav&&siteHost){
  siteHost.append(mdt);mdt.setAttribute('open','');
  mdt.querySelector('.gw-mdt-sidebar').hidden=true;
  mdt.querySelector('#gwMdtClose').hidden=true;
+ mdt.querySelector('.dialogHead').hidden=true;
  mdtButton.hidden=true;mdtButton.style.display='none';
  button.hidden=true;button.style.display='none';
  siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.addEventListener('click',()=>showSite(b.dataset.sitePage)));
