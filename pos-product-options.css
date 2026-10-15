@@ -1,0 +1,19 @@
+
+/* Friendly ingredients and flavor editor */
+#adminProducts .gw-editor-list{grid-column:1/-1;display:flex;flex-direction:column;gap:9px;padding:12px;border:1px solid var(--line,#395043);border-radius:9px;background:var(--panel2,#18251e)}
+#adminProducts .gw-editor-list strong{font-size:13px}
+#adminProducts .gw-editor-entries{display:flex;flex-direction:column;gap:8px}
+#adminProducts .gw-editor-entry{display:grid;grid-template-columns:minmax(140px,2fr) minmax(80px,1fr) minmax(100px,1fr) auto;gap:7px}
+#adminProducts [data-list="options"] .gw-editor-entry{grid-template-columns:minmax(0,1fr) auto}
+#adminProducts .gw-editor-entry input{min-width:0;width:100%;padding:8px;border:1px solid var(--line,#395043);background:var(--panel,#121d17);color:var(--text,#fff);border-radius:6px}
+#adminProducts .gw-editor-list>button{align-self:flex-start}
+.gw-choice-dialog{width:min(480px,94vw);max-height:80vh;overflow:auto;background:var(--panel,#111c16)!important;color:var(--text,#fff)!important;border:1px solid var(--accent,#5ac781)!important;border-radius:14px;padding:22px;box-shadow:0 20px 60px #000a}
+.gw-choice-dialog::backdrop{background:#000a;backdrop-filter:blur(4px)}
+.gw-choice-dialog h3{font-size:22px;margin:0 0 7px}
+.gw-choice-dialog p{color:var(--muted,#aaa);margin:0 0 18px}
+.gw-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:16px}
+.gw-choice-grid button{background:var(--panel2,#19291f);border:1px solid var(--line,#3b5b47);border-radius:8px;padding:13px 8px;color:var(--text,#fff);font-weight:700;cursor:pointer}
+.gw-choice-grid button:hover,.gw-choice-grid button:focus-visible{border-color:var(--accent,#6dd58e);background:var(--gw-accent-soft,#214b30)}
+.gw-choice-dialog>button:last-child{width:100%;padding:10px}
+.gw-cart-choice{font-size:12px;color:var(--accent,#7ddda0);margin-top:4px;font-weight:600}
+@media(max-width:640px){#adminProducts .gw-editor-entry{grid-template-columns:1fr 1fr}#adminProducts .gw-editor-entry input:first-child{grid-column:1/-1}}
