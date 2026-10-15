@@ -242,8 +242,7 @@ if(siteNav&&siteHost){
   await checkBoss();
   await loadGrantedFeatures();
   for(const p of restricted)navButton(p).hidden=!canFeature(featureForPage[p]);
-  navButton('announcements').hidden=!(canFeature('announcements')||canFeature('announcements_manage'));
-  navButton('notes').hidden=!(canFeature('employees')&&(canFeature('employee_notes')||canFeature('employee_notes_manage')));
+  for(const p of ['history','leaderboard','reports'])navButton(p).hidden=!canFeature(featureForPage[p]);
   navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
   permissionsNav.hidden=!bossAllowed;
   navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding'));
