@@ -2,14 +2,28 @@ import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const db=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const themes={
- wonderland:['#090f0d','#121a16','#1a251e','#344438','#f1f4ed','#a3b0a4','#b6db72'],
+ wonderland:['#090f0d','#121a16','#1a251e','#344438','#f1f4ed','#a3b0a4','#59c780'],
  midnight:['#0d1525','#142238','#1b2940','#375273','#f6faff','#a8bdd4','#74c7f8'],
  purple:['#171023','#21172f','#2a1c3d','#54406c','#ffffff','#beb0d3','#c7a1ff'],
- light:['#f3f5f4','#ffffff','#f0f5f1','#c7d5ca','#1d2c22','#61736b','#20774a'],
+ light:['#f3f5f4','#ffffff','#edf4ee','#c7d5ca','#1d2c22','#61736b','#20774a'],
  amoled:['#050505','#101010','#171717','#353535','#ffffff','#aaaaaa','#7ee6a0'],
- sunset:['#201510','#291c16','#34231c','#654634','#ffffff','#c8b0a0','#ffb074']
+ sunset:['#201510','#291c16','#34231c','#654634','#ffffff','#c8b0a0','#ffb074'],
+ emerald:['#061b16','#0c2921','#14382b','#306450','#effff7','#a5c9b7','#3ae2a0'],
+ ocean:['#071b25','#102d39','#173d4b','#386276','#f2fbff','#b2cfdd','#43c9e8'],
+ crimson:['#200c12','#2c131c','#391b25','#734151','#fff3f5','#d6aeb9','#ff6682'],
+ rose:['#24151f','#35202d','#462b3b','#7c516b','#fff4fa','#e1bfd1','#ff94c6'],
+ lavender:['#1c1930','#282442','#353054','#635c88','#f9f7ff','#c7c0df','#b9a6ff'],
+ gold:['#1c170b','#2b2414','#3b321b','#72603a','#fff9e9','#d7c9a5','#f1c85b'],
+ copper:['#24170f','#342219','#442c1e','#805740','#fff5ed','#dbc1ad','#ed995a'],
+ arctic:['#eaf3f8','#ffffff','#e1eef5','#b4cbd9','#173443','#536f7f','#147aa3'],
+ forest:['#0b170e','#16281a','#223726','#425d46','#f3fff0','#b6cbb1','#9bdf71'],
+ slate:['#14191f','#1d252d','#27313a','#4b5c6c','#f3f6f9','#b1c1ce','#88b6db'],
+ cyber:['#100c20','#1b1232','#281d45','#584b80','#f7f3ff','#c5b8e5','#00e3c2'],
+ cherry:['#fff1f1','#ffffff','#ffe4e8','#e6bdc7','#43232e','#86636e','#c73766'],
+ sand:['#f5f0e4','#fffaf0','#eee5d1','#d0c1a2','#342d21','#776e5e','#a56d32'],
+ halloween:['#130e18','#211626','#2d1d32','#674362','#fff4e8','#c9b4d0','#ff9238']
 };
-const labels={wonderland:'Wonderland Dark',midnight:'Midnight Blue',purple:'Royal Purple',light:'Clean Light',amoled:'AMOLED Black',sunset:'Sunset'};
+const labels={wonderland:'Wonderland Dark',midnight:'Midnight Blue',purple:'Royal Purple',light:'Clean Light',amoled:'AMOLED Black',sunset:'Sunset',emerald:'Emerald',ocean:'Deep Ocean',crimson:'Crimson',rose:'Rose',lavender:'Lavender',gold:'Black & Gold',copper:'Copper',arctic:'Arctic Light',forest:'Forest',slate:'Slate',cyber:'Cyber Neon',cherry:'Cherry Blossom',sand:'Warm Sand',halloween:'Halloween'};
 const keys=['--bg','--panel','--panel2','--line','--text','--muted','--accent'];
 const storeKey='gw-theme-v1';
 let branding={},authorized=false,canBrand=false,canProduct=false,boss=false;
