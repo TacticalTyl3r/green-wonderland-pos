@@ -137,6 +137,30 @@ checkBoss();
 roster().then(refresh).catch(e=>{msg('Employee service not configured yet: '+e.message);holder.hidden=true;});
 
 
+/* Boss-configurable role permission editor */
+const roleFeatures=[['dashboard','Dashboard'],['employees','Employees'],['time_management','Time Management'],['sales_earnings','Sales & Earnings'],['admin_catalog','Products & Settings'],['admin_branding','Branding & Images']];
+async function showRolePermissions(){
+ mdtContent.replaceChildren(make('h2','Roles & Permissions'),make('p','Choose which MDT sections each employee role may access. Boss always has full access. Existing Boss-only database actions remain protected.'));
+ mdtMessage.textContent='Loading permissions…';
+ try{
+  const records=await call('gw_mdt_role_permissions_admin');
+  const grid=make('div',undefined,'gw-permission-grid');
+  for(const role of ['Manager','Senior Salesman','Salesman']){
+   const card=make('section',undefined,'gw-permission-card');
+   card.append(make('h3',role));
+   for(const [feature,label] of roleFeatures){
+    const entry=records.find(x=>x.role===role&&x.feature===feature);
+    const line=make('label',undefined,'gw-permission-row');
+    const input=document.createElement('input');input.type='checkbox';input.checked=entry?.allowed===true;
+    const name=make('span',label);line.append(input,name);
+    input.onchange=async()=>{input.disabled=true;try{await call('gw_mdt_set_role_permission',{p_role:role,p_feature:feature,p_allowed:input.checked});mdtMessage.textContent='Saved '+role+' · '+label;}catch(e){input.checked=!input.checked;mdtMessage.textContent='Could not save: '+e.message;}finally{input.disabled=false;}};
+    card.append(line);
+   }
+   grid.append(card);
+  }
+  mdtContent.append(grid);mdtMessage.textContent='';
+ }catch(e){mdtMessage.textContent='Permissions unavailable: '+e.message;}
+}
 /* Full-page Store MDT navigation and permission-aware menu */
 const siteNav=document.querySelector('#gwSiteNav');
 const siteHost=document.querySelector('#gwSiteMdtHost');
@@ -147,6 +171,16 @@ if(siteNav&&siteHost){
  const topHeader=shell.querySelector('header');
  if(topHeader){const posStatus=document.querySelector('#status');const posSlot=document.querySelector('#gwPosStatusSlot');if(posStatus&&posSlot)posSlot.append(posStatus);const content=document.querySelector('.gw-site-content');content?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');const ribbon=shell.querySelector('.ribbon');if(ribbon){content?.insertBefore(ribbon,shell);ribbon.classList.add('gw-global-ribbon');}}
  const restricted=['overview','employees','sales'];
+ const permissionsNav=document.createElement('button');permissionsNav.type='button';permissionsNav.dataset.sitePage='permissions';permissionsNav.innerHTML='<span class="gw-site-icon">⚿</span><span class="gw-site-label">Roles & Permissions</span><span class="gw-site-arrow">›</span>';
+ siteNav.querySelector('[data-site-page="employees"]')?.after(permissionsNav);
+ let grantedFeatures=new Set();
+ const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings'};
+ async function loadGrantedFeatures(){
+  grantedFeatures=new Set();
+  if(bossAllowed){roleFeatures.forEach(([feature])=>grantedFeatures.add(feature));return;}
+  if(!token||!me)return;
+  try{const rows=await call('gw_mdt_my_permissions',{p_token:token});for(const item of rows||[])if(item.allowed)grantedFeatures.add(item.feature);}catch(e){console.warn('Unable to load MDT role permissions',e);}
+ }
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
  const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.textContent='Products & Settings';
  const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.textContent='Branding & Images';
@@ -158,22 +192,29 @@ if(siteNav&&siteHost){
  const navButton=p=>siteNav.querySelector('[data-site-page="'+p+'"]');
  async function refreshNavigation(){
   await checkBoss();
-  for(const p of restricted)navButton(p).hidden=!bossAllowed;
-  navButton('admin').hidden=!bossAllowed;
+  await loadGrantedFeatures();
+  for(const p of restricted)navButton(p).hidden=!grantedFeatures.has(featureForPage[p]);
+  navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
+  navButton('permissions').hidden=!bossAllowed;
+  navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding'));
+  catalogLink.hidden=!bossAllowed;
+  brandingLink.hidden=!bossAllowed;
   if(!bossAllowed)adminSubmenu.hidden=true;
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
   if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin':'Sign in';adminBtn.hidden=true;}
-  if(!bossAllowed&&restricted.concat('admin').includes(currentPage))await showSite('pos');
+  if(currentPage!=='pos'&&currentPage!=='permissions'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
+  if(currentPage==='permissions'&&!bossAllowed)await showSite('pos');
  }
  async function showSite(page){
-  if(page==='admin'&&!bossAllowed)return;
-  if(restricted.includes(page)&&!bossAllowed)return;
+  if(page==='permissions'&&!bossAllowed)return;
+  if(restricted.includes(page)&&!grantedFeatures.has(featureForPage[page]))return;
   if(page==='admin'){adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
+  if(page==='permissions'){await showRolePermissions();return;}
   if(page==='admin-legacy'){
    mdtContent.replaceChildren(make('h2','Store Administration'),make('p','Manage the catalog, delivery zones, settings, branding and images.'));
    const controls=make('div',undefined,'gw-mdt-actions');
@@ -184,6 +225,7 @@ if(siteNav&&siteHost){
   mdtMessage.textContent='Loading store information…';
   try{
    if(page==='time'&&!bossAllowed){mdtContent.replaceChildren(make('h3','Time Management'),make('p','Use the Clock In / Clock Out button in the header.'));}
+   else if(!bossAllowed){mdtContent.replaceChildren(make('h3',page==='overview'?'Dashboard':page==='employees'?'Employees':'Sales & Earnings'),make('p','Your role allows this section. Detailed management reports and employee changes currently require Boss authorization; they will be enabled as their secure server permissions are added.'));}
    else{await loadStaff();await switchPage(page);}
    if(page!=='sales')mdtMessage.textContent='';
   }catch(err){mdtContent.replaceChildren();mdtMessage.textContent=err.message;}
@@ -200,8 +242,9 @@ if(siteNav&&siteHost){
  db.auth.onAuthStateChange(()=>setTimeout(refreshNavigation,100));
  document.querySelector('#login')?.addEventListener('click',()=>setTimeout(refreshNavigation,800));
  document.querySelector('#adminBtn')?.addEventListener('click',()=>setTimeout(refreshNavigation,500));
- document.querySelector('#gwEmpClose')?.addEventListener('click',()=>{updateClockStatus();if(currentPage==='time')showSite('time');});
+ document.querySelector('#gwEmpClose')?.addEventListener('click',()=>{updateClockStatus();refreshNavigation();if(currentPage==='time')showSite('time');});
  refreshNavigation();updateClockStatus();refreshWeeklyHours();
+ window.gwRefreshRoleNavigation=refreshNavigation;
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token)refreshWeeklyHours();});
  setInterval(()=>{if(token&&me?.clocked_in)refreshWeeklyHours();},60000);
 }
