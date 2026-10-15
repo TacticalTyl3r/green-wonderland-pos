@@ -258,9 +258,11 @@ if(siteNav&&siteHost){
  async function showSite(page){
   if(page==='permissions'&&!bossAllowed)return;
   if(restricted.includes(page)&&!canFeature(featureForPage[page])&&!(page==='announcements'&&canFeature('announcements_manage'))&&!(page==='notes'&&canFeature('employee_notes_manage')&&canFeature('employees')))return;
+  if(page==='sales'&&currentPage==='sales'){salesSubmenu.hidden=!salesSubmenu.hidden;return;}
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
   if(page!=='permissions')adminSubmenu.hidden=true;
+  salesSubmenu.hidden=!(['sales','history','leaderboard','reports'].includes(page));
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
@@ -289,7 +291,7 @@ if(siteNav&&siteHost){
  mdtButton.hidden=true;mdtButton.style.display='none';
  button.hidden=true;button.style.display='none';
  siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.addEventListener('click',()=>showSite(b.dataset.sitePage)));
- siteToggle?.addEventListener('click',()=>{const collapsed=siteSidebar.classList.toggle('collapsed');if(collapsed)adminSubmenu.hidden=true;siteToggle.setAttribute('aria-expanded',String(!collapsed));siteToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');});
+ siteToggle?.addEventListener('click',()=>{const collapsed=siteSidebar.classList.toggle('collapsed');if(collapsed){adminSubmenu.hidden=true;salesSubmenu.hidden=true;}siteToggle.setAttribute('aria-expanded',String(!collapsed));siteToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');});
  document.querySelector('#logout')?.addEventListener('click',()=>{bossAllowed=false;refreshNavigation();});
  db.auth.onAuthStateChange(()=>setTimeout(refreshNavigation,100));
  document.querySelector('#login')?.addEventListener('click',()=>setTimeout(refreshNavigation,800));
