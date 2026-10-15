@@ -12,7 +12,7 @@ const themes={
 const labels={wonderland:'Wonderland Dark',midnight:'Midnight Blue',purple:'Royal Purple',light:'Clean Light',amoled:'AMOLED Black',sunset:'Sunset'};
 const keys=['--bg','--panel','--panel2','--line','--text','--muted','--accent'];
 const storeKey='gw-theme-v1';
-let branding={},authorized=false;
+let branding={},authorized=false,canBrand=false,canProduct=false,boss=false;
 function applyTheme(name){const t=themes[name]||themes.wonderland;keys.forEach((key,i)=>document.documentElement.style.setProperty(key,t[i]));document.body.classList.remove('light');document.body.dataset.theme=name;localStorage.setItem(storeKey,name);document.querySelector('#themeBtn')?.setAttribute('aria-label','Open appearance settings');}
 function image(url,alt,css){const el=document.createElement('img');el.src=url;el.alt=alt;el.className=css;el.onerror=()=>el.remove();return el;}
 function renderLogo(){const el=document.querySelector('.mark');if(!el)return;el.replaceChildren();if(branding.main_logo_url)el.append(image(branding.main_logo_url,'Green Wonderland logo','gw-logo'));else el.textContent='✦';}
@@ -28,15 +28,67 @@ document.querySelector('header .actions')?.append(trigger);
 document.querySelector('#themeBtn')?.remove();
 root.querySelector('#gwClose').onclick=()=>root.close();
 const message=t=>root.querySelector('#gwSettingsMessage').textContent=t;
-async function refreshAdmin(){const {data:{session}}=await db.auth.getSession();if(!session){authorized=false;root.querySelector('#gwBrandingAdmin').textContent='Sign in through Admin to manage images.';return;}const {data,error}=await db.rpc('is_admin');authorized=!error&&data===true;if(!authorized){root.querySelector('#gwBrandingAdmin').textContent='Image management requires administrator access.';return;}
- const {data:products}=await db.from('products').select('id,name').order('name');
+async function refreshAdmin(){
+ const {data:{session}}=await db.auth.getSession();
  const wrap=root.querySelector('#gwBrandingAdmin');wrap.replaceChildren();
- const slot=document.createElement('select');for(const [id,label] of [['main_logo','Main website logo'],['login_logo','Login logo'],['receipt_logo','Receipt logo'],['dashboard_logo','Dashboard logo'],['favicon','Browser icon'],['product','Product image']]){const o=new Option(label,id);slot.add(o);}
- const product=document.createElement('select');(products||[]).forEach(p=>product.add(new Option(p.name,p.id)));product.hidden=true;slot.onchange=()=>product.hidden=slot.value!=='product';
- const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';const upload=document.createElement('button');upload.className='primary';upload.textContent='Upload / Replace';upload.onclick=async()=>{if(!authorized)return;const f=file.files?.[0];if(!f)return message('Select an image first.');if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>3*1024*1024)return message('Use PNG, JPG or WebP under 3 MB.');if(slot.value==='product'&&!product.value)return message('Select a product.');upload.disabled=true;message('Uploading...');try{const path=`${slot.value}/${crypto.randomUUID()}.${f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg'}`;const {error:upErr}=await db.storage.from('gw-images').upload(path,f,{contentType:f.type,upsert:false});if(upErr)throw upErr;const url=db.storage.from('gw-images').getPublicUrl(path).data.publicUrl;
- if(slot.value==='product'){const {error}=await db.from('products').update({image_url:url}).eq('id',product.value);if(error)throw error;}else{const {error}=await db.from('gw_branding').upsert({slot:slot.value,image_url:url,active:true},{onConflict:'slot'});if(error)throw error;}await loadBranding();message('Image saved. Reload the calculator to see product image changes.');}catch(e){message(e.message||String(e));}finally{upload.disabled=false;}};
- const reset=document.createElement('button');reset.textContent='Reset selected logo';reset.onclick=async()=>{if(slot.value==='product')return message('Select a logo to reset.');if(!confirm('Reset this logo to default?'))return;const {error}=await db.from('gw_branding').delete().eq('slot',slot.value);if(error)return message(error.message);await loadBranding();message('Logo reset.');};
- const label=document.createElement('label');label.textContent='Image location ';label.append(slot);wrap.append(label,product,file,upload,reset);
+ if(!session){authorized=false;wrap.textContent='Sign in through Admin to manage store images.';return;}
+ const [b,p,staff]=await Promise.all([db.rpc('gw_can_manage_branding'),db.rpc('gw_can_manage_product_images'),db.rpc('gw_is_boss')]);
+ canBrand=b.data===true&&!b.error;canProduct=p.data===true&&!p.error;boss=staff.data===true&&!staff.error;
+ authorized=canBrand||canProduct;
+ if(!authorized&&!boss){wrap.textContent='Store branding is managed by authorized staff.';return;}
+ if(authorized){
+ const {data:products}=await db.from('products').select('id,name').order('name');
+ const slot=document.createElement('select');
+ const options=[...(canBrand?[['main_logo','Main website logo'],['login_logo','Login logo'],['receipt_logo','Receipt logo'],['dashboard_logo','Dashboard logo'],['favicon','Browser icon']]:[]),...(canProduct?[['product','Product image']]:[])];
+ for(const [id,label] of options)slot.add(new Option(label,id));
+ const product=document.createElement('select');(products||[]).forEach(p=>product.add(new Option(p.name,p.id)));
+ const updateVisibility=()=>product.hidden=slot.value!=='product';slot.onchange=updateVisibility;updateVisibility();
+ const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';
+ const upload=document.createElement('button');upload.className='primary';upload.textContent='Upload / Replace';
+ upload.onclick=async()=>{
+ const f=file.files?.[0];if(!f)return message('Select an image first.');
+ if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>3*1024*1024)return message('Use PNG, JPG or WebP under 3 MB.');
+ if(slot.value==='product'&&!product.value)return message('Select a product.');
+ if(slot.value==='product'&&!canProduct||slot.value!=='product'&&!canBrand)return message('Not authorized.');
+ upload.disabled=true;message('Uploading...');
+ try{
+ const path=`${slot.value}/${crypto.randomUUID()}.${f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg'}`;
+ const {error:upErr}=await db.storage.from('gw-images').upload(path,f,{contentType:f.type,upsert:false});
+ if(upErr)throw upErr;
+ const url=db.storage.from('gw-images').getPublicUrl(path).data.publicUrl;
+ if(slot.value==='product'){
+ const {error}=await db.rpc('gw_set_product_image',{p_product_id:product.value,p_image_url:url});if(error)throw error;
+ }else{
+ const {error}=await db.from('gw_branding').upsert({slot:slot.value,image_url:url,active:true},{onConflict:'slot'});if(error)throw error;
+ }
+ await loadBranding();message('Image saved. Refresh to see product image changes.');
+ }catch(e){message(e.message||String(e));}finally{upload.disabled=false;}
+ };
+ const reset=document.createElement('button');reset.textContent='Reset selected logo';
+ reset.onclick=async()=>{if(slot.value==='product')return message('Select a logo to reset.');if(!canBrand)return;
+ if(!confirm('Reset this logo to default?'))return;
+ const {error}=await db.from('gw_branding').delete().eq('slot',slot.value);
+ if(error)return message(error.message);await loadBranding();message('Logo reset.');};
+ const label=document.createElement('label');label.textContent='Image location ';label.append(slot);
+ wrap.append(label,product,file,upload);if(canBrand)wrap.append(reset);
+ }
+ if(boss)await renderStaffManager(wrap);
+}
+async function renderStaffManager(wrap){
+ const heading=document.createElement('h3');heading.textContent='Boss • Staff permissions';wrap.append(heading);
+ const {data:staff,error}=await db.from('gw_staff_permissions').select('user_id,display_name,role,can_manage_branding,can_manage_product_images').order('display_name');
+ if(error){message(error.message);return;}
+ for(const person of staff||[]){
+ const row=document.createElement('div');row.className='gw-permission-row';
+ const name=document.createElement('strong');name.textContent=person.display_name||person.user_id;
+ const role=document.createElement('select');['Boss','Manager','Senior Salesman','Salesman'].forEach(r=>role.add(new Option(r,r)));role.value=person.role;
+ const branding=document.createElement('label'),brandCheck=document.createElement('input');brandCheck.type='checkbox';brandCheck.checked=person.can_manage_branding;branding.append(brandCheck,' Logos');
+ const images=document.createElement('label'),imageCheck=document.createElement('input');imageCheck.type='checkbox';imageCheck.checked=person.can_manage_product_images;images.append(imageCheck,' Product photos');
+ const save=document.createElement('button');save.textContent='Save';
+ save.onclick=async()=>{save.disabled=true;const {error}=await db.from('gw_staff_permissions').update({role:role.value,can_manage_branding:brandCheck.checked,can_manage_product_images:imageCheck.checked}).eq('user_id',person.user_id);message(error?error.message:'Permissions saved.');save.disabled=false;};
+ row.append(name,role,branding,images,save);wrap.append(row);
+ }
+ const note=document.createElement('p');note.textContent='New staff accounts must first be linked to their Supabase Auth user ID by an administrator. Keep at least one Boss account.';wrap.append(note);
 }
 await loadBranding();
 db.channel('gw-branding-updates').on('postgres_changes',{event:'*',schema:'public',table:'gw_branding'},loadBranding).subscribe();
