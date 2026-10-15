@@ -109,6 +109,24 @@ function employeeProfile(e){
  if(canFeature('time_add')||canFeature('time_remove')){const adjust=make('button','Adjust Time','outline');adjust.onclick=()=>adjustTime(e);actions.append(adjust);}
  mdtContent.append(actions);
 }
+async function renderEmployeeNotes(e,host){
+ host.replaceChildren(make('p','Loading private notes…'));
+ try{
+  const notes=await call('gw_mdt_notes_list',{p_token:token||'',p_employee:e.id});
+  host.replaceChildren();
+  if(canFeature('employee_notes_manage')){
+   const form=make('form',undefined,'gw-mdt-form'),category=document.createElement('select'),body=document.createElement('textarea'),submit=make('button','Add Note','primary');
+   for(const kind of ['General','Recognition','Disciplinary'])category.add(new Option(kind,kind));
+   body.placeholder='Private employee note';body.required=true;body.minLength=3;body.maxLength=3000;
+   form.append(category,body,submit);host.append(form);
+   form.onsubmit=async ev=>{ev.preventDefault();submit.disabled=true;try{await call('gw_mdt_note_create',{p_token:token||'',p_employee:e.id,p_category:category.value,p_body:body.value});await renderEmployeeNotes(e,host);}catch(err){mdtMessage.textContent=err.message;}finally{submit.disabled=false;}};
+  }
+  const list=make('div',undefined,'gw-mdt-roster');
+  for(const n of notes){const row=make('div',undefined,'gw-mdt-employee'),info=make('div');info.append(make('strong',n.category+' · '+n.author),make('p',n.body+' · '+new Date(n.created_at).toLocaleString()));row.append(info);list.append(row);}
+  if(!notes.length)list.append(make('p','No employee notes yet.'));
+  host.append(list);
+ }catch(err){host.replaceChildren(make('p','Unable to load notes: '+err.message));}
+}
 function employeeForm(e){
  const form=make('form',undefined,'gw-mdt-form');
  const title=make('h3',e?'Edit Employee':'Add Employee');form.append(title);
