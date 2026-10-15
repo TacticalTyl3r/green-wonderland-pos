@@ -256,14 +256,14 @@ if(siteNav&&siteHost){
  const topHeader=shell.querySelector('header');
  if(topHeader){const posStatus=document.querySelector('#status');const posSlot=document.querySelector('#gwPosStatusSlot');if(posStatus&&posSlot)posSlot.append(posStatus);const content=document.querySelector('.gw-site-content');content?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');const ribbon=shell.querySelector('.ribbon');if(ribbon){content?.insertBefore(ribbon,shell);ribbon.classList.add('gw-global-ribbon');}}
  const restricted=['overview','employees','sales','history','leaderboard','reports'];
- const businessPages=[['history','Sales History','sales_history'],['leaderboard','Employee Leaderboards','sales_earnings'],['reports','Financial Reports','sales_earnings'],['announcements','Announcements','announcements'],['notes','Employee Notes','employee_notes']];
+ const businessPages=[['history','Sales History','sales_history'],['leaderboard','Employee Leaderboards','sales_earnings'],['reports','Financial Reports','sales_earnings'],['analytics','Sales Analytics','sales_earnings'],['announcements','Announcements','announcements'],['notes','Employee Notes','employee_notes']];
  const salesSubmenu=document.createElement('div');salesSubmenu.className='gw-site-submenu';salesSubmenu.hidden=true;
- for(const [page,label] of businessPages.filter(([page])=>['history','leaderboard','reports'].includes(page))){const b=document.createElement('button');b.type='button';b.dataset.sitePage=page;b.textContent=label;salesSubmenu.append(b);}
+ for(const [page,label] of businessPages.filter(([page])=>['history','leaderboard','reports','analytics'].includes(page))){const b=document.createElement('button');b.type='button';b.dataset.sitePage=page;b.textContent=label;salesSubmenu.append(b);}
  siteNav.querySelector('[data-site-page="sales"]')?.after(salesSubmenu);
 
  const permissionsNav=document.createElement('button');permissionsNav.type='button';permissionsNav.dataset.sitePage='permissions';permissionsNav.innerHTML='<span class="gw-site-icon">⚿</span><span class="gw-site-label">Roles & Permissions</span><span class="gw-site-arrow">›</span>';
  // Roles & Permissions belongs inside the expandable Admin section.
- const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings',history:'sales_history',leaderboard:'sales_earnings',reports:'sales_earnings',announcements:'announcements',notes:'employee_notes'};
+ const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings',history:'sales_history',leaderboard:'sales_earnings',reports:'sales_earnings',analytics:'sales_earnings',announcements:'announcements',notes:'employee_notes'};
  async function loadGrantedFeatures(){
   grantedFeatures=new Set();
   if(bossAllowed){roleFeatures.forEach(([feature])=>grantedFeatures.add(feature));return;}
