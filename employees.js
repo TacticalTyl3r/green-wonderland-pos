@@ -49,14 +49,14 @@ window.gwRecordSale=async sale=>{
  return await call('gw_record_sale',{p_token:token||'',p_employee:selected,p_total:sale.total,p_count:sale.count,p_fulfillment:sale.fulfillment});
 };
 // Store MDT: uses existing Boss-authorized RPCs. No schema change required.
-const mdtButton=document.createElement('button');mdtButton.className='outline';mdtButton.textContent='▦ Store MDT';mdtButton.hidden=true;document.querySelector('header .actions')?.append(mdtButton);
+const mdtButton=document.createElement('button');mdtButton.className='outline';mdtButton.textContent='▦ Store MDT';mdtButton.hidden=false;document.querySelector('header .actions')?.append(mdtButton);
 const mdt=document.createElement('dialog');mdt.id='gwMdt';mdt.innerHTML='<div class="dialogHead"><div><small>GREEN WONDERLAND / MANAGEMENT</small><h2>STORE MDT</h2></div><button class="outline" id="gwMdtClose">✕</button></div><div class="gw-mdt-tabs"><button data-page="overview" class="active">Overview</button><button data-page="employees">Employees</button><button data-page="time">Time Management</button></div><div id="gwMdtContent"></div><p id="gwMdtMessage" role="status"></p>';document.body.append(mdt);
 mdt.querySelector('#gwMdtClose').onclick=()=>mdt.close();
 const mdtContent=mdt.querySelector('#gwMdtContent'),mdtMessage=mdt.querySelector('#gwMdtMessage');
 let mdtPage='overview',staffRows=[],bossAllowed=false;
 const formatHours=n=>(Number(n||0)/60).toFixed(2);
 const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
-async function checkBoss(){try{const {data:{session}}=await db.auth.getSession();if(!session){bossAllowed=false;}else{const {data,error}=await db.rpc('gw_is_boss');bossAllowed=!error&&data===true;}mdtButton.hidden=!bossAllowed;}catch(e){bossAllowed=false;mdtButton.hidden=true;}return bossAllowed;}
+async function checkBoss(){try{const {data:{session}}=await db.auth.getSession();if(!session){bossAllowed=false;}else{const {data,error}=await db.rpc('gw_is_boss');bossAllowed=!error&&data===true;}mdtButton.hidden=false;}catch(e){bossAllowed=false;mdtButton.hidden=false;}return bossAllowed;}
 async function loadStaff(){staffRows=await call('gw_staff_report');return staffRows;}
 function employeeForm(e){
  const form=make('form',undefined,'gw-mdt-form');
@@ -96,10 +96,10 @@ function renderMdt(){
 }
 function switchPage(page){mdtPage=page;mdt.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));renderMdt();}
 mdt.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>switchPage(b.dataset.page));
-mdtButton.onclick=async()=>{if(!await checkBoss())return;mdt.showModal();mdtMessage.textContent='Loading employees…';try{await loadStaff();mdtMessage.textContent='';switchPage('overview');}catch(e){mdtMessage.textContent=e.message;}};
+mdtButton.onclick=async()=>{mdt.showModal();mdtMessage.textContent='Checking management access…';if(!await checkBoss()){mdtContent.replaceChildren(make('h3','Management sign-in required'),make('p','Sign in using the Admin button with your Boss account, then reopen Store MDT. If already signed in, sign out and sign back in to refresh your session.'));mdtMessage.textContent='Your current website session does not have Boss access.';return;}mdtMessage.textContent='Loading employees…';try{await loadStaff();mdtMessage.textContent='';switchPage('overview');}catch(e){mdtMessage.textContent=e.message;}};
 document.querySelector('#adminBtn')?.addEventListener('click',()=>setTimeout(checkBoss,400));
 document.querySelector('#login')?.addEventListener('click',()=>setTimeout(checkBoss,800));
-document.querySelector('#logout')?.addEventListener('click',()=>{bossAllowed=false;mdtButton.hidden=true;mdt.close();});
+document.querySelector('#logout')?.addEventListener('click',()=>{bossAllowed=false;mdtButton.hidden=false;mdt.close();});
 db.auth.onAuthStateChange(()=>setTimeout(checkBoss,0));
 checkBoss();
 roster().then(refresh).catch(e=>{msg('Employee service not configured yet: '+e.message);holder.hidden=true;});
