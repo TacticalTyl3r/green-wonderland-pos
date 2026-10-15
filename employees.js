@@ -128,6 +128,18 @@ async function adjustTime(e){
  form.onsubmit=async ev=>{ev.preventDefault();const value=Number(mins.value);if(!Number.isSafeInteger(value)||value===0){mdtMessage.textContent='Enter a nonzero whole number of minutes.';return;}if(!canFeature(value>0?'time_add':'time_remove')){mdtMessage.textContent='You do not have permission for this adjustment.';return;}save.disabled=true;try{await call('gw_mdt_adjust_time',{p_token:token||'',p_employee:e.id,p_minutes:value,p_reason:reason.value.trim()});await loadStaff();mdtMessage.textContent='Time adjustment saved with reason.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
  mdtContent.replaceChildren(form);
 }
+async function showTimeHistory(){
+ mdtTab='history';mdtContent.replaceChildren(make('h2','Time Adjustment History'));
+ const back=make('button','← Employee Hours','outline');back.onclick=()=>{mdtTab='hours';renderMdt();};mdtContent.append(back);
+ mdtMessage.textContent='Loading adjustment history…';
+ try{
+  timeHistoryRows=await call('gw_mdt_time_history',{p_token:token||''});
+  const search=document.createElement('input');search.placeholder='Search employee, manager or reason';mdtContent.append(search);
+  const list=make('div',undefined,'gw-mdt-roster');mdtContent.append(list);
+  const draw=()=>{list.replaceChildren();const q=search.value.trim().toLowerCase();for(const a of timeHistoryRows.filter(a=>(a.employee_name+' '+a.actor_name+' '+a.reason).toLowerCase().includes(q))){const row=make('div',undefined,'gw-mdt-employee');const detail=make('div');detail.append(make('strong',a.employee_name+' · '+(a.minutes>0?'+':'')+a.minutes+' minutes'),make('p',a.reason+' · By '+a.actor_name+' · '+new Date(a.created_at).toLocaleString()));row.append(detail);list.append(row);}if(!list.children.length)list.append(make('p','No matching adjustments.'));};
+  search.oninput=draw;draw();mdtMessage.textContent='';
+ }catch(err){mdtMessage.textContent='History unavailable: '+err.message;}
+}
 function renderMdt(){
  mdtContent.replaceChildren();
  if(mdtPage==='time'){const clockCard=make('div',undefined,'gw-mdt-stat');clockCard.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const openClock=make('button','Open Time Clock','primary');openClock.onclick=()=>button.click();clockCard.append(openClock);mdtContent.append(clockCard);}
