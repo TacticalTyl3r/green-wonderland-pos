@@ -47,7 +47,7 @@ async function refresh(){
  const logout=document.createElement('button');logout.textContent='Sign out';logout.onclick=async()=>{try{await call('gw_pin_logout',{p_token:token});}finally{token='';me=null;sessionStorage.removeItem(key);updateClockStatus();await refresh();}};
  view.append(title,status,clock,logout);
  }
- updateAttribution();
+ updateAttribution();window.gwRefreshRoleNavigation?.();
  }catch(e){msg(e.message);}
 }
 window.gwRecordSale=async sale=>{
