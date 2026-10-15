@@ -11,7 +11,8 @@ create table if not exists public.gw_employees(
  created_at timestamptz not null default now()
 );
 create unique index if not exists gw_employee_name_ci on public.gw_employees(lower(name));
-create table if not exists public.gw_pin_attempts(employee_id uuid primary key references public.gw_employees(id) on delete cascade, failures integer not null default 0, locked_until timestamptz);\ncreate table if not exists public.gw_pin_sessions(
+create table if not exists public.gw_pin_attempts(employee_id uuid primary key references public.gw_employees(id) on delete cascade, failures integer not null default 0, locked_until timestamptz);
+create table if not exists public.gw_pin_sessions(
  id uuid primary key default gen_random_uuid(),
  employee_id uuid not null references public.gw_employees(id),
  token_hash text not null unique,
@@ -44,7 +45,8 @@ create table if not exists public.gw_sales(
  created_at timestamptz not null default now()
 );
 alter table public.gw_employees enable row level security;
-alter table public.gw_pin_attempts enable row level security;\nalter table public.gw_pin_sessions enable row level security;
+alter table public.gw_pin_attempts enable row level security;
+alter table public.gw_pin_sessions enable row level security;
 alter table public.gw_shifts enable row level security;
 alter table public.gw_time_adjustments enable row level security;
 alter table public.gw_sales enable row level security;
@@ -157,5 +159,6 @@ grant execute on function public.gw_adjust_time(uuid,integer,text) to authentica
 grant execute on function public.gw_staff_report() to authenticated;
 -- Restrict function access for unauthenticated roles where appropriate.
 revoke all on function public.gw_manage_employee(uuid,text,text,text,boolean),public.gw_adjust_time(uuid,integer,text),public.gw_staff_report() from public,anon;
--- Failed PINs return no rows (rather than raising) so lockout counters commit.\n-- IMPORTANT: Also configure API rate limits / edge throttling for PIN attempts.
+-- Failed PINs return no rows (rather than raising) so lockout counters commit.
+-- IMPORTANT: Also configure API rate limits / edge throttling for PIN attempts.
 -- Do not rely on 4-digit PINs alone for internet-facing accounts.
