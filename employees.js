@@ -312,7 +312,7 @@ if(siteNav&&siteHost){
   if(!bossAllowed)adminSubmenu.hidden=true;
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
-  if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin':'Sign in';adminBtn.hidden=true;}
+  if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin Account':'Admin Login';adminBtn.hidden=false;adminBtn.title=bossAllowed?'Manage your administrator account and product settings':'Sign in with your administrator email and password';}
   if(currentPage!=='pos'&&currentPage!=='permissions'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
   if(currentPage==='permissions'&&!bossAllowed)await showSite('pos');
  }
