@@ -1,6 +1,7 @@
 -- Green Wonderland employee PIN, shift tracking and auditable time adjustments.
 -- Requires supabase-role-permissions.sql and an existing Boss Supabase Auth account.
-create extension if not exists pgcrypto;
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 create table if not exists public.gw_employees(
  id uuid primary key default gen_random_uuid(),
  name text not null check(length(trim(name)) between 2 and 100),
@@ -55,7 +56,7 @@ revoke all on public.gw_employees,public.gw_pin_attempts,public.gw_pin_sessions,
 create or replace function public.gw_employee_for_token(p_token text)
 returns uuid language sql stable security definer set search_path=public,pg_temp
 as $$select s.employee_id from public.gw_pin_sessions s join public.gw_employees e on e.id=s.employee_id
-where s.token_hash=encode(digest(p_token,'sha256'),'hex') and s.expires_at>now() and e.active limit 1$$;
+where s.token_hash=encode(extensions.digest(p_token,'sha256'),'hex') and s.expires_at>now() and e.active limit 1$$;
 revoke all on function public.gw_employee_for_token(text) from public;
 create or replace function public.gw_public_employees()
 returns table(id uuid,name text) language sql stable security definer set search_path=public,pg_temp
@@ -70,7 +71,7 @@ begin
  if not found then raise exception 'Invalid credentials'; end if;
  select * into attempt from public.gw_pin_attempts where employee_id=e.id for update;
  if attempt.locked_until>now() then raise exception 'PIN temporarily locked. Try again later'; end if;
- if e.pin_hash<>crypt(p_pin,e.pin_hash) then
+ if e.pin_hash<>extensions.crypt(p_pin,e.pin_hash) then
   insert into public.gw_pin_attempts(employee_id,failures,locked_until)
   values(e.id,1,null)
   on conflict(employee_id) do update set failures=case when gw_pin_attempts.locked_until<now() then 1 else gw_pin_attempts.failures+1 end,
@@ -79,7 +80,7 @@ begin
  end if;
  delete from public.gw_pin_attempts where employee_id=e.id;
  delete from public.gw_pin_sessions where employee_id=e.id or expires_at<now();
- insert into public.gw_pin_sessions(employee_id,token_hash) values(e.id,encode(digest(p_token,'sha256'),'hex'));
+ insert into public.gw_pin_sessions(employee_id,token_hash) values(e.id,encode(extensions.digest(p_token,'sha256'),'hex'));
  return query select e.id,e.name,e.role;
 end$$;
 create or replace function public.gw_pin_me(p_token text)
@@ -89,7 +90,7 @@ select e.id,e.name,e.role,exists(select 1 from public.gw_shifts s where s.employ
 from public.gw_employees e where e.id=public.gw_employee_for_token(p_token)$$;
 create or replace function public.gw_pin_logout(p_token text)
 returns void language sql security definer set search_path=public,pg_temp as $$
-delete from public.gw_pin_sessions where token_hash=encode(digest(p_token,'sha256'),'hex')$$;
+delete from public.gw_pin_sessions where token_hash=encode(extensions.digest(p_token,'sha256'),'hex')$$;
 create or replace function public.gw_clock(p_token text,p_clock_in boolean)
 returns text language plpgsql security definer set search_path=public,pg_temp as $$
 declare eid uuid:=public.gw_employee_for_token(p_token);
@@ -112,10 +113,10 @@ begin
  if p_pin is not null and (p_pin !~ '^[0-9]{4,12}$') then raise exception 'PIN must be 4 to 12 digits'; end if;
  if p_id is null then
   if p_pin is null then raise exception 'PIN required'; end if;
-  insert into public.gw_employees(name,role,pin_hash,active) values(trim(p_name),p_role,crypt(p_pin,gen_salt('bf',12)),p_active) returning id into result;
+  insert into public.gw_employees(name,role,pin_hash,active) values(trim(p_name),p_role,extensions.crypt(p_pin,extensions.gen_salt('bf',12)),p_active) returning id into result;
  else
   update public.gw_employees set name=trim(p_name),role=p_role,active=p_active,
-   pin_hash=case when p_pin is null then pin_hash else crypt(p_pin,gen_salt('bf',12)) end where id=p_id returning id into result;
+   pin_hash=case when p_pin is null then pin_hash else extensions.crypt(p_pin,extensions.gen_salt('bf',12)) end where id=p_id returning id into result;
   if result is null then raise exception 'Employee not found'; end if;
   if p_pin is not null or not p_active then delete from public.gw_pin_sessions where employee_id=result; end if;
  end if;
