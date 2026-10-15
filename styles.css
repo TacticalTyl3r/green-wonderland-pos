@@ -63,3 +63,5 @@
 #adminBtn[hidden]{display:none!important}#gwQuickClock{font-weight:700}#gwQuickClock.on-duty{color:#ff8585;border-color:#a63838;background:rgba(170,40,40,.13)}#gwQuickClock.off-duty{color:#8beba0;border-color:#27864a;background:rgba(34,139,67,.13)}#gwQuickClock:disabled{opacity:.55;cursor:wait}
 
 #gwPosStatusSlot{display:inline-flex;vertical-align:middle;margin-left:12px}#gwPosStatusSlot .status{font-size:11px;padding:6px 10px}.gw-global-header .brand h1{display:inline-block}.gw-global-header .brand p{margin-top:5px}#gwBrandingSection[hidden]{display:none!important}
+
+.gw-permission-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:20px}.gw-permission-card{padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}.gw-permission-card h3{margin:0 0 14px}.gw-permission-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--line);cursor:pointer}.gw-permission-row input{width:18px;height:18px;accent-color:var(--accent)}#gwSiteNav button[hidden]{display:none!important}
