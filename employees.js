@@ -211,6 +211,8 @@ if(siteNav&&siteHost){
   if(page==='permissions'&&!bossAllowed)return;
   if(restricted.includes(page)&&!grantedFeatures.has(featureForPage[page]))return;
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
+  siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
+  if(page!=='permissions')adminSubmenu.hidden=true;
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
