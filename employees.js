@@ -142,7 +142,7 @@ async function showTimeHistory(){
 }
 function renderMdt(){
  mdtContent.replaceChildren();
- if(mdtPage==='time'){const clockCard=make('div',undefined,'gw-mdt-stat');clockCard.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const openClock=make('button','Open Time Clock','primary');openClock.onclick=()=>button.click();clockCard.append(openClock);mdtContent.append(clockCard);}
+ if(mdtPage==='time'){const clockCard=make('div',undefined,'gw-mdt-stat');clockCard.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const openClock=make('button','Open Time Clock','primary');openClock.onclick=()=>button.click();clockCard.append(openClock);mdtContent.append(clockCard);if(canFeature('time_history')){const history=make('button','Adjustment History','outline');history.onclick=showTimeHistory;mdtContent.append(history);}}
  const active=staffRows.filter(e=>e.active!==false),onDuty=active.filter(e=>e.clocked_in).length;
  if(mdtPage==='sales'){renderSales();}else if(mdtPage==='overview'){
   const cards=make('div',undefined,'gw-mdt-stats');
