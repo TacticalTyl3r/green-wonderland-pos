@@ -172,6 +172,27 @@ async function showTimeHistory(){
   search.oninput=draw;draw();mdtMessage.textContent='';
  }catch(err){mdtMessage.textContent='History unavailable: '+err.message;}
 }
+async function renderDashboardAnnouncements(host){
+ host.replaceChildren(make('p','Loading announcements…'));
+ try{
+  const rows=await call('gw_mdt_announcements_list',{p_token:token||''});
+  host.replaceChildren();
+  if(canFeature('announcements_manage')){
+   const form=make('form',undefined,'gw-mdt-form'),title=document.createElement('input'),body=document.createElement('textarea'),submit=make('button','Post Announcement','primary');
+   title.placeholder='Announcement title';title.required=true;title.minLength=3;title.maxLength=120;
+   body.placeholder='Announcement message';body.required=true;body.minLength=3;body.maxLength=4000;
+   form.append(title,body,submit);host.append(form);
+   form.onsubmit=async ev=>{ev.preventDefault();submit.disabled=true;try{await call('gw_mdt_announcement_create',{p_token:token||'',p_title:title.value,p_body:body.value});await renderDashboardAnnouncements(host);}catch(err){mdtMessage.textContent=err.message;}finally{submit.disabled=false;}};
+  }
+  const list=make('div',undefined,'gw-mdt-roster');
+  for(const a of rows){const row=make('div',undefined,'gw-mdt-employee'),info=make('div');info.append(make('strong',a.title),make('p',a.body+' · '+a.author+' · '+new Date(a.created_at).toLocaleString()));row.append(info);
+   if(canFeature('announcements_manage')){const remove=make('button','Remove','outline');remove.onclick=async()=>{if(!confirm('Remove this announcement?'))return;try{await call('gw_mdt_announcement_delete',{p_token:token||'',p_id:a.id});await renderDashboardAnnouncements(host);}catch(err){mdtMessage.textContent=err.message;}};row.append(remove);}
+   list.append(row);
+  }
+  if(!rows.length)list.append(make('p','No announcements posted yet.'));
+  host.append(list);
+ }catch(err){host.replaceChildren(make('p','Unable to load announcements: '+err.message));}
+}
 function renderMdt(){
  mdtContent.replaceChildren();
  if(mdtPage==='time'){const clockCard=make('div',undefined,'gw-mdt-stat');clockCard.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const openClock=make('button','Open Time Clock','primary');openClock.onclick=()=>button.click();clockCard.append(openClock);mdtContent.append(clockCard);if(canFeature('time_history')){const history=make('button','Adjustment History','outline');history.onclick=showTimeHistory;mdtContent.append(history);}}
