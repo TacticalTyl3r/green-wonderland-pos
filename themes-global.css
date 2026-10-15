@@ -1,0 +1,32 @@
+/* Complete personal theme coverage: POS, Store MDT, side navigation, modals,
+   charts, category buttons, and settings. Loaded after all legacy styles. */
+:root{--gw-accent-soft:color-mix(in srgb,var(--accent) 18%,var(--panel));--gw-accent-strong:color-mix(in srgb,var(--accent) 65%,var(--panel));--gw-panel-deep:color-mix(in srgb,var(--panel) 65%,var(--bg));--gw-border-soft:color-mix(in srgb,var(--line) 75%,var(--panel))}
+body[data-theme]{background:var(--bg)!important;color:var(--text)!important}
+body[data-theme] .gw-site-sidebar,body[data-theme] .gw-mdt-sidebar{background:var(--gw-panel-deep)!important;border-color:var(--line)!important;color:var(--text)!important}
+body[data-theme] .gw-site-brand,body[data-theme] .gw-site-toggle,body[data-theme] .gw-mdt-toggle{color:var(--accent)!important}
+body[data-theme] #gwSiteNav button,body[data-theme] #gwMdt .gw-mdt-tabs button,body[data-theme] .gw-site-submenu button{color:var(--text)!important;background:transparent!important;border-color:transparent!important}
+body[data-theme] #gwSiteNav button:hover,body[data-theme] #gwMdt .gw-mdt-tabs button:hover{background:var(--gw-accent-soft)!important}
+body[data-theme] #gwSiteNav button.active,body[data-theme] #gwMdt .gw-mdt-tabs button.active{background:var(--gw-accent-soft)!important;border-color:var(--accent)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell>header,body[data-theme] .gw-global-header{background:var(--panel)!important;border-color:var(--line)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell .brand h1,body[data-theme] .gw-site-content .shell .brand h1 em,body[data-theme] .gw-site-content .shell .brand p{color:var(--text)!important}
+body[data-theme] .gw-site-content .shell .brand .mark{background:var(--panel2)!important;border-color:var(--line)!important;color:var(--accent)!important}
+body[data-theme] .gw-site-content .shell .panel,body[data-theme] .gw-mdt-main,body[data-theme] #gwMdt,body[data-theme] #gwSettings,body[data-theme] dialog{background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important}
+body[data-theme] .gw-site-content .shell .product,body[data-theme] .gw-mdt-stat,body[data-theme] .gw-mdt-employee,body[data-theme] .gw-mdt-roster>div,body[data-theme] .gw-site-content .shell .cartline,body[data-theme] .adminbar{background:var(--panel2)!important;color:var(--text)!important;border-color:var(--line)!important}
+body[data-theme] .gw-site-content .shell .product .gw-product-placeholder,body[data-theme] .gw-site-content .shell .product .gw-product-photo{background:var(--gw-panel-deep)!important;color:var(--accent)!important}
+body[data-theme] .gw-site-content .shell #categories button,body[data-theme] .gw-site-content .shell .ordertabs button,body[data-theme] .gw-site-content .shell .qty button{background:var(--panel2)!important;color:var(--text)!important;border-color:var(--line)!important}
+body[data-theme] .gw-site-content .shell #categories button.active,body[data-theme] .gw-site-content .shell .ordertabs button.active{background:var(--gw-accent-soft)!important;border-color:var(--accent)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell button.primary,body[data-theme] .gw-site-content .shell .product button,body[data-theme] .primary{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--bg)!important}
+body[data-theme] .gw-site-content .shell button.primary:hover,body[data-theme] .gw-site-content .shell .product button:hover,body[data-theme] .primary:hover{background:var(--gw-accent-strong)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell button:not(.primary):not([data-add]),body[data-theme] #gwMdt button:not(.primary):not(.active),body[data-theme] #gwSettings button:not(.primary):not(.gw-theme-choice){border-color:var(--line);color:var(--text)}
+body[data-theme] .gw-site-content .shell input:not([type=radio]):not([type=range]),body[data-theme] .gw-site-content .shell select,body[data-theme] #gwMdt input,body[data-theme] #gwMdt select,body[data-theme] #gwMdt textarea,body[data-theme] #gwSettings input,body[data-theme] #gwSettings select{background:var(--panel2)!important;border-color:var(--line)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell .price,body[data-theme] .gw-site-content .shell .grand b,body[data-theme] .gw-mdt-stat strong,body[data-theme] .gw-mdt-sales-figures strong,body[data-theme] .gw-category-heading h3{color:var(--accent)!important}
+body[data-theme] .gw-site-content .shell .gw-category-heading,body[data-theme] .gw-site-content .shell .totals,body[data-theme] .gw-site-content .shell .control{border-color:var(--line)!important}
+body[data-theme] .gw-site-content .shell small,body[data-theme] .gw-site-content .shell p,body[data-theme] .gw-mdt-employee p,body[data-theme] #gwMdt p,body[data-theme] .gw-category-heading span{color:var(--muted)}
+body[data-theme] .gw-site-content .shell .gw-product-name,body[data-theme] .gw-site-content .shell h2,body[data-theme] #gwMdt h2,body[data-theme] #gwMdt h3{color:var(--text)!important}
+body[data-theme] .gw-sales-chart button{background:var(--accent)!important}
+body[data-theme] .gw-theme-choice[aria-pressed=true]{outline:2px solid var(--accent)}
+body[data-theme] #gwSettings .gw-theme-choice{background:var(--panel2);color:var(--text);border-color:var(--line)}
+body[data-theme] #gwSettings .gw-theme-choice:hover{border-color:var(--accent)}
+body[data-theme] .gw-site-content .shell .empty{border-color:var(--line);color:var(--muted)}
+/* Light themes need legible button text even with a dark brand accent. */
+body[data-theme="light"] .primary,body[data-theme="arctic"] .primary,body[data-theme="cherry"] .primary,body[data-theme="sand"] .primary{color:#fff!important}
