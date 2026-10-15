@@ -26,3 +26,28 @@
 #gwMdt.gw-mdt-collapsed .gw-mdt-toggle{justify-content:center;padding:12px 0}
 #gwMdt.gw-mdt-collapsed .gw-mdt-tabs button{justify-content:center;padding:8px 0}
 @media(max-width:650px){#gwMdt>.dialogHead{padding:12px}#gwMdt .gw-mdt-sidebar{width:68px;flex-basis:68px}#gwMdt .gw-mdt-label,#gwMdt .gw-mdt-chevron,#gwMdt .gw-mdt-toggle span{display:none}#gwMdt .gw-mdt-tabs button{justify-content:center;padding:8px 0}#gwMdt .gw-mdt-main{padding:15px}}
+
+/* Full-page Store MDT shell */
+.gw-site-layout{display:flex;min-height:100vh;width:100%}
+.gw-site-sidebar{width:252px;flex:0 0 252px;min-height:100vh;background:#090a12;border-right:1px solid #292733;padding:18px 9px;position:sticky;top:0;height:100vh;overflow:auto;transition:width .2s,flex-basis .2s;z-index:5}
+.gw-site-brand{display:flex;gap:12px;align-items:center;padding:14px 11px 22px;color:#c1df8a;font-weight:800;letter-spacing:1px;white-space:nowrap}
+.gw-site-toggle{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:transparent;color:#e8e7ef;border:0;margin-bottom:12px}
+#gwSiteNav{display:flex;flex-direction:column;gap:6px}
+#gwSiteNav button{display:flex;align-items:center;gap:12px;width:100%;min-height:51px;padding:8px 10px;background:transparent;border:1px solid transparent;border-radius:11px;color:#eceaf1;text-align:left;white-space:nowrap}
+#gwSiteNav button:hover{background:#191720}
+#gwSiteNav button.active{background:#2b191b;border-color:#60342e;color:#fff}
+.gw-site-icon{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border:1px solid #2b2a35;background:#171620;border-radius:9px;font-size:18px}
+.gw-site-label{flex:1;overflow:hidden;text-overflow:ellipsis}
+.gw-site-arrow{font-size:21px;color:#8a8792}
+.gw-site-sidebar.collapsed{width:70px;flex-basis:70px}
+.gw-site-sidebar.collapsed .gw-site-brand span,.gw-site-sidebar.collapsed .gw-site-label,.gw-site-sidebar.collapsed .gw-site-arrow,.gw-site-sidebar.collapsed .gw-site-toggle span{display:none}
+.gw-site-sidebar.collapsed #gwSiteNav button{justify-content:center;padding:8px 0}
+.gw-site-sidebar.collapsed .gw-site-toggle{justify-content:center}
+.gw-site-content{flex:1;min-width:0}
+.gw-site-content .shell{max-width:1500px}
+#gwSiteMdtHost{padding:24px}
+#gwSiteMdtHost #gwMdt{position:static;inset:auto;margin:0;width:100%;height:auto;min-height:calc(100vh - 48px);max-height:none;box-shadow:none;overflow:visible;border:1px solid var(--line);background:var(--panel)}
+#gwSiteMdtHost #gwMdt .gw-mdt-layout{display:block}
+#gwSiteMdtHost #gwMdt .gw-mdt-main{overflow:visible;padding:28px}
+#gwSiteMdtHost #gwMdt>.dialogHead{background:var(--panel2)}
+@media(max-width:720px){.gw-site-sidebar{width:70px;flex-basis:70px}.gw-site-brand span,.gw-site-label,.gw-site-arrow,.gw-site-toggle span{display:none}.gw-site-sidebar #gwSiteNav button{justify-content:center;padding:8px 0}#gwSiteMdtHost{padding:10px}#gwSiteMdtHost #gwMdt .gw-mdt-main{padding:14px}.gw-site-content .shell{padding:12px}}
