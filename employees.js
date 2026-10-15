@@ -116,6 +116,7 @@ function employeeProfile(e){
  }
  mdtContent.append(back,header,cards);
  if(canFeature('employees')){const weeklyCard=[...cards.children].find(card=>card.querySelector('small')?.textContent==='Hours This Week');call('gw_mdt_employee_weekly_hours',{p_token:token||'',p_employee:e.id}).then(hours=>{if(weeklyCard)weeklyCard.querySelector('strong').textContent=Number(hours||0).toFixed(2)+' hrs';}).catch(()=>{if(weeklyCard)weeklyCard.querySelector('strong').textContent='Unavailable';});}
+ if(canFeature('sales_earnings')){const trend=make('div');mdtContent.append(make('h3','Sales Performance · Last 30 Days'),trend);renderEmployeeSalesTrend(e,trend);}
  if(canFeature('recognition_view')||canFeature('recognition_manage')){const recognitionHost=make('div');mdtContent.append(make('h3','Employee Recognition'),recognitionHost);showRecognition(recognitionHost,e,{call,token:()=>token||'',canFeature,make});}
  const actions=make('div',undefined,'gw-mdt-actions');
  if(canFeature('employee_notes')||canFeature('employee_notes_manage')){const notes=make('h3','Management Notes');mdtContent.append(notes);const noteHost=make('div');mdtContent.append(noteHost);renderEmployeeNotes(e,noteHost);}
