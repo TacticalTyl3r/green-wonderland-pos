@@ -138,7 +138,7 @@ roster().then(refresh).catch(e=>{msg('Employee service not configured yet: '+e.m
 
 
 /* Boss-configurable role permission editor */
-const roleFeatures=[['dashboard','Dashboard'],['employees','Employees'],['time_management','Time Management'],['sales_earnings','Sales & Earnings'],['admin_catalog','Products & Settings'],['admin_branding','Branding & Images']];
+const roleFeatures=[['dashboard','Dashboard'],['employees','Employees'],['time_management','Time Management'],['sales_earnings','Sales & Earnings'],['admin_catalog','Products & Settings'],['admin_branding','Branding & Images'],['employee_add','Add Employees'],['employee_edit','Edit Employees'],['employee_deactivate','Deactivate Employees'],['employee_role_assign','Assign Roles'],['employee_pin_reset','Reset PINs'],['time_add','Add Work Time'],['time_remove','Remove Work Time'],['time_history','View Time History']];
 async function showRolePermissions(){
  mdtContent.replaceChildren(make('h2','Roles & Permissions'),make('p','Choose which MDT sections each employee role may access. Boss always has full access. Existing Boss-only database actions remain protected.'));
  mdtMessage.textContent='Loading permissions…';
