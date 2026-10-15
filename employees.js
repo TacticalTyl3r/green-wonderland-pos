@@ -65,6 +65,7 @@ const sidebarToggle=mdt.querySelector('#gwMdtToggle');sidebarToggle.onclick=()=>
 const mdtContent=mdt.querySelector('#gwMdtContent'),mdtMessage=mdt.querySelector('#gwMdtMessage');
 let mdtPage='overview',staffRows=[],salesRows=[],bossAllowed=false;
 let grantedFeatures=new Set();
+let timeHistoryRows=[],activityRows=[],mdtTab='hours',employeeSearch='';
 const canFeature=feature=>bossAllowed||grantedFeatures.has(feature);
 const formatHours=n=>(Number(n||0)/60).toFixed(2);
 const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
