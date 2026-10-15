@@ -188,4 +188,6 @@ if(siteNav&&siteHost){
  document.querySelector('#adminBtn')?.addEventListener('click',()=>setTimeout(refreshNavigation,500));
  document.querySelector('#gwEmpClose')?.addEventListener('click',()=>{updateClockStatus();if(currentPage==='time')showSite('time');});
  refreshNavigation();updateClockStatus();refreshWeeklyHours();
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token)refreshWeeklyHours();});
+ setInterval(()=>{if(token&&me?.clocked_in)refreshWeeklyHours();},60000);
 }
