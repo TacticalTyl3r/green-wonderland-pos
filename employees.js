@@ -92,6 +92,21 @@ function renderSales(){
  if(!ranked.length)list.append(make('p','No employees found.'));
  mdtContent.append(list);
 }
+function employeeProfile(e){
+ mdtContent.replaceChildren();
+ const back=make('button','← Back to Employees','outline');back.onclick=()=>renderMdt();
+ const header=make('div',undefined,'gw-mdt-head');header.append(make('h2',e.name),make('p',e.role+' · '+(e.active?'Active':'Inactive')));
+ const cards=make('div',undefined,'gw-mdt-stats');
+ const sale=salesRows.find(s=>s.employee_id===e.id);
+ for(const [label,value] of [['Total Hours',formatHours(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))],['Shift Status',e.clocked_in?'Clocked In':'Clocked Out'],['Lifetime Sales',sale?cash(sale.lifetime_sales):'Not available'],['Total Orders',sale?String(sale.total_orders):'Not available']]){
+  const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));cards.append(card);
+ }
+ mdtContent.append(back,header,cards);
+ const actions=make('div',undefined,'gw-mdt-actions');
+ if(['employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset'].some(canFeature)){const edit=make('button','Edit Employee','outline');edit.onclick=()=>employeeForm(e);actions.append(edit);}
+ if(canFeature('time_add')||canFeature('time_remove')){const adjust=make('button','Adjust Time','outline');adjust.onclick=()=>adjustTime(e);actions.append(adjust);}
+ mdtContent.append(actions);
+}
 function employeeForm(e){
  const form=make('form',undefined,'gw-mdt-form');
  const title=make('h3',e?'Edit Employee':'Add Employee');form.append(title);
