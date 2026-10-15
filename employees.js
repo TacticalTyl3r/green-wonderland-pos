@@ -172,7 +172,7 @@ if(siteNav&&siteHost){
  if(topHeader){const posStatus=document.querySelector('#status');const posSlot=document.querySelector('#gwPosStatusSlot');if(posStatus&&posSlot)posSlot.append(posStatus);const content=document.querySelector('.gw-site-content');content?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');const ribbon=shell.querySelector('.ribbon');if(ribbon){content?.insertBefore(ribbon,shell);ribbon.classList.add('gw-global-ribbon');}}
  const restricted=['overview','employees','sales'];
  const permissionsNav=document.createElement('button');permissionsNav.type='button';permissionsNav.dataset.sitePage='permissions';permissionsNav.innerHTML='<span class="gw-site-icon">⚿</span><span class="gw-site-label">Roles & Permissions</span><span class="gw-site-arrow">›</span>';
- siteNav.querySelector('[data-site-page="employees"]')?.after(permissionsNav);
+ // Roles & Permissions belongs inside the expandable Admin section.
  let grantedFeatures=new Set();
  const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings'};
  async function loadGrantedFeatures(){
@@ -184,7 +184,7 @@ if(siteNav&&siteHost){
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
  const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.textContent='Products & Settings';
  const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.textContent='Branding & Images';
- adminSubmenu.append(catalogLink,brandingLink);navButtonAdminPlaceholder();
+ adminSubmenu.append(catalogLink,brandingLink,permissionsNav);navButtonAdminPlaceholder();
  function navButtonAdminPlaceholder(){siteNav.querySelector('[data-site-page="admin"]')?.after(adminSubmenu);}
  catalogLink.onclick=()=>document.querySelector('#adminBtn')?.click();
  brandingLink.onclick=()=>window.gwOpenBrandingAdmin?.();
@@ -195,7 +195,7 @@ if(siteNav&&siteHost){
   await loadGrantedFeatures();
   for(const p of restricted)navButton(p).hidden=!grantedFeatures.has(featureForPage[p]);
   navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
-  navButton('permissions').hidden=!bossAllowed;
+  permissionsNav.hidden=!bossAllowed;
   navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding'));
   catalogLink.hidden=!bossAllowed;
   brandingLink.hidden=!bossAllowed;
@@ -214,7 +214,7 @@ if(siteNav&&siteHost){
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
-  if(page==='permissions'){await showRolePermissions();return;}
+  if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
   if(page==='admin-legacy'){
    mdtContent.replaceChildren(make('h2','Store Administration'),make('p','Manage the catalog, delivery zones, settings, branding and images.'));
    const controls=make('div',undefined,'gw-mdt-actions');
