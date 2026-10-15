@@ -225,9 +225,8 @@ if(siteNav&&siteHost){
   }
   mdtMessage.textContent='Loading store information…';
   try{
-   if(page==='time'&&!bossAllowed){mdtContent.replaceChildren(make('h3','Time Management'),make('p','Use the Clock In / Clock Out button in the header.'));}
-   else if(!bossAllowed){mdtContent.replaceChildren(make('h3',page==='overview'?'Dashboard':page==='employees'?'Employees':'Sales & Earnings'),make('p','Your role allows this section. Detailed management reports and employee changes currently require Boss authorization; they will be enabled as their secure server permissions are added.'));}
-   else{await loadStaff();await switchPage(page);}
+   if(page!=='sales')await loadStaff(page);
+   await switchPage(page);
    if(page!=='sales')mdtMessage.textContent='';
   }catch(err){mdtContent.replaceChildren();mdtMessage.textContent=err.message;}
  }
