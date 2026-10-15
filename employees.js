@@ -104,6 +104,7 @@ function employeeProfile(e){
  }
  mdtContent.append(back,header,cards);
  const actions=make('div',undefined,'gw-mdt-actions');
+ if(canFeature('employee_notes')||canFeature('employee_notes_manage')){const notes=make('h3','Management Notes');mdtContent.append(notes);const noteHost=make('div');mdtContent.append(noteHost);renderEmployeeNotes(e,noteHost);}
  if(['employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset'].some(canFeature)){const edit=make('button','Edit Employee','outline');edit.onclick=()=>employeeForm(e);actions.append(edit);}
  if(canFeature('time_add')||canFeature('time_remove')){const adjust=make('button','Adjust Time','outline');adjust.onclick=()=>adjustTime(e);actions.append(adjust);}
  mdtContent.append(actions);
