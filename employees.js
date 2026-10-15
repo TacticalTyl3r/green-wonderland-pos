@@ -95,10 +95,10 @@ function employeeForm(e){
  const form=make('form',undefined,'gw-mdt-form');
  const title=make('h3',e?'Edit Employee':'Add Employee');form.append(title);
  const field=(label,input)=>{const l=make('label',label);l.append(input);form.append(l);return input;};
- const name=field('Employee name',document.createElement('input'));name.required=true;name.maxLength=100;name.value=e?.name||'';
- const role=document.createElement('select');for(const r of ['Boss','Manager','Senior Salesman','Salesman'])role.add(new Option(r,r));role.value=e?.role||'Salesman';field('Position',role);
- const pin=field(e?'New PIN (leave blank to keep existing)':'Employee PIN (4–12 digits)',document.createElement('input'));pin.type='password';pin.inputMode='numeric';pin.minLength=4;pin.maxLength=12;pin.pattern='[0-9]{4,12}';pin.required=!e;pin.autocomplete='new-password';
- const active=document.createElement('input');active.type='checkbox';active.checked=e?e.active!==false:true;field('Active employee',active);
+ const name=field('Employee name',document.createElement('input'));name.required=true;name.maxLength=100;name.value=e?.name||'';name.disabled=!!e&&!canFeature('employee_edit');
+ const role=document.createElement('select');for(const r of ['Boss','Manager','Senior Salesman','Salesman'])role.add(new Option(r,r));role.value=e?.role||'Salesman';role.disabled=!!e&&!canFeature('employee_role_assign');field('Position',role);
+ const pin=field(e?'New PIN (leave blank to keep existing)':'Employee PIN (4–12 digits)',document.createElement('input'));pin.type='password';pin.inputMode='numeric';pin.minLength=4;pin.maxLength=12;pin.pattern='[0-9]{4,12}';pin.required=!e;pin.disabled=!!e&&!canFeature('employee_pin_reset');pin.autocomplete='new-password';
+ const active=document.createElement('input');active.type='checkbox';active.checked=e?e.active!==false:true;active.disabled=!!e&&!canFeature('employee_deactivate');field('Active employee',active);
  const actions=make('div',undefined,'gw-mdt-actions');const save=make('button','Save Employee','primary');save.type='submit';const cancel=make('button','Cancel','outline');cancel.type='button';cancel.onclick=()=>renderMdt();actions.append(save,cancel);form.append(actions);
  form.onsubmit=async ev=>{ev.preventDefault();save.disabled=true;mdtMessage.textContent='Saving employee…';try{await call('gw_mdt_manage_employee',{p_token:token||'',p_id:e?.id||null,p_name:name.value.trim(),p_role:role.value,p_pin:pin.value||null,p_active:active.checked});await roster();await loadStaff();mdtMessage.textContent='Employee saved.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
  mdtContent.replaceChildren(form);name.focus();
