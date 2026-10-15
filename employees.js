@@ -7,9 +7,13 @@ dlg.innerHTML=`<div class="dialogHead"><h2>EMPLOYEE TIME CLOCK</h2><button id="g
 document.body.append(dlg);
 const view=dlg.querySelector('#gwEmpView'),msg=s=>dlg.querySelector('#gwEmpMsg').textContent=s;
 const clockStatus=document.querySelector('#gwClockStatus');
+const quickClock=document.querySelector('#gwQuickClock');
+let quickClockBusy=false;
+async function quickClockAction(){if(quickClockBusy)return;if(!token||!me){button.click();return;}quickClockBusy=true;quickClock.disabled=true;try{await call('gw_clock',{p_token:token,p_clock_in:!me.clocked_in});await refresh();}catch(e){alert('Time clock: '+e.message);}finally{quickClockBusy=false;quickClock.disabled=false;}}
+quickClock?.addEventListener('click',quickClockAction);
 const weeklyHours=document.querySelector('#gwWeeklyHours');
 async function refreshWeeklyHours(){if(!weeklyHours)return;if(!token||!me){weeklyHours.textContent='This Week: —';return;}try{const hours=await call('gw_my_weekly_hours',{p_token:token});weeklyHours.textContent='This Week: '+Number(hours||0).toFixed(2)+' hrs';}catch(e){weeklyHours.textContent='This Week: unavailable';}}
-function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);clockStatus.classList.toggle('off-duty',!me?.clocked_in);}}
+function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);clockStatus.classList.toggle('off-duty',!me?.clocked_in);}if(quickClock){quickClock.textContent=me?.clocked_in?'Clock Out':'Clock In';quickClock.classList.toggle('on-duty',!!me?.clocked_in);quickClock.classList.toggle('off-duty',!me?.clocked_in);}}
 dlg.querySelector('#gwEmpClose').onclick=()=>dlg.close();
 const button=document.createElement('button');button.className='outline';button.textContent='◷ Employee';button.onclick=async()=>{dlg.showModal();await refresh();};document.querySelector('header .actions')?.append(button);
 const select=document.createElement('select');select.id='gwSaleEmployee';select.setAttribute('aria-label','Employee credited for this sale');
@@ -159,7 +163,7 @@ if(siteNav&&siteHost){
   if(!bossAllowed)adminSubmenu.hidden=true;
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
-  if(adminBtn)adminBtn.textContent=bossAllowed?'⚙ Admin':'Sign in';
+  if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin':'Sign in';adminBtn.hidden=true;}
   if(!bossAllowed&&restricted.concat('admin').includes(currentPage))await showSite('pos');
  }
  async function showSite(page){
@@ -179,7 +183,7 @@ if(siteNav&&siteHost){
   }
   mdtMessage.textContent='Loading store information…';
   try{
-   if(page==='time'&&!bossAllowed){mdtPage='time';staffRows=[];mdtContent.replaceChildren();const card=make('div',undefined,'gw-mdt-stat');card.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const launch=make('button','Open Time Clock','primary');launch.onclick=()=>button.click();card.append(launch);mdtContent.append(card);}
+   if(page==='time'&&!bossAllowed){mdtContent.replaceChildren(make('h3','Time Management'),make('p','Use the Clock In / Clock Out button in the header.'));}
    else{await loadStaff();await switchPage(page);}
    if(page!=='sales')mdtMessage.textContent='';
   }catch(err){mdtContent.replaceChildren();mdtMessage.textContent=err.message;}
