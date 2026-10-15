@@ -55,3 +55,5 @@
 #gwSiteNav button[hidden]{display:none!important}.gw-clock-status{padding:9px 12px;border:1px solid var(--line);border-radius:8px;color:var(--muted);white-space:nowrap}.gw-clock-status.on-duty{color:var(--accent);border-color:var(--accent)}.gw-site-content .shell[hidden],#gwSiteMdtHost[hidden]{display:none!important}@media(max-width:760px){.gw-clock-status{font-size:11px;white-space:normal}}
 
 .gw-global-header{padding:20px 28px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:4;flex-wrap:wrap}.gw-global-header .brand h1{font-size:29px}.gw-global-header .brand p{font-size:12px}@media(max-width:760px){.gw-global-header{padding:12px;gap:10px}.gw-global-header .brand h1{font-size:22px}.gw-global-header .mark{width:42px;height:42px}.gw-global-header .actions{flex-wrap:wrap}}
+
+.gw-global-ribbon{margin:0 28px 12px}.gw-global-header{position:sticky;top:0;z-index:4}@media(max-width:760px){.gw-global-ribbon{margin:0 12px 8px}}
