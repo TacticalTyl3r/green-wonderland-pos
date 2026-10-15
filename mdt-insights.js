@@ -1,3 +1,4 @@
+import {createSalesChart} from './sales-chart.js?v=2';
 // Analytics and recognition views. Database permissions are enforced by Supabase RPCs.
 export async function showAnalytics(host,{call,token,cash,make}){
  host.replaceChildren(make('h2','Sales Analytics'));
@@ -15,15 +16,11 @@ export async function showAnalytics(host,{call,token,cash,make}){
    const summary=make('div',undefined,'gw-mdt-stats');
    for(const [label,value] of [['Total Revenue',cash(total)],['Orders',String(orders)],['Average Order',cash(orders?total/orders:0)]]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));summary.append(card);}
    chart.append(summary);
-   const graph=make('div');graph.style.cssText='display:flex;align-items:flex-end;gap:3px;height:210px;padding:12px 4px;border-bottom:1px solid #777;overflow:hidden';
-   const max=Math.max(1,...rows.map(r=>Number(r.sales||0)));
-   const byDay=new Map(rows.map(r=>[r.day.slice(0,10),Number(r.sales||0)]));
-   for(let d=new Date(start);d<end;d.setUTCDate(d.getUTCDate()+1)){
-    const day=d.toISOString().slice(0,10),amount=byDay.get(day)||0;
-    const bar=make('div');bar.style.cssText='min-width:2px;flex:1;background:#70b88d;border-radius:3px 3px 0 0;height:'+Math.max(2,Math.round(amount/max*190))+'px';
-    bar.title=day+' · '+cash(amount);graph.append(bar);
-   }
-   chart.append(make('h3','Daily Sales Trend'),graph,make('p','Each bar represents one day. Hover over a bar to view the amount. Dates are grouped in UTC.'));
+   const byDay=new Map(rows.map(r=>[r.day.slice(0,10),{sales:Number(r.sales||0),orders:Number(r.orders||0)}]));
+   const points=[];const first=Date.UTC(start.getUTCFullYear(),start.getUTCMonth(),start.getUTCDate());
+   const last=Date.UTC(end.getUTCFullYear(),end.getUTCMonth(),end.getUTCDate());
+   for(let timestamp=first;timestamp<=last;timestamp+=86400000){const day=new Date(timestamp).toISOString().slice(0,10);points.push({day,...(byDay.get(day)||{sales:0,orders:0})});}
+   chart.append(make('h3','Daily Sales Trend'),createSalesChart(points,{cash,height:210}));
    const list=make('div',undefined,'gw-mdt-roster');for(const row of [...rows].reverse().slice(0,15)){const item=make('div',undefined,'gw-mdt-employee');item.append(make('strong',row.day),make('span',cash(row.sales)+' · '+row.orders+' orders'));list.append(item);}chart.append(list);
    status.textContent=rows.length+' days with recorded sales';
   }catch(err){status.textContent='Analytics unavailable: '+err.message;}
