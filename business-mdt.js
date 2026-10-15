@@ -48,7 +48,7 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
    }
    picker.onchange=reload;await reload();
   }else if(page==='leaderboard'||page==='reports'){
-   const rows=await rpc('gw_mdt_sales_report_for_role'),staff=await rpc('gw_mdt_staff_report',{p_feature:'dashboard'});
+   const rows=await rpc('gw_mdt_sales_report_for_role'),staff=canFeature('dashboard')?await rpc('gw_mdt_staff_report',{p_feature:'dashboard'}):[];
    const list=box(),hours=new Map(staff.map(e=>[e.id,(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))/60]));
    if(page==='reports'){
     const cards=make('div',undefined,'gw-mdt-stats');
