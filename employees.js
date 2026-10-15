@@ -64,6 +64,8 @@ mdt.querySelector('#gwMdtClose').onclick=()=>mdt.close();
 const sidebarToggle=mdt.querySelector('#gwMdtToggle');sidebarToggle.onclick=()=>{const collapsed=mdt.classList.toggle('gw-mdt-collapsed');sidebarToggle.setAttribute('aria-expanded',String(!collapsed));sidebarToggle.setAttribute('aria-label',collapsed?'Expand sidebar':'Collapse sidebar');};
 const mdtContent=mdt.querySelector('#gwMdtContent'),mdtMessage=mdt.querySelector('#gwMdtMessage');
 let mdtPage='overview',staffRows=[],salesRows=[],bossAllowed=false;
+let grantedFeatures=new Set();
+const canFeature=feature=>bossAllowed||grantedFeatures.has(feature);
 const formatHours=n=>(Number(n||0)/60).toFixed(2);
 const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
 async function checkBoss(){try{const {data:{session}}=await db.auth.getSession();if(!session){bossAllowed=false;}else{const {data,error}=await db.rpc('gw_is_boss');bossAllowed=!error&&data===true;}mdtButton.hidden=false;}catch(e){bossAllowed=false;mdtButton.hidden=false;}return bossAllowed;}
@@ -173,7 +175,6 @@ if(siteNav&&siteHost){
  const restricted=['overview','employees','sales'];
  const permissionsNav=document.createElement('button');permissionsNav.type='button';permissionsNav.dataset.sitePage='permissions';permissionsNav.innerHTML='<span class="gw-site-icon">⚿</span><span class="gw-site-label">Roles & Permissions</span><span class="gw-site-arrow">›</span>';
  // Roles & Permissions belongs inside the expandable Admin section.
- let grantedFeatures=new Set();
  const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings'};
  async function loadGrantedFeatures(){
   grantedFeatures=new Set();
