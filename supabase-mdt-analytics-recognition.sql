@@ -55,7 +55,7 @@ begin
  if not public.gw_mdt_can(p_token,'activity_history') then raise exception 'Access denied'; end if;
  return query select a.action,a.subject,a.details,a.actor,a.created_at from public.gw_mdt_activity_log a
  where (p_from is null or a.created_at>=p_from) and (p_to is null or a.created_at<p_to)
- and (coalesce(p_search,'')='' or concat_ws(' ',a.action,a.subject,a.actor,a.details) ilike '%'||replace(replace(p_search,'%','\\%'),'_','\\_')||'%' escape '\\')
+ and (coalesce(p_search,'')='' or position(lower(p_search) in lower(concat_ws(' ',a.action,a.subject,a.actor,a.details)))>0)
  order by a.created_at desc limit 500;
 end$$;
 revoke all on function public.gw_mdt_recognition_list(text,uuid),public.gw_mdt_recognition_add(text,uuid,text,text),public.gw_mdt_sales_trends(text,timestamptz,timestamptz),public.gw_mdt_activity_search(text,text,timestamptz,timestamptz) from public,anon,authenticated;
