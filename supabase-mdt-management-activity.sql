@@ -54,3 +54,20 @@ begin
 end$$;
 revoke all on function public.gw_mdt_activity_report(text) from public,anon,authenticated;
 grant execute on function public.gw_mdt_activity_report(text) to anon,authenticated;
+
+-- Track delegated time adjustments in the management activity feed.
+create or replace function public.gw_mdt_time_activity_trigger()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+declare target_name text; actor_name text;
+begin
+ select name into target_name from public.gw_employees where id=new.employee_id;
+ select name into actor_name from public.gw_employees where id=new.actor_employee_id;
+ insert into public.gw_mdt_activity_log(action,subject,details,actor)
+ values('Time adjustment',coalesce(target_name,'Employee'),
+   (case when new.minutes>0 then '+' else '' end)||new.minutes||' minutes: '||new.reason,
+   coalesce(actor_name,'Boss'));
+ return new;
+end$$;
+drop trigger if exists gw_mdt_time_activity on public.gw_mdt_time_audit;
+create trigger gw_mdt_time_activity after insert on public.gw_mdt_time_audit
+for each row execute function public.gw_mdt_time_activity_trigger();
