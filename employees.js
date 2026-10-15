@@ -100,10 +100,11 @@ function employeeProfile(e){
  const header=make('div',undefined,'gw-mdt-head');header.append(make('h2',e.name),make('p',e.role+' · '+(e.active?'Active':'Inactive')));
  const cards=make('div',undefined,'gw-mdt-stats');
  const sale=salesRows.find(s=>s.employee_id===e.id);
- for(const [label,value] of [['Total Hours',formatHours(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))],['Shift Status',e.clocked_in?'Clocked In':'Clocked Out'],['Lifetime Sales',sale?cash(sale.lifetime_sales):'Not available'],['Total Orders',sale?String(sale.total_orders):'Not available']]){
+ for(const [label,value] of [['Total Hours',formatHours(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))],['Hours This Week','Loading…'],['Weekly Sales',sale?cash(sale.weekly_sales):'Not available'],['Shift Status',e.clocked_in?'Clocked In':'Clocked Out'],['Lifetime Sales',sale?cash(sale.lifetime_sales):'Not available'],['Total Orders',sale?String(sale.total_orders):'Not available']]){
   const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));cards.append(card);
  }
  mdtContent.append(back,header,cards);
+ if(canFeature('employees')){const weeklyCard=[...cards.children].find(card=>card.querySelector('small')?.textContent==='Hours This Week');call('gw_mdt_employee_weekly_hours',{p_token:token||'',p_employee:e.id}).then(hours=>{if(weeklyCard)weeklyCard.querySelector('strong').textContent=Number(hours||0).toFixed(2)+' hrs';}).catch(()=>{if(weeklyCard)weeklyCard.querySelector('strong').textContent='Unavailable';});}
  if(canFeature('recognition_view')||canFeature('recognition_manage')){const recognitionHost=make('div');mdtContent.append(make('h3','Employee Recognition'),recognitionHost);showRecognition(recognitionHost,e,{call,token:()=>token||'',canFeature,make});}
  const actions=make('div',undefined,'gw-mdt-actions');
  if(canFeature('employee_notes')||canFeature('employee_notes_manage')){const notes=make('h3','Management Notes');mdtContent.append(notes);const noteHost=make('div');mdtContent.append(noteHost);renderEmployeeNotes(e,noteHost);}
