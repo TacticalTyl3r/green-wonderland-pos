@@ -68,7 +68,7 @@ const formatHours=n=>(Number(n||0)/60).toFixed(2);
 const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
 async function checkBoss(){try{const {data:{session}}=await db.auth.getSession();if(!session){bossAllowed=false;}else{const {data,error}=await db.rpc('gw_is_boss');bossAllowed=!error&&data===true;}mdtButton.hidden=false;}catch(e){bossAllowed=false;mdtButton.hidden=false;}return bossAllowed;}
 async function loadStaff(page=mdtPage){const feature=page==='time'?'time_management':page==='employees'?'employees':'dashboard';staffRows=await call('gw_mdt_staff_report',{p_token:token||'',p_feature:feature});return staffRows;}
-async function loadSales(){salesRows=await call('gw_mdt_sales_report');}
+async function loadSales(){salesRows=await call('gw_mdt_sales_report_for_role',{p_token:token||''});}
 const cash=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
 function renderSales(){
  const cards=make('div',undefined,'gw-mdt-stats');
