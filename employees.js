@@ -1,3 +1,4 @@
+import {createSalesChart} from './sales-chart.js?v=2';
 import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=1';
 import {renderBusinessPage} from './business-mdt.js?v=1';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
@@ -99,10 +100,12 @@ async function renderEmployeeSalesTrend(e,host){
  try{
   const rows=await call('gw_mdt_employee_sales_trend',{p_token:token||'',p_employee:e.id});
   host.replaceChildren();
-  const graph=make('div');graph.style.cssText='display:flex;align-items:flex-end;gap:3px;height:150px;padding:8px 0;border-bottom:1px solid #777';
-  const values=new Map(rows.map(r=>[r.day.slice(0,10),Number(r.sales||0)])),max=Math.max(1,...values.values());
-  for(let offset=29;offset>=0;offset--){const d=new Date();d.setUTCDate(d.getUTCDate()-offset);const day=d.toISOString().slice(0,10),amount=values.get(day)||0;const bar=make('div');bar.style.cssText='flex:1;min-width:2px;height:'+Math.max(2,Math.round(amount/max*135))+'px;background:#70b88d;border-radius:2px 2px 0 0';bar.title=day+' · '+cash(amount);graph.append(bar);}
-  host.append(graph,make('p','Last 30 days · Hover over bars for daily totals.'));
+  const values=new Map(rows.map(r=>[r.day.slice(0,10),{sales:Number(r.sales||0),orders:Number(r.orders||0)}]));
+  const days=[];const today=new Date();const utcToday=Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate());
+  for(let offset=29;offset>=0;offset--){const day=new Date(utcToday-offset*86400000).toISOString().slice(0,10);days.push({day,...(values.get(day)||{sales:0,orders:0})});}
+  host.append(createSalesChart(days,{cash,height:150}));
+  host.append(make('p','Last 30 days · Hover, tap, or use Tab to inspect a date.'));
+
  }catch(err){host.replaceChildren(make('p','Sales trend unavailable: '+err.message));}
 }
 function employeeProfile(e){
