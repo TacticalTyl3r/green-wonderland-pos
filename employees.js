@@ -26,7 +26,7 @@ async function refresh(){
  const login=document.createElement('button');login.className='primary';login.textContent='Sign in';
  login.onclick=async()=>{login.disabled=true;try{
  const bytes=crypto.getRandomValues(new Uint8Array(32));const next=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
- await call('gw_pin_login',{p_employee:employee.value,p_pin:pin.value,p_token:next});
+ const signedIn=await call('gw_pin_login',{p_employee:employee.value,p_pin:pin.value,p_token:next});if(!signedIn?.length)throw Error('Invalid PIN or too many attempts.');
  token=next;sessionStorage.setItem(key,token);await refresh();
  }catch(e){msg(e.message);}finally{login.disabled=false;}};
  view.append(label,pinLabel,login);
