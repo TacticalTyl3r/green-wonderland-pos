@@ -139,7 +139,7 @@ const siteToggle=document.querySelector('#gwSiteToggle');
 if(siteNav&&siteHost){
  const shell=document.querySelector('.shell');
  const topHeader=shell.querySelector('header');
- if(topHeader){document.querySelector('.gw-site-content')?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');}
+ if(topHeader){const content=document.querySelector('.gw-site-content');content?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');const ribbon=shell.querySelector('.ribbon');if(ribbon){content?.insertBefore(ribbon,shell);ribbon.classList.add('gw-global-ribbon');}}
  const restricted=['overview','employees','sales'];
  let currentPage='pos';
  const navButton=p=>siteNav.querySelector('[data-site-page="'+p+'"]');
