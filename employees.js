@@ -255,7 +255,7 @@ if(siteNav&&siteHost){
  const shell=document.querySelector('.shell');
  const topHeader=shell.querySelector('header');
  if(topHeader){const posStatus=document.querySelector('#status');const posSlot=document.querySelector('#gwPosStatusSlot');if(posStatus&&posSlot)posSlot.append(posStatus);const content=document.querySelector('.gw-site-content');content?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');const ribbon=shell.querySelector('.ribbon');if(ribbon){content?.insertBefore(ribbon,shell);ribbon.classList.add('gw-global-ribbon');}}
- const restricted=['overview','employees','sales','history','leaderboard','reports'];
+ const restricted=['overview','employees','sales','history','leaderboard','reports','analytics'];
  const businessPages=[['history','Sales History','sales_history'],['leaderboard','Employee Leaderboards','sales_earnings'],['reports','Financial Reports','sales_earnings'],['analytics','Sales Analytics','sales_earnings'],['announcements','Announcements','announcements'],['notes','Employee Notes','employee_notes']];
  const salesSubmenu=document.createElement('div');salesSubmenu.className='gw-site-submenu';salesSubmenu.hidden=true;
  for(const [page,label] of businessPages.filter(([page])=>['history','leaderboard','reports','analytics'].includes(page))){const b=document.createElement('button');b.type='button';b.dataset.sitePage=page;b.textContent=label;salesSubmenu.append(b);}
@@ -302,12 +302,13 @@ if(siteNav&&siteHost){
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
   if(page!=='permissions')adminSubmenu.hidden=true;
-  salesSubmenu.hidden=!(['sales','history','leaderboard','reports'].includes(page));
+  salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics'].includes(page));
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
   if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
+  if(page==='analytics'){await showAnalytics(mdtContent,{call,token:()=>token||'',cash,make});return;}
   if(businessPages.some(([name])=>name===page)){shell.hidden=true;siteHost.hidden=false;await renderBusinessPage(page,{host:mdtContent,call,token:()=>token||'',canFeature,cash,make});return;}
   if(page==='admin-legacy'){
    mdtContent.replaceChildren(make('h2','Store Administration'),make('p','Manage the catalog, delivery zones, settings, branding and images.'));
