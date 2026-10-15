@@ -11,7 +11,7 @@ create table if not exists public.gw_employees(
  created_at timestamptz not null default now()
 );
 create unique index if not exists gw_employee_name_ci on public.gw_employees(lower(name));
-create table if not exists public.gw_pin_sessions(
+create table if not exists public.gw_pin_attempts(employee_id uuid primary key references public.gw_employees(id) on delete cascade, failures integer not null default 0, locked_until timestamptz);\ncreate table if not exists public.gw_pin_sessions(
  id uuid primary key default gen_random_uuid(),
  employee_id uuid not null references public.gw_employees(id),
  token_hash text not null unique,
@@ -44,12 +44,12 @@ create table if not exists public.gw_sales(
  created_at timestamptz not null default now()
 );
 alter table public.gw_employees enable row level security;
-alter table public.gw_pin_sessions enable row level security;
+alter table public.gw_pin_attempts enable row level security;\nalter table public.gw_pin_sessions enable row level security;
 alter table public.gw_shifts enable row level security;
 alter table public.gw_time_adjustments enable row level security;
 alter table public.gw_sales enable row level security;
 -- No direct table grants for anonymous users; all sensitive actions use RPC.
-revoke all on public.gw_employees,public.gw_pin_sessions,public.gw_shifts,public.gw_time_adjustments,public.gw_sales from anon,authenticated;
+revoke all on public.gw_employees,public.gw_pin_attempts,public.gw_pin_sessions,public.gw_shifts,public.gw_time_adjustments,public.gw_sales from anon,authenticated;
 create or replace function public.gw_employee_for_token(p_token text)
 returns uuid language sql stable security definer set search_path=public,pg_temp
 as $$select s.employee_id from public.gw_pin_sessions s join public.gw_employees e on e.id=s.employee_id
@@ -61,11 +61,21 @@ as $$select e.id,e.name from public.gw_employees e where e.active order by e.nam
 create or replace function public.gw_pin_login(p_employee uuid,p_pin text,p_token text)
 returns table(employee_id uuid,employee_name text,employee_role text)
 language plpgsql security definer set search_path=public,pg_temp as $$
-declare e public.gw_employees%rowtype;
+declare e public.gw_employees%rowtype; attempt public.gw_pin_attempts%rowtype;
 begin
  if p_token is null or length(p_token)<32 or length(p_pin)<4 or length(p_pin)>12 then raise exception 'Invalid credentials'; end if;
  select * into e from public.gw_employees where id=p_employee and active;
- if not found or e.pin_hash<>crypt(p_pin,e.pin_hash) then raise exception 'Invalid credentials'; end if;
+ if not found then raise exception 'Invalid credentials'; end if;
+ select * into attempt from public.gw_pin_attempts where employee_id=e.id for update;
+ if attempt.locked_until>now() then raise exception 'PIN temporarily locked. Try again later'; end if;
+ if e.pin_hash<>crypt(p_pin,e.pin_hash) then
+  insert into public.gw_pin_attempts(employee_id,failures,locked_until)
+  values(e.id,1,null)
+  on conflict(employee_id) do update set failures=case when gw_pin_attempts.locked_until<now() then 1 else gw_pin_attempts.failures+1 end,
+   locked_until=case when gw_pin_attempts.failures>=4 then now()+interval '15 minutes' else null end;
+  return;
+ end if;
+ delete from public.gw_pin_attempts where employee_id=e.id;
  delete from public.gw_pin_sessions where employee_id=e.id or expires_at<now();
  insert into public.gw_pin_sessions(employee_id,token_hash) values(e.id,encode(digest(p_token,'sha256'),'hex'));
  return query select e.id,e.name,e.role;
@@ -147,5 +157,5 @@ grant execute on function public.gw_adjust_time(uuid,integer,text) to authentica
 grant execute on function public.gw_staff_report() to authenticated;
 -- Restrict function access for unauthenticated roles where appropriate.
 revoke all on function public.gw_manage_employee(uuid,text,text,text,boolean),public.gw_adjust_time(uuid,integer,text),public.gw_staff_report() from public,anon;
--- IMPORTANT: Configure Supabase API rate limits / edge throttling for PIN attempts.
+-- Failed PINs return no rows (rather than raising) so lockout counters commit.\n-- IMPORTANT: Also configure API rate limits / edge throttling for PIN attempts.
 -- Do not rely on 4-digit PINs alone for internet-facing accounts.
