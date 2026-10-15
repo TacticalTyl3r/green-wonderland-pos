@@ -104,6 +104,7 @@ function employeeProfile(e){
   const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));cards.append(card);
  }
  mdtContent.append(back,header,cards);
+ if(canFeature('recognition_view')||canFeature('recognition_manage')){const recognitionHost=make('div');mdtContent.append(make('h3','Employee Recognition'),recognitionHost);showRecognition(recognitionHost,e,{call,token:()=>token||'',canFeature,make});}
  const actions=make('div',undefined,'gw-mdt-actions');
  if(canFeature('employee_notes')||canFeature('employee_notes_manage')){const notes=make('h3','Management Notes');mdtContent.append(notes);const noteHost=make('div');mdtContent.append(noteHost);renderEmployeeNotes(e,noteHost);}
  if(['employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset'].some(canFeature)){const edit=make('button','Edit Employee','outline');edit.onclick=()=>employeeForm(e);actions.append(edit);}
