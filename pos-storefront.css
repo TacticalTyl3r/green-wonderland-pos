@@ -79,3 +79,20 @@ body:not(.light){background:#050c0a;color:#eef6f0}
 @media(max-width:1250px){.gw-site-content .shell .gw-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:980px) and (min-width:601px){.gw-site-content .shell .gw-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.gw-site-content .shell .gw-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Reference-style category layout: vertical scroll with clear category and flower tier headings. */
+.gw-site-content .shell #products.gw-products-grouped{display:flex!important;flex-direction:column!important;gap:12px!important;grid-template-columns:none!important;overflow:visible}
+.gw-site-content .shell #products.gw-products-grouped .gw-category-section{display:block!important;width:100%;padding:0 0 16px;border-bottom:1px solid var(--line,#32483c)}
+.gw-site-content .shell #products.gw-products-grouped .gw-category-heading{margin-bottom:8px;border-bottom:0;padding:0}
+.gw-site-content .shell #products.gw-products-grouped .gw-category-heading h3{font-size:19px;color:var(--text,#f4f8f5)!important;font-weight:800}
+.gw-site-content .shell #products.gw-products-grouped .gw-category-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px}
+.gw-site-content .shell .gw-flower-groups{display:flex;flex-direction:column;gap:18px}
+.gw-site-content .shell .gw-flower-subgroup h4{font-size:14px;color:var(--text,#f3fff4);margin:4px 0 10px;font-weight:750}
+.gw-site-content .shell .gw-category-section .product{min-height:190px}
+#adminDialog{max-width:min(1040px,96vw);max-height:90vh;overflow:auto}
+#adminDialog #adminProducts{display:grid;gap:12px}
+#adminDialog .adminrow{border:1px solid var(--line,#30473a);border-radius:10px;padding:12px}
+#adminDialog .adminrow label:has([data-field="image_url"]){font-weight:700;color:var(--accent,#70d39b)}
+#adminDialog [data-field="image_url"]{display:block;width:100%;margin-top:6px}
+@media(max-width:850px){.gw-site-content .shell #products.gw-products-grouped .gw-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:460px){.gw-site-content .shell #products.gw-products-grouped .gw-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px}}
