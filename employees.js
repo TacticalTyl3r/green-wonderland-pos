@@ -165,11 +165,11 @@ if(siteNav&&siteHost){
  async function showSite(page){
   if(page==='admin'&&!bossAllowed)return;
   if(restricted.includes(page)&&!bossAllowed)return;
+  if(page==='admin'){adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
-  if(page==='admin'){adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   if(page==='admin-legacy'){
    mdtContent.replaceChildren(make('h2','Store Administration'),make('p','Manage the catalog, delivery zones, settings, branding and images.'));
    const controls=make('div',undefined,'gw-mdt-actions');
