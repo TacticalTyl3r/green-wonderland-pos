@@ -8,7 +8,7 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
  const box=()=>{const div=make('div',undefined,'gw-mdt-roster');host.append(div);return div;};
  const line=(parent,title,description)=>{const row=make('div',undefined,'gw-mdt-employee'),info=make('div');info.append(make('strong',title),make('p',description));row.append(info);parent.append(row);return row;};
  const dateText=d=>new Date(d).toLocaleString();
- const exportCsv=(filename,headers,rows)=>{const escape=v=>'"'+String(v??'').replaceAll('"','""')+'"';const csv=[headers,...rows].map(row=>row.map(escape).join(',')).join('\\r\\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);};
+ const exportCsv=(filename,headers,rows)=>{const escape=v=>'"'+String(v??'').replaceAll('"','""')+'"';const csv=[headers,...rows].map(row=>row.map(escape).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);};
  try{
   if(page==='history'){
    const filter=make('div',undefined,'gw-mdt-actions'),from=document.createElement('input'),to=document.createElement('input'),search=document.createElement('input');
