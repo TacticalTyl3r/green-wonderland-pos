@@ -128,6 +128,18 @@ async function adjustTime(e){
  form.onsubmit=async ev=>{ev.preventDefault();const value=Number(mins.value);if(!Number.isSafeInteger(value)||value===0){mdtMessage.textContent='Enter a nonzero whole number of minutes.';return;}if(!canFeature(value>0?'time_add':'time_remove')){mdtMessage.textContent='You do not have permission for this adjustment.';return;}save.disabled=true;try{await call('gw_mdt_adjust_time',{p_token:token||'',p_employee:e.id,p_minutes:value,p_reason:reason.value.trim()});await loadStaff();mdtMessage.textContent='Time adjustment saved with reason.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
  mdtContent.replaceChildren(form);
 }
+async function showActivityLog(){
+ mdtContent.replaceChildren(make('h2','Management Activity'));
+ const back=make('button','← Dashboard','outline');back.onclick=()=>renderMdt();mdtContent.append(back);
+ mdtMessage.textContent='Loading activity…';
+ try{
+  activityRows=await call('gw_mdt_activity_report',{p_token:token||''});
+  const list=make('div',undefined,'gw-mdt-roster');
+  for(const a of activityRows){const row=make('div',undefined,'gw-mdt-employee'),info=make('div');info.append(make('strong',a.action+' · '+a.subject),make('p',(a.details||'')+' · '+new Date(a.created_at).toLocaleString()));row.append(info);list.append(row);}
+  if(!activityRows.length)list.append(make('p','No activity recorded yet.'));
+  mdtContent.append(list);mdtMessage.textContent='';
+ }catch(err){mdtMessage.textContent='Activity log unavailable: '+err.message;}
+}
 async function showTimeHistory(){
  mdtTab='history';mdtContent.replaceChildren(make('h2','Time Adjustment History'));
  const back=make('button','← Employee Hours','outline');back.onclick=()=>{mdtTab='hours';renderMdt();};mdtContent.append(back);
