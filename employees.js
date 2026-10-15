@@ -239,7 +239,7 @@ if(siteNav&&siteHost){
  mdtButton.hidden=true;mdtButton.style.display='none';
  button.hidden=true;button.style.display='none';
  siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.addEventListener('click',()=>showSite(b.dataset.sitePage)));
- siteToggle?.addEventListener('click',()=>{const collapsed=siteSidebar.classList.toggle('collapsed');siteToggle.setAttribute('aria-expanded',String(!collapsed));siteToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');});
+ siteToggle?.addEventListener('click',()=>{const collapsed=siteSidebar.classList.toggle('collapsed');if(collapsed)adminSubmenu.hidden=true;siteToggle.setAttribute('aria-expanded',String(!collapsed));siteToggle.setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');});
  document.querySelector('#logout')?.addEventListener('click',()=>{bossAllowed=false;refreshNavigation();});
  db.auth.onAuthStateChange(()=>setTimeout(refreshNavigation,100));
  document.querySelector('#login')?.addEventListener('click',()=>setTimeout(refreshNavigation,800));
