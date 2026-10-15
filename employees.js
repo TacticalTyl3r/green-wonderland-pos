@@ -265,6 +265,7 @@ if(siteNav&&siteHost){
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
   if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
+  if(businessPages.some(([name])=>name===page)){shell.hidden=true;siteHost.hidden=false;await renderBusinessPage(page,{host:mdtContent,call,token:()=>token||'',canFeature,cash,make});return;}
   if(page==='admin-legacy'){
    mdtContent.replaceChildren(make('h2','Store Administration'),make('p','Manage the catalog, delivery zones, settings, branding and images.'));
    const controls=make('div',undefined,'gw-mdt-actions');
