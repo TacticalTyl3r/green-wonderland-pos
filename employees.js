@@ -220,7 +220,7 @@ if(siteNav&&siteHost){
 
  const permissionsNav=document.createElement('button');permissionsNav.type='button';permissionsNav.dataset.sitePage='permissions';permissionsNav.innerHTML='<span class="gw-site-icon">⚿</span><span class="gw-site-label">Roles & Permissions</span><span class="gw-site-arrow">›</span>';
  // Roles & Permissions belongs inside the expandable Admin section.
- const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings'};
+ const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings',history:'sales_history',leaderboard:'sales_earnings',reports:'sales_earnings',announcements:'announcements',notes:'employee_notes'};
  async function loadGrantedFeatures(){
   grantedFeatures=new Set();
   if(bossAllowed){roleFeatures.forEach(([feature])=>grantedFeatures.add(feature));return;}
