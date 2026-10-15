@@ -79,7 +79,7 @@ language plpgsql stable security definer set search_path=public,pg_temp as $$
 begin
  if not public.gw_mdt_can(p_token,'sales_history') then raise exception 'Access denied'; end if;
  return query
- select e.name,s.total,s.item_count,s.fulfillment,s.created_at
+ select e.name,s.total,coalesce((to_jsonb(s)->>'item_count')::integer,(to_jsonb(s)->>'count')::integer,0),coalesce(to_jsonb(s)->>'fulfillment',''),s.created_at
  from public.gw_sales s join public.gw_employees e on e.id=s.employee_id
  where (p_from is null or s.created_at>=p_from)
  and (p_to is null or s.created_at<p_to)
