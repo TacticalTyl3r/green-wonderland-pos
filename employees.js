@@ -98,7 +98,7 @@ function employeeForm(e){
  const pin=field(e?'New PIN (leave blank to keep existing)':'Employee PIN (4–12 digits)',document.createElement('input'));pin.type='password';pin.inputMode='numeric';pin.minLength=4;pin.maxLength=12;pin.pattern='[0-9]{4,12}';pin.required=!e;pin.autocomplete='new-password';
  const active=document.createElement('input');active.type='checkbox';active.checked=e?e.active!==false:true;field('Active employee',active);
  const actions=make('div',undefined,'gw-mdt-actions');const save=make('button','Save Employee','primary');save.type='submit';const cancel=make('button','Cancel','outline');cancel.type='button';cancel.onclick=()=>renderMdt();actions.append(save,cancel);form.append(actions);
- form.onsubmit=async ev=>{ev.preventDefault();save.disabled=true;mdtMessage.textContent='Saving employee…';try{await call('gw_manage_employee',{p_id:e?.id||null,p_name:name.value.trim(),p_role:role.value,p_pin:pin.value||null,p_active:active.checked});await roster();await loadStaff();mdtMessage.textContent='Employee saved.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
+ form.onsubmit=async ev=>{ev.preventDefault();save.disabled=true;mdtMessage.textContent='Saving employee…';try{await call('gw_mdt_manage_employee',{p_token:token||'',p_id:e?.id||null,p_name:name.value.trim(),p_role:role.value,p_pin:pin.value||null,p_active:active.checked});await roster();await loadStaff();mdtMessage.textContent='Employee saved.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
  mdtContent.replaceChildren(form);name.focus();
 }
 async function adjustTime(e){
