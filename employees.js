@@ -256,7 +256,7 @@ if(siteNav&&siteHost){
  }
  async function showSite(page){
   if(page==='permissions'&&!bossAllowed)return;
-  if(restricted.includes(page)&&!grantedFeatures.has(featureForPage[page]))return;
+  if(restricted.includes(page)&&!canFeature(featureForPage[page])&&!(page==='announcements'&&canFeature('announcements_manage'))&&!(page==='notes'&&canFeature('employee_notes_manage')&&canFeature('employees')))return;
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
   if(page!=='permissions')adminSubmenu.hidden=true;
