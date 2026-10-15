@@ -153,7 +153,7 @@ if(siteNav&&siteHost){
  adminSubmenu.append(catalogLink,brandingLink);navButtonAdminPlaceholder();
  function navButtonAdminPlaceholder(){siteNav.querySelector('[data-site-page="admin"]')?.after(adminSubmenu);}
  catalogLink.onclick=()=>document.querySelector('#adminBtn')?.click();
- brandingLink.onclick=()=>{const settings=Array.from(document.querySelectorAll('header .actions button')).find(b=>b.textContent.includes('Settings'));settings?.click();};
+ brandingLink.onclick=()=>window.gwOpenBrandingAdmin?.();
  let currentPage='pos';
  const navButton=p=>siteNav.querySelector('[data-site-page="'+p+'"]');
  async function refreshNavigation(){
