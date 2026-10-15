@@ -1,5 +1,8 @@
 -- Green Wonderland MDT: sales history, announcements and private management notes.
 -- Run in Supabase SQL Editor. Does not change inventory or POS sale behavior.
+alter table public.gw_mdt_role_permissions drop constraint if exists gw_mdt_role_permissions_feature_check;
+alter table public.gw_mdt_role_permissions add constraint gw_mdt_role_permissions_feature_check check(feature in ('dashboard','employees','time_management','sales_earnings','admin_catalog','admin_branding','employee_add','employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset','time_add','time_remove','time_history','sales_history','announcements','announcements_manage','employee_notes','employee_notes_manage'));
+
 insert into public.gw_mdt_role_permissions(role,feature,allowed)
 select roles.role,features.feature,false
 from (values ('Manager'),('Senior Salesman'),('Salesman')) roles(role)
