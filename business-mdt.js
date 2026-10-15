@@ -14,10 +14,9 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
    const filter=make('div',undefined,'gw-mdt-actions'),from=document.createElement('input'),to=document.createElement('input'),search=document.createElement('input');
    from.type='date';to.type='date';search.type='search';search.placeholder='Search employee or fulfillment';
    filter.append(from,to,search);host.insertBefore(filter,status);
-   const list=box();
+   const list=box(),download=make('button','Export Filtered CSV','outline');filter.append(download);
    const reload=async()=>{status.textContent='Loading sales…';try{
     const rows=await rpc('gw_mdt_sales_history',{p_from:from.value?new Date(from.value+'T00:00:00').toISOString():null,p_to:to.value?new Date(new Date(to.value+'T00:00:00').getTime()+86400000).toISOString():null,p_employee:null});
-    const download=make('button','Export Filtered CSV','outline');filter.append(download);
     const filtered=()=>rows.filter(s=>(s.employee_name+' '+s.fulfillment).toLowerCase().includes(search.value.toLowerCase()));
     download.onclick=()=>exportCsv('green-wonderland-sales-history.csv',['Employee','Amount','Items','Fulfillment','Date'],filtered().map(s=>[s.employee_name,s.total,s.item_count,s.fulfillment,s.created_at]));
     const draw=()=>{list.replaceChildren();let total=0;let count=0;for(const s of filtered()){total+=Number(s.total||0);count++;line(list,s.employee_name+' · '+cash(s.total),dateText(s.created_at)+' · '+s.item_count+' items · '+s.fulfillment);}status.textContent=count+' sales · '+cash(total)+' total';if(!count)line(list,'No matching sales','Try changing your filters.');};search.oninput=draw;draw();
