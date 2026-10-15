@@ -94,6 +94,17 @@ function renderSales(){
  if(!ranked.length)list.append(make('p','No employees found.'));
  mdtContent.append(list);
 }
+async function renderEmployeeSalesTrend(e,host){
+ host.replaceChildren(make('p','Loading 30-day sales trend…'));
+ try{
+  const rows=await call('gw_mdt_employee_sales_trend',{p_token:token||'',p_employee:e.id});
+  host.replaceChildren();
+  const graph=make('div');graph.style.cssText='display:flex;align-items:flex-end;gap:3px;height:150px;padding:8px 0;border-bottom:1px solid #777';
+  const values=new Map(rows.map(r=>[r.day.slice(0,10),Number(r.sales||0)])),max=Math.max(1,...values.values());
+  for(let offset=29;offset>=0;offset--){const d=new Date();d.setUTCDate(d.getUTCDate()-offset);const day=d.toISOString().slice(0,10),amount=values.get(day)||0;const bar=make('div');bar.style.cssText='flex:1;min-width:2px;height:'+Math.max(2,Math.round(amount/max*135))+'px;background:#70b88d;border-radius:2px 2px 0 0';bar.title=day+' · '+cash(amount);graph.append(bar);}
+  host.append(graph,make('p','Last 30 days · Hover over bars for daily totals.'));
+ }catch(err){host.replaceChildren(make('p','Sales trend unavailable: '+err.message));}
+}
 function employeeProfile(e){
  mdtContent.replaceChildren();
  const back=make('button','← Back to Employees','outline');back.onclick=()=>renderMdt();
