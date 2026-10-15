@@ -292,12 +292,10 @@ if(siteNav&&siteHost){
  }
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
  const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.textContent='Products, Images & Settings';
- const imageLink=document.createElement('button');imageLink.type='button';imageLink.textContent='Edit Product Images';
  const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.textContent='Branding & Images';
- adminSubmenu.append(catalogLink,imageLink,brandingLink,permissionsNav);navButtonAdminPlaceholder();
+ adminSubmenu.append(catalogLink,brandingLink,permissionsNav);navButtonAdminPlaceholder();
  function navButtonAdminPlaceholder(){siteNav.querySelector('[data-site-page="admin"]')?.after(adminSubmenu);}
  catalogLink.onclick=()=>document.querySelector('#adminBtn')?.click();
- imageLink.onclick=()=>{document.querySelector('#adminBtn')?.click();setTimeout(()=>{const target=document.querySelector('#adminProducts');target?.scrollIntoView({block:'start',behavior:'smooth'});target?.querySelector('[data-field="image_url"]')?.focus();},150);};
  brandingLink.onclick=()=>window.gwOpenBrandingAdmin?.();
  let currentPage='pos';
  const navButton=p=>siteNav.querySelector('[data-site-page="'+p+'"]');
@@ -310,7 +308,6 @@ if(siteNav&&siteHost){
   permissionsNav.hidden=!bossAllowed;
   navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding'));
   catalogLink.hidden=!bossAllowed;
-  imageLink.hidden=!bossAllowed;
   brandingLink.hidden=!bossAllowed;
   if(!bossAllowed)adminSubmenu.hidden=true;
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
