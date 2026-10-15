@@ -53,12 +53,12 @@ export async function showRecognition(host,employee,{call,token,canFeature,make}
 export async function showActivitySearch(host,{call,token,make}){
  host.replaceChildren(make('h2','Management Activity History'));
  const controls=make('div',undefined,'gw-mdt-actions'),search=document.createElement('input'),from=document.createElement('input'),to=document.createElement('input'),button=make('button','Search','primary'),status=make('p','');
- search.type='search';search.placeholder='Search action, manager or employee';from.type='date';to.type='date';
+ search.type='search';search.placeholder='Search manager or employee';from.type='date';to.type='date';const action=document.createElement('select');for(const name of ['All Actions','Employee created','Employee updated','Permission changed','Time adjustment'])action.add(new Option(name,name==='All Actions'?'':name));controls.append(action);
  controls.append(search,from,to,button);host.append(controls,status);
  const list=make('div',undefined,'gw-mdt-roster');host.append(list);
  const load=async()=>{status.textContent='Loading activity…';try{
   const rows=await call('gw_mdt_activity_search',{p_token:token(),p_search:search.value,p_from:from.value?new Date(from.value+'T00:00:00').toISOString():null,p_to:to.value?new Date(new Date(to.value+'T00:00:00').getTime()+86400000).toISOString():null});
-  list.replaceChildren();for(const r of rows){const row=make('div',undefined,'gw-mdt-employee'),info=make('div');info.append(make('strong',r.action+' · '+r.subject),make('p',(r.details||'')+' · '+r.actor+' · '+new Date(r.created_at).toLocaleString()));row.append(info);list.append(row);}if(!rows.length)list.append(make('p','No matching activity.'));status.textContent=rows.length+' activity records';
+  list.replaceChildren();const filtered=rows.filter(r=>!action.value||r.action===action.value);for(const r of filtered){const row=make('div',undefined,'gw-mdt-employee'),info=make('div');info.append(make('strong',r.action+' · '+r.subject),make('p',(r.details||'')+' · '+r.actor+' · '+new Date(r.created_at).toLocaleString()));row.append(info);list.append(row);}if(!filtered.length)list.append(make('p','No matching activity.'));status.textContent=filtered.length+' activity records';
  }catch(err){status.textContent='Activity unavailable: '+err.message;}};
- button.onclick=load;search.onkeydown=e=>{if(e.key==='Enter')load();};await load();
+ button.onclick=load;action.onchange=load;search.onkeydown=e=>{if(e.key==='Enter')load();};await load();
 }
