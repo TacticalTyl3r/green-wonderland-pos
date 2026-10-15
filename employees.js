@@ -138,6 +138,8 @@ const siteSidebar=document.querySelector('#gwSiteSidebar');
 const siteToggle=document.querySelector('#gwSiteToggle');
 if(siteNav&&siteHost){
  const shell=document.querySelector('.shell');
+ const topHeader=shell.querySelector('header');
+ if(topHeader){document.querySelector('.gw-site-content')?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');}
  const restricted=['overview','employees','sales'];
  let currentPage='pos';
  const navButton=p=>siteNav.querySelector('[data-site-page="'+p+'"]');
@@ -161,7 +163,7 @@ if(siteNav&&siteHost){
    mdtContent.replaceChildren(make('h2','Store Administration'),make('p','Manage the catalog, delivery zones, settings, branding and images.'));
    const controls=make('div',undefined,'gw-mdt-actions');
    const catalog=make('button','Products, Delivery Zones & Settings','primary');catalog.onclick=()=>document.querySelector('#adminBtn')?.click();
-   const branding=make('button','Branding & Images','outline');branding.onclick=()=>document.querySelector('#gwSettings')?.showModal();
+   const branding=make('button','Branding & Images','outline');branding.onclick=()=>{const settings=Array.from(document.querySelectorAll('header .actions button')).find(b=>b.textContent.includes('Settings'));if(settings)settings.click();};
    controls.append(catalog,branding);mdtContent.append(controls);mdtMessage.textContent='';return;
   }
   mdtMessage.textContent='Loading store information…';
