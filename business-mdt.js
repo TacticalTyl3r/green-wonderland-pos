@@ -57,6 +57,7 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
     const cards=make('div',undefined,'gw-mdt-stats');
     for(const [name,key] of [['Today','today_sales'],['This Week','weekly_sales'],['Lifetime','lifetime_sales']]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',name+' Sales'),make('strong',cash(rows.reduce((sum,e)=>sum+Number(e[key]||0),0))));cards.append(card);}
     host.insertBefore(cards,list);
+    const exportReport=make('button','Export Employee Sales CSV','outline');exportReport.onclick=()=>exportCsv('green-wonderland-employee-sales.csv',['Employee','Role','Today','This Week','Lifetime','Orders'],rows.map(e=>[e.employee_name,e.employee_role,e.today_sales,e.weekly_sales,e.lifetime_sales,e.total_orders]));host.insertBefore(exportReport,list);
     for(const e of [...rows].sort((a,b)=>Number(b.weekly_sales)-Number(a.weekly_sales)))line(list,e.employee_name,cash(e.weekly_sales)+' this week · '+cash(e.lifetime_sales)+' lifetime · '+e.total_orders+' orders');
    }else{
     const order=document.createElement('select');for(const [label,key] of [['Weekly Sales','weekly_sales'],['Lifetime Sales','lifetime_sales'],['Hours Worked','hours'],['Orders','total_orders']])order.add(new Option(label,key));host.insertBefore(order,list);
