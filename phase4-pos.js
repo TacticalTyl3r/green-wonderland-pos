@@ -74,7 +74,7 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  const render=()=>{
   root.replaceChildren();renderCheckoutRewards();
   const heading=document.createElement('div');heading.className='gw-phase4-heading';
-  heading.innerHTML='<strong>✦ CUSTOMER REWARDS</strong>';const rate=document.createElement('small');rate.textContent=loyaltyConfigReady?'1 point per '+money(Number(loyaltyConfig.earn_per_amount))+' spent · 1 point = '+money(Number(loyaltyConfig.point_value)):'Sign in to view reward rates';heading.append(rate);root.append(heading);
+  heading.innerHTML='<strong>✦ CUSTOMER REWARDS</strong>';const rate=document.createElement('small');rate.textContent=loyaltyConfigReady?(loyaltyConfig.enabled?'Earning ON · 1 point per '+money(Number(loyaltyConfig.earn_per_amount))+' spent':'Earning OFF · no new points earned')+' · 1 point = '+money(Number(loyaltyConfig.point_value)):'Sign in to view reward rates';heading.append(rate);root.append(heading);
   const field=document.createElement('div');field.className='gw-phase4-field';
   const code=document.createElement('input');code.placeholder='Customer CID';code.maxLength=40;code.setAttribute('aria-label','Customer CID');
   const find=document.createElement('button');find.className='outline';find.textContent='Find Member';
@@ -156,14 +156,16 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  const checkout=async({items,fulfillment,zone,discount,employee,expectedTotal,availableDue})=>{
   if(!ready)throw Error('Phase 4 SQL migration is not installed or offers are not available');
   if(member){await refreshLoyaltyConfig();if(!loyaltyConfigReady)throw Error('Reward settings unavailable. No sale was recorded.');}
+  const memberAtCheckout=member?{id:member.id,member_code:member.member_code,display_name:member.display_name,points:Number(member.points)}:null;
   const rows=await rpc('gw_pos_checkout_v4',{p_token:token(),p_employee:employee||null,
    p_items:items,p_fulfillment:fulfillment,p_zone:zone||null,p_manual_percent:discount,
    p_member:member?.id||null,p_redeem:applicablePoints(availableDue),p_expected_total:expectedTotal});
   if(!rows?.length)throw Error('Checkout did not return a sale');
   const result=rows[0];
-  if(member){
-   member={...member,points:member.points-result.points_redeemed+result.points_earned};
-   redeem=0;render();
+  if(memberAtCheckout){
+   const earned=Number(result.points_earned||0),spent=Number(result.points_redeemed||0);
+   if(member?.id===memberAtCheckout.id){member={...member,points:memberAtCheckout.points-spent+earned};redeem=0;render();}
+   result.loyalty_receipt={member_id:memberAtCheckout.id,member_code:memberAtCheckout.member_code,member_name:memberAtCheckout.display_name,points_earned:earned,points_redeemed:spent,points_remaining:memberAtCheckout.points-spent+earned};
   }
   return result;
  };
