@@ -43,7 +43,7 @@ async function refresh(){
  login.onclick=async()=>{login.disabled=true;try{
  const bytes=crypto.getRandomValues(new Uint8Array(32));const next=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
  const signedIn=await call('gw_pin_login',{p_employee:employee.value,p_pin:pin.value,p_token:next});if(!signedIn?.length)throw Error('Invalid PIN or too many attempts.');
- token=next;sessionStorage.setItem(key,token);await refresh();
+ token=next;sessionStorage.setItem(key,token);window.dispatchEvent(new Event('gw-employee-session-changed'));await refresh();
  }catch(e){msg(e.message);}finally{login.disabled=false;}};
  view.append(label,pinLabel,login);
  }else{
@@ -51,7 +51,7 @@ async function refresh(){
  const status=document.createElement('p');status.textContent=me.clocked_in?'● Currently clocked in':'○ Currently clocked out';
  const clock=document.createElement('button');clock.className='primary';clock.textContent=me.clocked_in?'Clock out':'Clock in';
  clock.onclick=async()=>{clock.disabled=true;try{const result=await call('gw_clock',{p_token:token,p_clock_in:!me.clocked_in});await refresh();msg(result);}catch(e){msg(e.message);clock.disabled=false;}};
- const logout=document.createElement('button');logout.textContent='Sign out';logout.onclick=async()=>{try{await call('gw_pin_logout',{p_token:token});}finally{token='';me=null;sessionStorage.removeItem(key);updateClockStatus();await refresh();}};
+ const logout=document.createElement('button');logout.textContent='Sign out';logout.onclick=async()=>{try{await call('gw_pin_logout',{p_token:token});}finally{token='';me=null;sessionStorage.removeItem(key);window.dispatchEvent(new Event('gw-employee-session-changed'));updateClockStatus();await refresh();}};
  view.append(title,status,clock,logout);
  }
  updateAttribution();window.gwRefreshRoleNavigation?.();
