@@ -1,7 +1,7 @@
 // Phase 4 POS enhancements: offers, favorites and loyalty preview.
 // Prices and points are authoritative only after gw_pos_checkout_v4 validates them.
 export function createPhase4({db,money,getProducts,getLines,getToken,onCartChanged}){
- let offers=[],ready=false,member=null,redeem=0,favorites=[];
+ let offers=[],ready=false,member=null,redeem=0,favorites=[],catalogRewards=[],catalogReady=false;
  let loyaltyConfig={earn_per_amount:100,point_value:1,enabled:true},loyaltyConfigReady=false;
  try{favorites=JSON.parse(localStorage.getItem('gw-pos-favorites')||'[]');if(!Array.isArray(favorites))favorites=[];}catch(e){}
  const root=document.createElement('section');root.className='gw-phase4-checkout';
@@ -35,7 +35,8 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   }
   return{subtotal,discount:Math.min(subtotal,Math.round(Math.max(specialDiscount,bestBundle)*100)/100),bundles:bundleDetails};
  };
- const setMember=m=>{member=m;redeem=0;render();onCartChanged();};
+ const refreshCatalogRewards=async()=>{if(!token()){catalogRewards=[];catalogReady=false;return;}try{catalogRewards=await rpc('gw_pos_catalog_rewards',{p_token:token()});catalogReady=true;}catch(e){catalogRewards=[];catalogReady=false;}render();};
+ const setMember=m=>{member=m;redeem=0;render();onCartChanged();if(m)refreshCatalogRewards();};
  const estimateRedemption=(due)=>loyaltyConfigReady?Math.max(0,Math.min(Math.max(0,due),Math.round(Math.max(0,Math.min(member?.points||0,redeem))*Number(loyaltyConfig.point_value)*100)/100)):0;
  const render=()=>{
   root.replaceChildren();
@@ -63,6 +64,35 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
    const entry=document.createElement('input');entry.type='number';entry.min='0';entry.step='1';entry.max=String(Math.max(0,member.points));entry.value=String(redeem);
    entry.oninput=()=>{redeem=Math.max(0,Math.min(member.points,Math.max(0,Math.floor(Number(entry.value)||0))));onCartChanged();};
    label.append(entry);root.append(label);
+   const catalog=document.createElement('div');catalog.className='gw-pos-offer-list gw-catalog-rewards';
+   const catalogTitle=document.createElement('strong');catalogTitle.textContent='Redeem a Catalog Reward';catalog.append(catalogTitle);
+   const message=document.createElement('small');message.textContent='Catalog rewards use points separately from checkout discounts. They do not change the sale total.';catalog.append(message);
+   if(!catalogReady){const hint=document.createElement('small');hint.textContent='Reward redemption is unavailable until the catalog redemption SQL is installed.';catalog.append(hint);}
+   else if(!catalogRewards.length){const hint=document.createElement('small');hint.textContent='No active catalog rewards.';catalog.append(hint);}
+   else for(const reward of catalogRewards){
+    const row=document.createElement('div');row.className='gw-catalog-reward-row';
+    const details=document.createElement('div');const name=document.createElement('strong');name.textContent=reward.title;
+    const description=document.createElement('small');description.textContent=reward.points_cost+' points'+(reward.description?' · '+reward.description:'');
+    details.append(name,description);
+    const button=document.createElement('button');button.type='button';button.className='outline';button.textContent='Redeem';
+    button.disabled=Number(member.points)<Number(reward.points_cost);
+    button.onclick=async()=>{
+     if(!member)return;
+     if(!confirm('Redeem '+reward.title+' for '+reward.points_cost+' points for '+member.display_name+'? This is separate from checkout.'))return;
+     button.disabled=true;button.textContent='Redeeming…';
+     try{
+      const result=await rpc('gw_pos_redeem_catalog_reward',{p_token:token(),p_member:member.id,p_reward:reward.id});
+      const value=Array.isArray(result)?result[0]:result;
+      if(!value||!Number.isFinite(Number(value.points_remaining)))throw Error('Reward redemption response was incomplete');
+      member={...member,points:Number(value.points_remaining)};
+      redeem=Math.min(redeem,Math.max(0,member.points));
+      render();onCartChanged();
+      alert('Redeemed '+reward.title+' for '+reward.points_cost+' points. Remaining balance: '+member.points+'.');
+     }catch(e){button.disabled=false;button.textContent='Redeem';alert('Reward was not redeemed: '+e.message);}
+    };
+    row.append(details,button);catalog.append(row);
+   }
+   root.append(catalog);
   }
   const offerInfo=document.createElement('div');offerInfo.className='gw-pos-offer-list';
   const p=preview();
@@ -95,7 +125,7 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   if(member){await refreshLoyaltyConfig();if(!loyaltyConfigReady)throw Error('Reward settings unavailable. No sale was recorded.');}
   const rows=await rpc('gw_pos_checkout_v4',{p_token:token(),p_employee:employee||null,
    p_items:items,p_fulfillment:fulfillment,p_zone:zone||null,p_manual_percent:discount,
-   p_member:member?.id||null,p_redeem:redeem,p_expected_total:expectedTotal});
+   p_member:member?.id||null,p_redeem:Math.min(redeem,Math.max(0,Math.floor((Number(expectedTotal)+0.000001)/Number(loyaltyConfig.point_value||1)))),p_expected_total:expectedTotal});
   if(!rows?.length)throw Error('Checkout did not return a sale');
   const result=rows[0];
   if(member){
