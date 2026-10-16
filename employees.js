@@ -509,7 +509,27 @@ async function showBackupCenter(){
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
   if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
-   if(page==='audit'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showActivitySearch(mdtContent,{call,token:()=>token||'',make});return;}
+   if(page==='audit'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showActivitySearch(mdtContent,{call,token:()=>token||'',make});
+   const appendLog=async(title,rpc,transform)=>{
+    const heading=make('h3',title),list=make('div',undefined,'gw-audit-list');mdtContent.append(heading,list);
+    try{const rows=await call(rpc,{p_token:token||''});
+     for(const a of rows.slice(0,100)){
+      const record=transform(a),card=make('article',undefined,'gw-audit-card gw-audit-updated');
+      const body=make('div',undefined,'gw-audit-card-body');
+      body.append(make('strong',record.title));
+      const people=make('div',undefined,'gw-audit-people');
+      const actor=make('div',undefined,'gw-audit-person');actor.append(make('small','PERFORMED BY'),make('strong',record.actor));
+      const subject=make('div',undefined,'gw-audit-person');subject.append(make('small','AFFECTED RECORD'),make('strong',record.subject));
+      people.append(actor,subject);
+      body.append(people,make('p',record.details,'gw-audit-details'),make('small',new Date(record.date).toLocaleString()));
+      card.append(make('span','▤','gw-audit-icon'),body);list.append(card);
+     }
+     if(!rows.length)list.append(make('p','No additional events recorded.'));
+    }catch(err){list.append(make('p','Additional events unavailable: '+err.message));}
+   };
+   if(canFeature('sales_history'))await appendLog('Financial Adjustment Activity','gw_mdt_sale_adjustments_list',a=>({title:a.adjustment_type.toUpperCase()+' · '+cash(a.amount),actor:a.performed_by||'Unknown',subject:'Sale '+a.sale_id,details:a.reason,date:a.created_at}));
+   if(bossAllowed)await appendLog('Security Activity','gw_security_events_list',a=>({title:a.event_type.replaceAll('_',' ').toUpperCase(),actor:a.actor_name||'Unknown',subject:a.target_name||'Unknown',details:a.details,date:a.created_at}));
+   return;}
   if(page==='backups'){adminSubmenu.hidden=false;await showBackupCenter();return;}
   if(page==='security'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showSecurityCenter(mdtContent,{call,token:()=>token||'',make,cash});return;}
   if(page==='adjustments'){await showSaleAdjustments(mdtContent,{call,token:()=>token||'',canFeature,cash,make});return;}
