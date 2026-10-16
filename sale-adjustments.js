@@ -46,9 +46,28 @@ export async function showSaleAdjustments(host,{call,token,canFeature,cash,make}
    }
    if(!sales.length)list.append(make('p','No matching sales.'));
    const changes=await rpc('gw_mdt_sale_adjustments_list');
-   for(const a of changes){const row=make('article',undefined,'gw-feature-card');
-    row.append(make('strong',(a.adjustment_type==='void'?'Voided ':'Refunded ')+cash(a.amount)),
-     make('p',a.reason),make('small','Sale '+a.sale_id+' · '+a.performed_by+' · '+new Date(a.created_at).toLocaleString()));journal.append(row);}
+   journal.classList.add('gw-adjustment-history');
+   for(const a of changes){
+    const isVoid=a.adjustment_type==='void';
+    const row=make('article',undefined,'gw-adjustment-card');
+    row.classList.add(isVoid?'gw-adjustment-void':'gw-adjustment-refund');
+    const top=make('div',undefined,'gw-adjustment-top');
+    const action=make('span',isVoid?'✕  VOIDED SALE':'↩  REFUND ISSUED','gw-adjustment-tag');
+    const amount=make('strong',(isVoid?'−':'+')+cash(a.amount),'gw-adjustment-amount');
+    top.append(action,amount);
+    const reasonBox=make('div',undefined,'gw-adjustment-reason');
+    reasonBox.append(make('span','REASON','gw-adjustment-field-label'),make('p',a.reason||'No reason provided'));
+    const fields=make('div',undefined,'gw-adjustment-fields');
+    const field=(label,value,extraClass)=>{
+     const group=make('div',undefined,'gw-adjustment-field');
+     group.append(make('span',label,'gw-adjustment-field-label'),make('span',value,'gw-adjustment-field-value'+(extraClass?' '+extraClass:'')));
+     fields.append(group);
+    };
+    field('PERFORMED BY',a.performed_by||'Unknown','gw-adjustment-actor');
+    field('DATE & TIME',new Date(a.created_at).toLocaleString());
+    field('SALE ID',a.sale_id||'Unknown','gw-adjustment-sale-id');
+    row.append(top,reasonBox,fields);journal.append(row);
+   }
    if(!changes.length)journal.append(make('p','No adjustments recorded yet.'));
   }catch(err){status.textContent='This feature requires the Phase 2 Supabase SQL migration. '+err.message;}
  };
