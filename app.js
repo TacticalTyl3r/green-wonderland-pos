@@ -133,19 +133,24 @@ $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat
 }else await window.gwRecordSale({total:t.total,count,fulfillment,items:l.map(({p,qty,choice})=>({name:p.name,qty,choice,unit_price:Number(p.price),total:Number(p.price)*qty}))});history.unshift({date:new Date().toISOString(),total:t.total,count,fulfillment});historyLoaded=false;history=history.slice(0,100);cart={};$('discount').value=0;render();}catch(e){alert('Checkout not recorded: '+e.message);}finally{button.disabled=false;}};$('clearHistory').onclick=()=>{if(confirm('Clear this browser’s order history?')){history=[];renderHistory();saveLocal();}};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));for(const name of ['cart','ingredients','history'])$(name==='cart'?'cartView':name+'View').hidden=name!==tab;if(tab==='history')loadSharedHistory();});$('copyIngredients').onclick=async()=>{await navigator.clipboard.writeText(ingredientSummary().map(x=>`${x.name}: ${x.qty} ${x.unit}`).join('\n'));alert('Ingredients copied.');};$('exportIngredients').onclick=()=>{const rows=[['Ingredient','Quantity','Unit'],...ingredientSummary().map(x=>[x.name,x.qty,x.unit])];const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='green-wonderland-ingredients.csv';a.click();URL.revokeObjectURL(a.href);};$('themeBtn').onclick=()=>{document.body.classList.toggle('light');$('themeBtn').textContent=document.body.classList.contains('light')?'☾ Lights Off':'☀ Lights On';};
 const dialog=$('adminDialog'),msg=s=>$('adminMessage').textContent=s;
-$('adminBtn').onclick=async()=>{dialog.showModal();if(db){const {data}=await db.auth.getSession();session=data.session;await updateAuthUI();}else msg('Configure Supabase in config.js and run schema.sql first.');};$('closeAdmin').onclick=()=>dialog.close();$('login').onclick=async()=>{if(!db)return msg('Supabase not configured.');msg('Signing in...');const {data,error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)return msg(error.message);session=data.session;await updateAuthUI();};$('logout').onclick=async()=>{await db.auth.signOut();session=null;await updateAuthUI();};
-async function updateAuthUI(){if(!db){$('loginPanel').hidden=false;$('adminPanel').hidden=true;return;}const {data,error}=await db.rpc('is_admin');const admin=!!session&&!error&&data===true;$('loginPanel').hidden=admin;$('adminPanel').hidden=!admin;if(session&&!admin)msg('This account is not authorized as an administrator.');else msg('');if(admin){
- const identity=$('adminIdentity');
- identity.textContent=session.user.email;
- const employeeToken=sessionStorage.getItem('gw-employee-token');
- if(employeeToken){
-  try{
-   const {data:staff,error:staffError}=await db.rpc('gw_pin_me',{p_token:employeeToken});
-   if(!staffError&&staff?.[0]?.employee_name)identity.textContent=staff[0].employee_name;
-  }catch(err){console.warn('Unable to resolve character name:',err);}
- }
- renderAdmin();
-}}
+const getBossToken=()=>sessionStorage.getItem('gw-employee-token')||'';
+$('adminBtn').onclick=async()=>{dialog.showModal();await updateAuthUI();};
+$('closeAdmin').onclick=()=>dialog.close();
+$('login').onclick=async()=>{msg('Sign in from the Employee Time Clock using your Boss PIN.');};
+$('logout').onclick=async()=>{const t=getBossToken();if(t&&db)await db.rpc('gw_pin_logout',{p_token:t});sessionStorage.removeItem('gw-employee-token');window.dispatchEvent(new Event('gw-employee-session-changed'));await updateAuthUI();};
+async function updateAuthUI(){
+ if(!db){$('loginPanel').hidden=false;$('adminPanel').hidden=true;msg('Database not configured.');return;}
+ const t=getBossToken();
+ if(!t){$('loginPanel').hidden=false;$('adminPanel').hidden=true;msg('Sign in to the Employee Time Clock with your Boss PIN to access admin tools.');return;}
+ const {data:allowed,error}=await db.rpc('gw_boss_pin_check',{p_token:t});
+ const ok=!error&&allowed===true;
+ $('loginPanel').hidden=ok;$('adminPanel').hidden=!ok;
+ if(!ok){msg('Boss PIN verification required. '+(error?.message||'Your session is not a Boss account.'));return;}
+ const {data:staff}=await db.rpc('gw_pin_me',{p_token:t});
+ $('adminIdentity').textContent=staff?.[0]?.employee_name||'Boss employee';
+ msg('');renderAdmin();
+}
+window.addEventListener('gw-employee-session-changed',()=>{if(dialog.open)updateAuthUI();});
 
 const defaultChoices=p=>{
  const name=p.name.toLowerCase();
@@ -226,7 +231,18 @@ function editCatalogProduct(p){
  dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
 }
 function rowValues(row,fields){const o={};for(const field of fields){const input=row.querySelector(`[data-field="${field}"]`);o[field]=input.type==='checkbox'?input.checked:input.value;}return o;}
-async function mutate(table,method,payload,id){if(!db||!session){msg('Sign in as an administrator first.');return false;}msg('Saving...');let q=db.from(table);let result;if(method==='insert')result=await q.insert(payload).select('id');else if(method==='delete')result=await q.delete().eq('id',id).select('id');else result=await q.update(payload).eq('id',id).select('*');if(result.error){msg('Save failed: '+result.error.message+(result.error.message.includes('image_url')?' — Run the product images SQL migration.':''));return false;}if(!result.data?.length){msg('Nothing was saved. Check your administrator permissions and database policies.');return false;}await load();if(table==='products'&&method==='update'&&Object.prototype.hasOwnProperty.call(payload,'image_url')){const saved=products.find(p=>String(p.id)===String(id));if(!saved||saved.image_url!==payload.image_url){msg('Save could not be verified. Check your product image column and permissions.');return false;}}renderAdmin();msg('Saved and verified in the shared catalog.');return true;}
+async function mutate(table,method,payload,id){
+ if(!db||!getBossToken()){msg('Sign in with your Boss employee PIN first.');return false;}
+ msg('Saving...');
+ const {data,error}=await db.rpc('gw_boss_catalog_change',{
+  p_token:getBossToken(),p_table:table,p_action:method,
+  p_id:id==null?null:String(id),p_values:payload||{}
+ });
+ if(error){msg('Save failed: '+error.message);return false;}
+ if(!data){msg('No changes recorded.');return false;}
+ await load();
+ renderAdmin();msg('Saved in shared catalog.');return true;
+}
 const catalogTools=document.createElement('div');catalogTools.className='gw-catalog-toolbar';
 const catalogSearch=document.createElement('input');catalogSearch.id='gwAdminProductSearch';catalogSearch.type='search';catalogSearch.placeholder='Search products…';
 const catalogCategory=document.createElement('select');catalogCategory.id='gwCatalogCategory';catalogCategory.add(new Option('All Categories','All Categories'));
@@ -241,5 +257,5 @@ $('adminProducts').onclick=async e=>{
 };
 $('adminZones').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const row=b.closest('.adminrow'),id=row.dataset.id;if(b.dataset.deleteZone){if(confirm('Delete this delivery zone?'))await mutate('delivery_zones','delete',null,id);return;}if(b.dataset.saveZone){const v=rowValues(row,['name','fee']);v.fee=Number(v.fee);if(!v.name.trim()||!Number.isFinite(v.fee)||v.fee<0)return msg('Invalid zone.');await mutate('delivery_zones','update',v,id);}};
 $('addProduct').onclick=()=>mutate('products','insert',{name:'New product',category:'Other',price:0,active:false,ingredients:[]});$('addZone').onclick=()=>mutate('delivery_zones','insert',{name:'New zone',fee:0});$('saveSettings').onclick=()=>{const n=Number($('maxDiscount').value);if(!Number.isInteger(n)||n<0||n>100)return msg('Discount must be between 0 and 100.');mutate('app_settings','update',{max_discount:n},1);};
-if(db){db.auth.onAuthStateChange((_event,s)=>{session=s;});db.channel('catalog-updates').on('postgres_changes',{event:'*',schema:'public',table:'products'},load).on('postgres_changes',{event:'*',schema:'public',table:'delivery_zones'},load).on('postgres_changes',{event:'*',schema:'public',table:'app_settings'},load).subscribe();}
+if(db){db.channel('catalog-updates').on('postgres_changes',{event:'*',schema:'public',table:'products'},load).on('postgres_changes',{event:'*',schema:'public',table:'delivery_zones'},load).on('postgres_changes',{event:'*',schema:'public',table:'app_settings'},load).subscribe();}
 load();
