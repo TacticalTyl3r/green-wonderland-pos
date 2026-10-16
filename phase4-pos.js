@@ -13,7 +13,8 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  const eligibleBundles=()=>offers.filter(o=>o.offer_type==='bundle'&&Array.isArray(o.items));
  const preview=()=>{
   const lines=getLines(),subtotal=lines.reduce((n,l)=>n+Number(l.p.price)*l.qty,0);
-  let offerDiscount=lines.reduce((n,l)=>n+Number(l.p.price)*l.qty*bestSpecial(l.p.id)/100,0);
+  const specialDiscount=lines.reduce((n,l)=>n+Number(l.p.price)*l.qty*bestSpecial(l.p.id)/100,0);
+  let bestBundle=0;
   const bundleDetails=[];
   for(const o of eligibleBundles()){
    if(!o.items.length)continue;
@@ -26,11 +27,11 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
    }
    if(sets>0&&Number.isFinite(sets)){
     const discount=Math.max(0,(gross-Number(o.bundle_price))*sets);
-    offerDiscount=Math.min(subtotal,offerDiscount+discount);
+    bestBundle=Math.max(bestBundle,discount);
     bundleDetails.push(o.title+' × '+sets);
    }
   }
-  return{subtotal,discount:Math.min(subtotal,Math.round(offerDiscount*100)/100),bundles:bundleDetails};
+  return{subtotal,discount:Math.min(subtotal,Math.round(Math.max(specialDiscount,bestBundle)*100)/100),bundles:bundleDetails};
  };
  const setMember=m=>{member=m;redeem=0;render();onCartChanged();};
  const estimateRedemption=(due)=>Math.min(Math.max(0,Math.floor(due)),member?.points||0,redeem);
@@ -87,11 +88,11 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id].slice(-24);
   localStorage.setItem('gw-pos-favorites',JSON.stringify(favorites));onCartChanged();
  };
- const checkout=async({items,fulfillment,zone,discount,employee})=>{
+ const checkout=async({items,fulfillment,zone,discount,employee,expectedTotal})=>{
   if(!ready)throw Error('Phase 4 SQL migration is not installed or offers are not available');
   const rows=await rpc('gw_pos_checkout_v4',{p_token:token(),p_employee:employee||null,
    p_items:items,p_fulfillment:fulfillment,p_zone:zone||null,p_manual_percent:discount,
-   p_member:member?.id||null,p_redeem:redeem});
+   p_member:member?.id||null,p_redeem:redeem,p_expected_total:expectedTotal});
   if(!rows?.length)throw Error('Checkout did not return a sale');
   const result=rows[0];
   if(member){
