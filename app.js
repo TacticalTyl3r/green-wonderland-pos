@@ -137,11 +137,11 @@ async function showSaleReceipt(s){
  const saleId=s.id||s.sale_id;
  if(db&&saleId){
   const id=String(saleId);
-  const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}}).catch(error=>console.warn('Saved receipt discounts unavailable:',error.message);reportReceiptError('Discounts',error));
+  const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}}).catch(error=>{console.warn('Saved receipt discounts unavailable:',error.message);reportReceiptError('Discounts',error);});
   const details=db.rpc('gw_pos_sale_details',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
    if(Array.isArray(data)&&data.length){s.loyalty_meta=data[0];showDiscounts();showLoyalty();}
-  }).catch(error=>console.warn('Sale loyalty details unavailable:',error.message);reportReceiptError('Sale details',error));
+  }).catch(error=>{console.warn('Sale loyalty details unavailable:',error.message);reportReceiptError('Sale details',error);});
   const snapshot=db.rpc('gw_pos_get_loyalty_receipt',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
    if(Array.isArray(data)&&data.length){s.loyalty_receipt=data[0];showLoyalty();}
