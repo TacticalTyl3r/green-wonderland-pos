@@ -632,3 +632,6 @@ body[data-theme] .gw-loyalty-activity-top strong{color:var(--text);font-size:13p
 body[data-theme] .gw-loyalty-activity-card>small{font-size:11px;color:var(--muted)}
 body[data-theme] .gw-loyalty-activity-card>p{margin:0;color:var(--text);font-size:12px}
 @media(max-width:860px){body[data-theme] .gw-loyalty-layout{grid-template-columns:1fr}body[data-theme] .gw-loyalty-directory{max-height:350px}}
+
+/* Loyalty & Rewards sidebar icon — matches Product Analytics submenu styling */
+body[data-theme] .gw-site-submenu button[data-site-page="loyalty"]::before{content:"★";display:inline-grid;place-items:center;width:30px;height:30px;margin-right:8px;color:#79dba6;background:color-mix(in srgb,#79dba6 14%,var(--panel));border-radius:7px}
