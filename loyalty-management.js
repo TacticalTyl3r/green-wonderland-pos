@@ -30,7 +30,7 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
  host.insertBefore(settingsPanel,layout);
  const setup=async()=>{
   try{
-   const [settings,rewards]=await Promise.all([rpc('gw_loyalty_settings'),rpc('gw_loyalty_rewards_list')]);
+   const [settings,rewards,boss]=await Promise.all([rpc('gw_loyalty_settings'),rpc('gw_loyalty_rewards_list'),rpc('gw_loyalty_is_boss')]);
    settingsPanel.replaceChildren(make('h3','Reward Rules & Catalog'));
    const rule=Array.isArray(settings)?settings[0]:settings;
    const summary=make('p',rule?.enabled?'Earning is enabled':'Earning is disabled');
@@ -48,7 +48,8 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
     await rpc('gw_loyalty_save_settings',{p_earn_per_amount:Number(rate.value),p_point_value:Number(value.value),p_enabled:enabled.checked});
     message.textContent='Settings saved. Checkout integration is not yet enabled; current checkout rules remain unchanged.';
    }catch(e){message.textContent=e.message;}finally{save.disabled=false;}};
-   settingsPanel.append(form,make('h3','Available Rewards'));
+   if(boss===true)settingsPanel.append(form);
+   settingsPanel.append(make('h3','Available Rewards'));
    const list=make('div',undefined,'gw-mdt-roster');settingsPanel.append(list);
    const edit=reward=>{
     const editor=make('form',undefined,'gw-mdt-form');
@@ -68,10 +69,10 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
    for(const reward of rewards||[]){
     const row=make('div',undefined,'gw-mdt-employee'),info=make('div');
     info.append(make('strong',reward.title+' · '+reward.points_cost+' pts'),make('p',(reward.description||'No description')+' · '+(reward.active?'Active':'Inactive')));
-    const button=make('button','Edit','outline');button.onclick=()=>edit(reward);row.append(info,button);list.append(row);
+    row.append(info);if(boss===true){const button=make('button','Edit','outline');button.onclick=()=>edit(reward);row.append(button);}list.append(row);
    }
    if(!rewards?.length)list.append(make('p','No rewards created yet.'));
-   const add=make('button','+ Create Reward','outline');add.onclick=()=>edit(null);settingsPanel.append(add);
+   if(boss===true){const add=make('button','+ Create Reward','outline');add.onclick=()=>edit(null);settingsPanel.append(add);}
    settingsPanel.append(make('p','Reward catalog entries are management records only until checkout redemption is integrated.','gw-mdt-message'));
   }catch(e){settingsStatus.textContent='Reward configuration unavailable until the new SQL migration is installed: '+e.message;}
  };
