@@ -224,7 +224,7 @@ language plpgsql stable security definer set search_path=public,pg_temp as $$
 begin
  if not public.gw_mdt_can(p_token,'sales_earnings') then raise exception 'Access denied';end if;
  return query select (x.item->>'name')::text,
-  sum((x.item->>'qty')::bigint),
+  sum((x.item->>'qty')::bigint)::bigint,
   round(sum(coalesce((x.item->>'total')::numeric,0)),2)
  from public.gw_sale_receipt_details d
  cross join lateral jsonb_array_elements(d.items) as x(item)
@@ -278,6 +278,7 @@ begin
  where coalesce(trim(p_query),'')=''
  or s.id::text ilike '%'||trim(p_query)||'%'
  or e.name ilike '%'||trim(p_query)||'%'
+ or exists(select 1 from public.gw_pos_sale_meta sm join public.gw_loyalty_members lm on lm.id=sm.member_id where sm.sale_id=s.id and (lm.display_name ilike '%'||trim(p_query)||'%' or lm.member_code ilike '%'||trim(p_query)||'%'))
  or exists(select 1 from public.gw_sale_receipt_details d
  cross join lateral jsonb_array_elements(d.items) x(item)
  where d.sale_id=s.id::text and ((x.item->>'name') ilike '%'||trim(p_query)||'%'
