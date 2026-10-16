@@ -12,12 +12,12 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
  try{
   if(page==='history'){
    const filter=make('div',undefined,'gw-mdt-actions'),from=document.createElement('input'),to=document.createElement('input'),search=document.createElement('input');
-   from.type='date';to.type='date';search.type='search';search.placeholder='Search employee, amount, or fulfillment';
+   from.type='date';to.type='date';search.type='search';search.placeholder='Search employee, amount, fulfillment, date or sale ID';
    filter.append(from,to,search);host.insertBefore(filter,status);
    const list=box(),download=make('button','Export Filtered CSV','outline');filter.append(download);
    const reload=async()=>{status.textContent='Loading sales…';try{
     const rows=await rpc('gw_mdt_sales_history',{p_from:from.value?new Date(from.value+'T00:00:00').toISOString():null,p_to:to.value?new Date(new Date(to.value+'T00:00:00').getTime()+86400000).toISOString():null,p_employee:null});
-    const sorted=[...rows].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));const filtered=()=>sorted.filter(s=>(String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')).toLowerCase().includes(search.value.toLowerCase()));
+    const sorted=[...rows].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));const filtered=()=>sorted.filter(s=>(String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')+' '+String(s.id||'')+' '+dateText(s.created_at)).toLowerCase().includes(search.value.toLowerCase()));
     download.onclick=()=>exportCsv('green-wonderland-sales-history.csv',['Employee','Amount','Items','Fulfillment','Date'],filtered().map(s=>[s.employee_name,s.total,s.item_count,s.fulfillment,s.created_at]));
     const draw=()=>{list.replaceChildren();let total=0;let count=0;for(const s of filtered()){total+=Number(s.total||0);count++;line(list,cash(s.total)+' · '+(s.employee_name||'Unknown employee'),dateText(s.created_at)+' · '+s.item_count+' items · '+s.fulfillment);}status.textContent=count+' recorded sales · '+cash(total)+' total · Newest first';if(!count)line(list,'No matching sales','Try changing your filters.');};search.oninput=draw;draw();
    }catch(e){status.textContent=e.message;}};
@@ -38,13 +38,13 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
    for(const e of staff)picker.add(new Option(e.name,e.id));host.insertBefore(picker,status);
    const list=box();
    const reload=async()=>{list.replaceChildren();if(!picker.value){status.textContent='No employees';return;}try{
-    const rows=await rpc('gw_mdt_notes_list',{p_employee:picker.value});status.textContent=rows.length+' private management notes';
-    for(const n of rows)line(list,n.category+' · '+n.author,n.body+' · '+dateText(n.created_at));
+    const rows=await rpc('gw_mdt_notes_list',{p_employee:picker.value});status.textContent=rows.length+' private management records';
+    for(const n of rows){const card=make('article',undefined,'gw-feature-card');card.append(make('strong',n.category+' · '+n.author),make('p',n.body),make('small',dateText(n.created_at)));list.append(card);}
     if(!rows.length)line(list,'No notes','No management notes recorded for this employee.');
    }catch(e){status.textContent=e.message;}};
    if(canFeature('employee_notes_manage')){
     const form=make('form',undefined,'gw-mdt-form'),category=document.createElement('select'),body=document.createElement('textarea'),submit=make('button','Save Note','primary');
-    for(const c of ['General','Recognition','Disciplinary'])category.add(new Option(c,c));
+    for(const c of ['General','Recognition','Commendation','Coaching','Verbal Warning','Written Warning','Disciplinary'])category.add(new Option(c,c));
     body.placeholder='Private management note';body.required=true;body.minLength=3;body.maxLength=3000;
     form.append(category,body,submit);host.insertBefore(form,list);
     form.onsubmit=async ev=>{ev.preventDefault();submit.disabled=true;try{await rpc('gw_mdt_note_create',{p_employee:picker.value,p_category:category.value,p_body:body.value});body.value='';await reload();}catch(e){status.textContent=e.message;}finally{submit.disabled=false;}};
@@ -58,6 +58,12 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
     for(const [name,key] of [['Today','today_sales'],['This Week','weekly_sales'],['Lifetime','lifetime_sales']]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',name+' Sales'),make('strong',cash(rows.reduce((sum,e)=>sum+Number(e[key]||0),0))));cards.append(card);}
     host.insertBefore(cards,list);
     const exportReport=make('button','Export Employee Sales CSV','outline');exportReport.onclick=()=>exportCsv('green-wonderland-employee-sales.csv',['Employee','Role','Today','This Week','Lifetime','Orders'],rows.map(e=>[e.employee_name,e.employee_role,e.today_sales,e.weekly_sales,e.lifetime_sales,e.total_orders]));host.insertBefore(exportReport,list);
+    const discord=make('button','Copy Weekly Report for Discord','outline');
+    discord.onclick=async()=>{const top=[...rows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0)).slice(0,5);
+     const weekly=rows.reduce((sum,e)=>sum+Number(e.weekly_sales||0),0);
+     const lines=['**GREEN WONDERLAND | WEEKLY BUSINESS REPORT**','**Week ending:** '+new Date().toLocaleDateString(),'**Weekly sales:** '+cash(weekly),'**Reporting employees:** '+rows.length,'','**Top performers**',...top.map((e,i)=>(i+1)+'. '+e.employee_name+' — '+cash(e.weekly_sales))];
+     try{await navigator.clipboard.writeText(lines.join('\\n'));discord.textContent='Copied for Discord!';setTimeout(()=>discord.textContent='Copy Weekly Report for Discord',2200);}catch(e){status.textContent='Unable to copy report: '+e.message;}
+    };host.insertBefore(discord,list);
     for(const e of [...rows].sort((a,b)=>Number(b.weekly_sales)-Number(a.weekly_sales)))line(list,e.employee_name,cash(e.weekly_sales)+' this week · '+cash(e.lifetime_sales)+' lifetime · '+e.total_orders+' orders');
    }else{
     const order=document.createElement('select');for(const [label,key] of [['Weekly Sales','weekly_sales'],['Lifetime Sales','lifetime_sales'],['Hours Worked','hours'],['Orders','total_orders']])order.add(new Option(label,key));host.insertBefore(order,list);
