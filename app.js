@@ -1,4 +1,4 @@
-import {createPhase4} from './phase4-pos.js?v=1';
+import {createPhase4} from './phase4-pos.js?v=phase4-final-20261016';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -91,7 +91,7 @@ async function showSaleReceipt(s){
 function renderHistory(){
  if(tab!=='history')return;
  const host=$('history');host.replaceChildren();
- const search=document.createElement('input');search.className='gw-history-filter';search.type='search';search.placeholder='Filter receipts by employee, ID, item or flavor';search.value=window.gwHistoryQuery||'';search.oninput=()=>{window.gwHistoryQuery=search.value;renderHistory();};host.append(search);
+ const search=document.createElement('input');search.className='gw-history-filter';search.type='search';search.placeholder='Filter receipts by employee, ID, item or flavor';search.value=window.gwHistoryQuery||'';search.oninput=()=>{window.gwHistoryQuery=search.value;const pos=search.selectionStart;renderHistory();const next=$('history').querySelector('.gw-history-filter');if(next){next.focus();next.setSelectionRange(pos,pos);}};host.append(search);
  if(historyLoading){host.textContent='Loading all recorded sales…';return;}
  if(historyError){host.textContent=historyError;return;}
  if(!sharedHistory.length){host.textContent='No recorded sales found.';return;}
