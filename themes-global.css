@@ -430,3 +430,59 @@ body[data-theme] #gwSiteNav .gw-site-submenu .gw-admin-subitem .gw-site-icon{fle
   overflow:visible;
  }
 }
+
+/* Animated effect selection cards */
+body[data-theme] .gw-effects-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+body[data-theme] .gw-effect-choice{display:flex;flex-direction:column;gap:9px;min-height:120px;padding:9px;text-align:left;overflow:hidden}
+body[data-theme] .gw-effect-choice .gw-effect-caption{display:block;padding:0 4px 3px;font-size:12px}
+body[data-theme] .gw-effect-preview{display:grid;place-items:center;position:relative;height:76px;width:100%;overflow:hidden;isolation:isolate;border-radius:7px;background:color-mix(in srgb,var(--panel) 82%,#000);border:1px solid var(--line)}
+body[data-theme] .gw-effect-preview-visual{position:absolute;inset:-35%;opacity:.8;pointer-events:none}
+body[data-theme] .gw-effect-preview-word{position:relative;z-index:2;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:23px;letter-spacing:3px;color:var(--text);text-shadow:0 1px 8px #0009}
+body[data-theme] .gw-effect-preview[data-preview-effect=none] .gw-effect-preview-visual{opacity:0}
+body[data-theme] .gw-effect-preview[data-preview-effect=haze] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=combo] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=haze-particles] .gw-effect-preview-visual{background:radial-gradient(ellipse,var(--accent),transparent 65%);filter:blur(15px);opacity:.35;animation:gw-preview-drift 5s ease-in-out infinite alternate}
+body[data-theme] .gw-effect-preview[data-preview-effect=glow] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=gradient] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=glow-trail] .gw-effect-preview-visual{background:linear-gradient(110deg,transparent 30%,var(--accent) 50%,transparent 70%);opacity:.3;animation:gw-preview-sweep 4s linear infinite}
+body[data-theme] .gw-effect-preview[data-preview-effect=particles] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=stars] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=aurora-stars] .gw-effect-preview-visual{background:radial-gradient(circle,var(--accent) 1.5px,transparent 2px);background-size:24px 20px;animation:gw-preview-float 7s linear infinite;opacity:.5}
+body[data-theme] .gw-effect-preview[data-preview-effect=aurora] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=cosmic] .gw-effect-preview-visual{background:conic-gradient(transparent,var(--accent),transparent,color-mix(in srgb,var(--accent) 45%,transparent),transparent);filter:blur(14px);opacity:.35;animation:gw-preview-rotate 9s linear infinite}
+body[data-theme] .gw-effect-preview[data-preview-effect=scan] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=neon-scan] .gw-effect-preview-visual{background:repeating-linear-gradient(0deg,transparent 0px,transparent 7px,var(--accent) 8px,transparent 9px);opacity:.28;animation:gw-preview-float 5s linear infinite}
+body[data-theme] .gw-effect-preview[data-preview-effect=spotlight] .gw-effect-preview-visual{background:conic-gradient(from 45deg at 50% 0%,transparent,var(--accent),transparent 55%);opacity:.25;animation:gw-preview-drift 5s ease-in-out infinite alternate}
+body[data-theme] .gw-effect-preview[data-preview-effect=border] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=glow-trail] .gw-effect-preview-word{box-shadow:inset 0 0 0 2px var(--accent);animation:gw-preview-border 3s ease-in-out infinite}
+body[data-theme] .gw-effect-preview[data-preview-effect=botanical] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=waves] .gw-effect-preview-visual{background:repeating-radial-gradient(ellipse at bottom,transparent 0px,transparent 12px,var(--accent) 14px,transparent 16px);opacity:.22;animation:gw-preview-drift 6s ease-in-out infinite alternate}
+body[data-theme] .gw-effect-preview[data-preview-effect=grid] .gw-effect-preview-visual{background-image:linear-gradient(var(--accent) 1px,transparent 1px),linear-gradient(90deg,var(--accent) 1px,transparent 1px);background-size:18px 18px;opacity:.2;animation:gw-preview-float 6s linear infinite}
+body[data-theme] .gw-effect-preview[data-preview-effect=pulse] .gw-effect-preview-visual,
+body[data-theme] .gw-effect-preview[data-preview-effect=breathe] .gw-effect-preview-visual{background:radial-gradient(circle,var(--accent),transparent 65%);opacity:.35;animation:gw-preview-pulse 3s ease-in-out infinite}
+body[data-theme] .gw-effect-preview[data-preview-effect=neon] .gw-effect-preview-word,
+body[data-theme] .gw-effect-preview[data-preview-effect=neon-scan] .gw-effect-preview-word{color:var(--accent);animation:gw-preview-neon 3s ease-in-out infinite}
+body[data-theme] .gw-effect-preview[data-preview-effect=shimmer] .gw-effect-preview-word{background:linear-gradient(110deg,var(--text) 20%,var(--accent) 45%,var(--text) 70%);background-size:250% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:gw-preview-sweep 4s linear infinite}
+body[data-theme] .gw-effect-preview[data-preview-effect=combo]::after,
+body[data-theme] .gw-effect-preview[data-preview-effect=haze-particles]::after,
+body[data-theme] .gw-effect-preview[data-preview-effect=aurora-stars]::after,
+body[data-theme] .gw-effect-preview[data-preview-effect=cosmic]::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,var(--accent) 1px,transparent 2px);background-size:25px 21px;opacity:.3;animation:gw-preview-float 6s linear infinite}
+@keyframes gw-preview-drift{from{transform:translateX(-18%) scale(.9)}to{transform:translateX(18%) scale(1.2)}}
+@keyframes gw-preview-sweep{from{background-position:220% 0}to{background-position:-120% 0}}
+@keyframes gw-preview-float{from{background-position:0 0}to{background-position:40px -45px}}
+@keyframes gw-preview-rotate{to{transform:rotate(360deg)}}
+@keyframes gw-preview-pulse{50%{transform:scale(1.6);opacity:.55}}
+@keyframes gw-preview-border{50%{box-shadow:inset 0 0 0 2px transparent,0 0 12px var(--accent)}}
+@keyframes gw-preview-neon{50%{text-shadow:0 0 14px var(--accent),0 0 24px var(--accent)}}
+@media(prefers-reduced-motion:reduce){body[data-theme] .gw-effect-preview *,body[data-theme] .gw-effect-preview::after{animation:none!important}}
+/* Combination presets in the actual site header */
+body[data-header-effect=aurora-stars] .gw-site-content .gw-global-header::before,
+body[data-header-effect=cosmic] .gw-site-content .gw-global-header::before{opacity:.5;inset:-110%;background:conic-gradient(transparent,color-mix(in srgb,var(--accent) 40%,transparent),transparent,color-mix(in srgb,var(--accent) 15%,transparent),transparent);filter:blur(25px);animation:gw-header-rotate 18s linear infinite}
+body[data-header-effect=aurora-stars] .gw-site-content .gw-global-header::after,
+body[data-header-effect=cosmic] .gw-site-content .gw-global-header::after,
+body[data-header-effect=haze-particles] .gw-site-content .gw-global-header::after{opacity:.35;background:radial-gradient(circle,var(--accent) 1px,transparent 2px);background-size:34px 29px;animation:gw-header-float 11s linear infinite}
+body[data-header-effect=neon-scan] .gw-site-content .gw-global-header::before{opacity:.25;background:repeating-linear-gradient(0deg,transparent 0px,transparent 6px,var(--accent) 7px,transparent 8px);animation:gw-header-float 9s linear infinite}
+body[data-header-effect=neon-scan] .gw-site-content .gw-global-header .brand h1{animation:gw-header-neon 5s ease-in-out infinite}
+body[data-header-effect=haze-particles] .gw-site-content .gw-global-header::before{opacity:.45;inset:-80%;background:radial-gradient(ellipse,var(--accent),transparent 60%);filter:blur(22px);animation:gw-header-drift 12s ease-in-out infinite alternate}
+body[data-header-effect=glow-trail] .gw-site-content .gw-global-header::before{opacity:.5;background:linear-gradient(110deg,transparent 30%,color-mix(in srgb,var(--accent) 35%,transparent) 50%,transparent 70%);background-size:220% 100%;animation:gw-header-sweep 7s linear infinite}
+body[data-header-effect=glow-trail] .gw-site-content .gw-global-header{border-bottom:2px solid var(--accent)}
