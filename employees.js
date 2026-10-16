@@ -1,6 +1,6 @@
 import {createSalesChart} from './sales-chart.js?v=2';
 import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=audit-detail-20261016';
-import {renderBusinessPage} from './business-mdt.js?v=sale-items-20261016';
+import {renderBusinessPage} from './business-mdt.js?v=financial-avg-20261016';
 import {showSaleAdjustments} from './sale-adjustments.js?v=actor-name-fix-20261016';
 import {showOffersManager,showProductAnalytics} from './phase4-management.js?v=1';
 import {renderLoyaltyManagement} from './loyalty-management.js?v=activity-export-20261016';
