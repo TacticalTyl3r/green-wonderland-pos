@@ -1,6 +1,7 @@
 import {createSalesChart} from './sales-chart.js?v=2';
 import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=audit-detail-20261016';
 import {renderBusinessPage} from './business-mdt.js?v=management-phase2-20261016';
+import {showSaleAdjustments} from './sale-adjustments.js?v=phase2-20261016';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const db=createClient(SUPABASE_URL,SUPABASE_ANON_KEY), key='gw-employee-token';
@@ -289,7 +290,7 @@ roster().then(refresh).catch(e=>{msg('Employee service not configured yet: '+e.m
 
 
 /* Boss-configurable role permission editor */
-const roleFeatures=[['dashboard','Dashboard'],['employees','Employees'],['time_management','Time Management'],['sales_earnings','Sales & Earnings'],['admin_catalog','Products & Settings'],['admin_branding','Branding & Images'],['employee_add','Add Employees'],['employee_edit','Edit Employees'],['employee_deactivate','Deactivate Employees'],['employee_role_assign','Assign Roles'],['employee_pin_reset','Reset PINs'],['time_add','Add Work Time'],['time_remove','Remove Work Time'],['time_history','View Time History'],['sales_history','Sales History'],['announcements','View Announcements'],['announcements_manage','Manage Announcements'],['employee_notes','View Employee Notes'],['employee_notes_manage','Manage Employee Notes'],['recognition_view','View Recognition'],['recognition_manage','Award Recognition'],['activity_history','View Activity History']];
+const roleFeatures=[['dashboard','Dashboard'],['employees','Employees'],['time_management','Time Management'],['sales_earnings','Sales & Earnings'],['admin_catalog','Products & Settings'],['admin_branding','Branding & Images'],['employee_add','Add Employees'],['employee_edit','Edit Employees'],['employee_deactivate','Deactivate Employees'],['employee_role_assign','Assign Roles'],['employee_pin_reset','Reset PINs'],['time_add','Add Work Time'],['time_remove','Remove Work Time'],['time_history','View Time History'],['sales_history','Sales History'],['sales_adjust','Refund / Void Sales'],['announcements','View Announcements'],['announcements_manage','Manage Announcements'],['employee_notes','View Employee Notes'],['employee_notes_manage','Manage Employee Notes'],['recognition_view','View Recognition'],['recognition_manage','Award Recognition'],['activity_history','View Activity History']];
 async function showRolePermissions(){
  mdtContent.replaceChildren();
  const intro=make('div',undefined,'gw-permissions-intro');
@@ -306,7 +307,7 @@ async function showRolePermissions(){
    employee_add:'Create new employee accounts',employee_edit:'Update employee information',employee_deactivate:'Deactivate employee accounts',
    employee_role_assign:'Change employee positions',employee_pin_reset:'Reset employee PINs',
    time_add:'Add work time to employee records',time_remove:'Remove work time from employee records',
-   time_history:'Review historical time adjustments',sales_history:'View customer order and sales history',
+   time_history:'Review historical time adjustments',sales_history:'View customer order and sales history',sales_adjust:'Authorize partial refunds and voids with required reasons',
    announcements:'Read store announcements',announcements_manage:'Create and manage announcements',
    employee_notes:'View employee notes',employee_notes_manage:'Add and manage employee notes',
    recognition_view:'View employee recognition',recognition_manage:'Award employee recognition',
@@ -379,15 +380,15 @@ if(siteNav&&siteHost){
  const shell=document.querySelector('.shell');
  const topHeader=shell.querySelector('header');
  if(topHeader){const posStatus=document.querySelector('#status');const posSlot=document.querySelector('#gwPosStatusSlot');if(posStatus&&posSlot)posSlot.append(posStatus);const content=document.querySelector('.gw-site-content');content?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');const ribbon=shell.querySelector('.ribbon');if(ribbon){content?.insertBefore(ribbon,shell);ribbon.classList.add('gw-global-ribbon');}}
- const restricted=['overview','employees','sales','history','leaderboard','reports','analytics'];
- const businessPages=[['history','Sales History','sales_history'],['leaderboard','Employee Leaderboards','sales_earnings'],['reports','Financial Reports','sales_earnings'],['analytics','Sales Analytics','sales_earnings'],['announcements','Announcements','announcements'],['notes','Employee Notes','employee_notes']];
+ const restricted=['overview','employees','sales','history','leaderboard','reports','analytics','adjustments'];
+ const businessPages=[['history','Sales History','sales_history'],['leaderboard','Employee Leaderboards','sales_earnings'],['reports','Financial Reports','sales_earnings'],['analytics','Sales Analytics','sales_earnings'],['adjustments','Refunds & Voids','sales_history'],['announcements','Announcements','announcements'],['notes','Employee Notes','employee_notes']];
  const salesSubmenu=document.createElement('div');salesSubmenu.className='gw-site-submenu';salesSubmenu.hidden=true;
- for(const [page,label] of businessPages.filter(([page])=>['history','leaderboard','reports','analytics'].includes(page))){const b=document.createElement('button');b.type='button';b.dataset.sitePage=page;b.textContent=label;salesSubmenu.append(b);}
+ for(const [page,label] of businessPages.filter(([page])=>['history','leaderboard','reports','analytics','adjustments'].includes(page))){const b=document.createElement('button');b.type='button';b.dataset.sitePage=page;b.textContent=label;salesSubmenu.append(b);}
  siteNav.querySelector('[data-site-page="sales"]')?.after(salesSubmenu);
 
  const permissionsNav=document.createElement('button');permissionsNav.type='button';permissionsNav.dataset.sitePage='permissions';permissionsNav.innerHTML='<span class="gw-site-icon">⚿</span><span class="gw-site-label">Roles & Permissions</span><span class="gw-site-arrow">›</span>';
  // Roles & Permissions belongs inside the expandable Admin section.
- const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings',history:'sales_history',leaderboard:'sales_earnings',reports:'sales_earnings',analytics:'sales_earnings',announcements:'announcements',notes:'employee_notes'};
+ const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings',history:'sales_history',leaderboard:'sales_earnings',reports:'sales_earnings',analytics:'sales_earnings',adjustments:'sales_history',announcements:'announcements',notes:'employee_notes'};
  async function loadGrantedFeatures(){
   grantedFeatures=new Set();
   if(bossAllowed){roleFeatures.forEach(([feature])=>grantedFeatures.add(feature));return;}
@@ -438,7 +439,7 @@ async function showBackupCenter(){
   await checkBoss();
   await loadGrantedFeatures();
   for(const p of restricted)navButton(p).hidden=!canFeature(featureForPage[p]);
-  for(const p of ['history','leaderboard','reports'])navButton(p).hidden=!canFeature(featureForPage[p]);
+  for(const p of ['history','leaderboard','reports','adjustments'])navButton(p).hidden=!canFeature(featureForPage[p]);
   navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
   permissionsNav.hidden=!bossAllowed;
    auditLink.hidden=!canFeature('activity_history');
@@ -465,7 +466,7 @@ async function showBackupCenter(){
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
   if(!['permissions','audit','notifications','backups'].includes(page))adminSubmenu.hidden=true;
-  salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics'].includes(page));
+  salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics','adjustments'].includes(page));
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
@@ -473,6 +474,7 @@ async function showBackupCenter(){
   if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
    if(page==='audit'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showActivitySearch(mdtContent,{call,token:()=>token||'',make});return;}
   if(page==='backups'){adminSubmenu.hidden=false;await showBackupCenter();return;}
+  if(page==='adjustments'){await showSaleAdjustments(mdtContent,{call,token:()=>token||'',canFeature,cash,make});return;}
   if(page==='analytics'){await showAnalytics(mdtContent,{call,token:()=>token||'',cash,make});return;}
   if(businessPages.some(([name])=>name===page)){shell.hidden=true;siteHost.hidden=false;await renderBusinessPage(page,{host:mdtContent,call,token:()=>token||'',canFeature,cash,make});return;}
   if(page==='admin-legacy'){
