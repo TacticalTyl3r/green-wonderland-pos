@@ -364,11 +364,51 @@ if(siteNav&&siteHost){
   if(!token||!me)return;
   try{const rows=await call('gw_mdt_my_permissions',{p_token:token});for(const item of rows||[])if(item.allowed)grantedFeatures.add(item.feature);}catch(e){console.warn('Unable to load MDT role permissions',e);}
  }
+async function showNotifications(){
+ mdtContent.replaceChildren();
+ const heading=make('div',undefined,'gw-mdt-head');heading.append(make('h2','Notification Center'),make('p','Management announcements and important updates for the team.'));
+ mdtContent.append(heading);
+ const list=make('div',undefined,'gw-mdt-roster');mdtContent.append(list);
+ try{
+  const rows=await call('gw_mdt_announcements_list',{p_token:token||''});
+  if(!rows?.length){list.append(make('p','No announcements yet.'));return;}
+  for(const item of rows){const card=make('article',undefined,'gw-feature-card');card.append(make('strong',item.title||'Announcement'),make('p',item.body||''),make('small',(item.author||'Management')+' · '+new Date(item.created_at).toLocaleString()));list.append(card);}
+ }catch(e){list.append(make('p','Unable to load announcements: '+e.message));}
+}
+async function showBackupCenter(){
+ mdtContent.replaceChildren();
+ const heading=make('div',undefined,'gw-mdt-head');heading.append(make('h2','Export & Backup Center'),make('p','Download available business records as CSV files. Exports reflect the permissions and records returned by the database.'));
+ mdtContent.append(heading);
+ const status=make('p','Choose an export.','gw-mdt-message');mdtContent.append(status);
+ const options=[['Sales History','gw_mdt_sales_history',{p_from:null,p_to:null,p_employee:null},'sales-history'],['Employee Sales','gw_mdt_sales_report_for_role',{},'employee-sales'],['Audit History','gw_mdt_activity_search',{p_search:'',p_from:null,p_to:null},'audit-history']];
+ const cards=make('div',undefined,'gw-feature-grid');mdtContent.append(cards);
+ for(const [label,rpc,args,filename] of options){
+  const card=make('article',undefined,'gw-feature-card'),title=make('h3',label),desc=make('p','Export records to a spreadsheet-compatible CSV file.'),button=make('button','Download CSV','primary');
+  button.onclick=async()=>{button.disabled=true;status.textContent='Preparing '+label+'…';try{
+   const rows=await call(rpc,{p_token:token||'',...args});
+   if(!Array.isArray(rows)||!rows.length){status.textContent='No records available for '+label+'.';return;}
+   const headers=[...new Set(rows.flatMap(row=>Object.keys(row)))];
+   const esc=v=>'"'+String(v==null?'':typeof v==='object'?JSON.stringify(v):v).replaceAll('"','""')+'"';
+   const csv=[headers,...rows.map(row=>headers.map(key=>row[key]))].map(line=>line.map(esc).join(',')).join('\\r\\n');
+   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='green-wonderland-'+filename+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+   status.textContent='Exported '+rows.length+' records. Some queries may be limited by the database.';
+  }catch(e){status.textContent='Export failed: '+e.message;}finally{button.disabled=false;}};
+  card.append(title,desc,button);cards.append(card);
+ }
+}
+ const extraPages=[['notifications','Notifications','announcements','✦'],['backups','Export & Backup Center','activity_history','⇩']];
+ const extraNav=new Map();
+ for(const [page,label,feature,glyph] of extraPages){
+  const b=document.createElement('button');b.type='button';b.dataset.sitePage=page;b.className='gw-admin-subitem gw-admin-'+page;
+  const symbol=document.createElement('span');symbol.className='gw-site-icon';symbol.textContent=glyph;
+  const caption=document.createElement('span');caption.className='gw-site-label';caption.textContent=label;b.append(symbol,caption);
+  b.onclick=()=>showSite(page);extraNav.set(page,b);
+ }
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
  const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.className='gw-admin-subitem gw-admin-catalog';catalogLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">▦</span><span class="gw-site-label">Products, Images & Settings</span>';
  const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.className='gw-admin-subitem gw-admin-branding';brandingLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">✦</span><span class="gw-site-label">Branding & Images</span>';
   const auditLink=document.createElement('button');auditLink.type='button';auditLink.dataset.sitePage='audit';auditLink.classList.add('gw-admin-subitem','gw-admin-audit');auditLink.innerHTML='<span class="gw-site-icon">▤</span><span class="gw-site-label">Full Audit Log</span>';
- permissionsNav.classList.add('gw-admin-subitem','gw-admin-permissions');adminSubmenu.append(catalogLink,brandingLink,auditLink,permissionsNav);navButtonAdminPlaceholder();
+ permissionsNav.classList.add('gw-admin-subitem','gw-admin-permissions');adminSubmenu.append(catalogLink,brandingLink,auditLink,permissionsNav,extraNav.get('notifications'),extraNav.get('backups'));navButtonAdminPlaceholder();
  function navButtonAdminPlaceholder(){siteNav.querySelector('[data-site-page="admin"]')?.after(adminSubmenu);}
  catalogLink.onclick=()=>document.querySelector('#adminBtn')?.click();
  brandingLink.onclick=()=>window.gwOpenBrandingAdmin?.();
@@ -383,7 +423,9 @@ if(siteNav&&siteHost){
   navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
   permissionsNav.hidden=!bossAllowed;
    auditLink.hidden=!canFeature('activity_history');
-  navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding')||grantedFeatures.has('activity_history'));
+   extraNav.get('notifications').hidden=!canFeature('announcements');
+   extraNav.get('backups').hidden=!bossAllowed;
+  navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding')||grantedFeatures.has('activity_history')||grantedFeatures.has('announcements'));
   catalogLink.hidden=!bossAllowed;
   brandingLink.hidden=!bossAllowed;
   if(!bossAllowed)adminSubmenu.hidden=true;
@@ -397,10 +439,12 @@ if(siteNav&&siteHost){
  async function showSite(page){
   if(page==='permissions'&&!bossAllowed)return;
    if(page==='audit'&&!canFeature('activity_history'))return;
+  if(page==='backups'&&!bossAllowed)return;
+  if(page==='notifications'&&!canFeature('announcements'))return;
   if(restricted.includes(page)&&!canFeature(featureForPage[page])&&!(page==='announcements'&&canFeature('announcements_manage'))&&!(page==='notes'&&canFeature('employee_notes_manage')&&canFeature('employees')))return;
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
-  if(page!=='permissions'&&page!=='audit')adminSubmenu.hidden=true;
+  if(!['permissions','audit','notifications','backups'].includes(page))adminSubmenu.hidden=true;
   salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics'].includes(page));
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
@@ -408,6 +452,8 @@ if(siteNav&&siteHost){
   if(pos)return;
   if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
    if(page==='audit'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showActivitySearch(mdtContent,{call,token:()=>token||'',make});return;}
+  if(page==='notifications'){adminSubmenu.hidden=false;await showNotifications();return;}
+  if(page==='backups'){adminSubmenu.hidden=false;await showBackupCenter();return;}
   if(page==='analytics'){await showAnalytics(mdtContent,{call,token:()=>token||'',cash,make});return;}
   if(businessPages.some(([name])=>name===page)){shell.hidden=true;siteHost.hidden=false;await renderBusinessPage(page,{host:mdtContent,call,token:()=>token||'',canFeature,cash,make});return;}
   if(page==='admin-legacy'){
