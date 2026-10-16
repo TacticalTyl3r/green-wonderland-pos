@@ -224,6 +224,36 @@ async function renderDashboardAnnouncements(host){
   host.append(list);
  }catch(err){host.replaceChildren(make('p','Unable to load announcements: '+err.message));}
 }
+async function showNotifications(host=mdtContent){
+ host.replaceChildren();
+ const heading=make('div',undefined,'gw-mdt-head');heading.append(make('h2','Notifications'),make('p','Company announcements and important updates.'));
+ host.append(heading);
+ const toolbar=make('div',undefined,'gw-mdt-actions'),list=make('div',undefined,'gw-mdt-roster'),status=make('p','');
+ host.append(toolbar,status,list);
+ if(canFeature('announcements_manage')){
+  const add=make('button','+ New Announcement','primary');toolbar.append(add);
+  add.onclick=()=>{
+   const form=make('form',undefined,'gw-mdt-form'),title=document.createElement('input'),body=document.createElement('textarea'),submit=make('button','Post Announcement','primary'),cancel=make('button','Cancel','outline');
+   title.placeholder='Announcement title';title.required=true;title.maxLength=120;body.placeholder='Write your announcement';body.required=true;body.maxLength=4000;
+   submit.type='submit';cancel.type='button';cancel.onclick=()=>form.remove();
+   form.append(title,body,submit,cancel);toolbar.after(form);title.focus();
+   form.onsubmit=async event=>{event.preventDefault();submit.disabled=true;status.textContent='Posting announcement…';try{
+    await call('gw_mdt_announcement_create',{p_token:token||'',p_title:title.value.trim(),p_body:body.value.trim()});
+    await showNotifications(host);
+   }catch(e){status.textContent='Could not post announcement: '+e.message;submit.disabled=false;}};
+  };
+ }
+ try{
+  const rows=await call('gw_mdt_announcements_list',{p_token:token||''});
+  status.textContent=rows?.length?rows.length+' announcement'+(rows.length===1?'':'s'):'';
+  if(!rows?.length){list.append(make('p','No announcements yet.'));return;}
+  for(const item of rows){
+   const card=make('article',undefined,'gw-feature-card');
+   card.append(make('strong',item.title||'Announcement'),make('p',item.body||''),make('small',(item.author||'Management')+' · '+new Date(item.created_at).toLocaleString()));
+   list.append(card);
+  }
+ }catch(e){status.textContent='Unable to load announcements: '+e.message;}
+}
 function renderMdt(){
  mdtContent.replaceChildren();
  if(mdtPage==='time'){const clockCard=make('div',undefined,'gw-mdt-stat');clockCard.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const openClock=make('button','Open Time Clock','primary');openClock.onclick=()=>button.click();clockCard.append(openClock);mdtContent.append(clockCard);if(canFeature('time_history')){const history=make('button','Adjustment History','outline');history.onclick=showTimeHistory;mdtContent.append(history);}}
@@ -364,36 +394,6 @@ if(siteNav&&siteHost){
   if(!token||!me)return;
   try{const rows=await call('gw_mdt_my_permissions',{p_token:token});for(const item of rows||[])if(item.allowed)grantedFeatures.add(item.feature);}catch(e){console.warn('Unable to load MDT role permissions',e);}
  }
-async function showNotifications(host=mdtContent){
- host.replaceChildren();
- const heading=make('div',undefined,'gw-mdt-head');heading.append(make('h2','Notifications'),make('p','Company announcements and important updates.'));
- host.append(heading);
- const toolbar=make('div',undefined,'gw-mdt-actions'),list=make('div',undefined,'gw-mdt-roster'),status=make('p','');
- host.append(toolbar,status,list);
- if(canFeature('announcements_manage')){
-  const add=make('button','+ New Announcement','primary');toolbar.append(add);
-  add.onclick=()=>{
-   const form=make('form',undefined,'gw-mdt-form'),title=document.createElement('input'),body=document.createElement('textarea'),submit=make('button','Post Announcement','primary'),cancel=make('button','Cancel','outline');
-   title.placeholder='Announcement title';title.required=true;title.maxLength=120;body.placeholder='Write your announcement';body.required=true;body.maxLength=4000;
-   submit.type='submit';cancel.type='button';cancel.onclick=()=>form.remove();
-   form.append(title,body,submit,cancel);toolbar.after(form);title.focus();
-   form.onsubmit=async event=>{event.preventDefault();submit.disabled=true;status.textContent='Posting announcement…';try{
-    await call('gw_mdt_announcement_create',{p_token:token||'',p_title:title.value.trim(),p_body:body.value.trim()});
-    await showNotifications(host);
-   }catch(e){status.textContent='Could not post announcement: '+e.message;submit.disabled=false;}};
-  };
- }
- try{
-  const rows=await call('gw_mdt_announcements_list',{p_token:token||''});
-  status.textContent=rows?.length?rows.length+' announcement'+(rows.length===1?'':'s'):'';
-  if(!rows?.length){list.append(make('p','No announcements yet.'));return;}
-  for(const item of rows){
-   const card=make('article',undefined,'gw-feature-card');
-   card.append(make('strong',item.title||'Announcement'),make('p',item.body||''),make('small',(item.author||'Management')+' · '+new Date(item.created_at).toLocaleString()));
-   list.append(card);
-  }
- }catch(e){status.textContent='Unable to load announcements: '+e.message;}
-}
 async function showBackupCenter(){
  mdtContent.replaceChildren();
  const heading=make('div',undefined,'gw-mdt-head');heading.append(make('h2','Export & Backup Center'),make('p','Download available business records as CSV files. Exports reflect the permissions and records returned by the database.'));
