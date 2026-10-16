@@ -5,6 +5,7 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  let loyaltyConfig={earn_per_amount:100,point_value:1,enabled:true},loyaltyConfigReady=false;
  try{favorites=JSON.parse(localStorage.getItem('gw-pos-favorites')||'[]');if(!Array.isArray(favorites))favorites=[];}catch(e){}
  const root=document.createElement('section');root.className='gw-phase4-checkout';
+ const checkoutRewards=document.createElement('section');checkoutRewards.className='gw-checkout-rewards';
  const favoritesRoot=document.createElement('section');favoritesRoot.className='gw-pos-favorites';
  const token=()=>getToken();
  const rpc=async(name,args={})=>{if(!db)throw Error('Supabase is not configured');const {data,error}=await db.rpc(name,args);if(error)throw Error(error.message);return data;};
@@ -39,8 +40,39 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  const setMember=m=>{member=m;redeem=0;render();onCartChanged();if(m)refreshCatalogRewards();};
  const applicablePoints=due=>loyaltyConfigReady&&Number(loyaltyConfig.point_value)>0?Math.max(0,Math.min(Math.max(0,Math.floor(member?.points||0)),redeem,Math.floor((Math.max(0,Number(due)||0)+0.000001)/Number(loyaltyConfig.point_value)))):0;
  const estimateRedemption=due=>Math.round(applicablePoints(due)*Number(loyaltyConfig.point_value)*100)/100;
+ const renderCheckoutRewards=()=>{
+  checkoutRewards.replaceChildren();
+  const title=document.createElement('strong');title.textContent='Loyalty at Checkout';checkoutRewards.append(title);
+  if(!member){const hint=document.createElement('small');hint.textContent='Find a customer CID above to apply or redeem loyalty points.';checkoutRewards.append(hint);return;}
+  const info=document.createElement('small');info.textContent=member.display_name+' · '+member.points+' points available';checkoutRewards.append(info);
+  const row=document.createElement('div');row.className='gw-checkout-rewards-actions';
+  const points=document.createElement('input');points.type='number';points.min='0';points.step='1';points.max=String(Math.max(0,member.points));points.value=String(redeem);points.setAttribute('aria-label','Points to redeem against checkout total');
+  points.oninput=()=>{redeem=Math.max(0,Math.min(Math.max(0,member.points),Math.floor(Number(points.value)||0)));const other=root.querySelector('.gw-loyalty-redeem input');if(other)other.value=String(redeem);onCartChanged();};
+  const max=document.createElement('button');max.type='button';max.className='outline';max.textContent='Use All Points';max.onclick=()=>{redeem=Math.max(0,Math.floor(member.points));points.value=String(redeem);const other=root.querySelector('.gw-loyalty-redeem input');if(other)other.value=String(redeem);onCartChanged();};
+  row.append(points,max);checkoutRewards.append(row);
+  const note=document.createElement('small');note.textContent='Points discount applies when you complete checkout. Catalog rewards are redeemed separately below.';checkoutRewards.append(note);
+  if(catalogReady&&catalogRewards.length){
+   const selection=document.createElement('select');selection.setAttribute('aria-label','Choose catalog reward');
+   const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Select catalog reward';selection.append(placeholder);
+   for(const reward of catalogRewards){const option=document.createElement('option');option.value=reward.id;option.textContent=reward.title+' — '+reward.points_cost+' pts';option.disabled=Number(member.points)<Number(reward.points_cost);selection.append(option);}
+   const redeemButton=document.createElement('button');redeemButton.type='button';redeemButton.className='outline';redeemButton.textContent='Redeem Reward';
+   redeemButton.onclick=async()=>{
+    const reward=catalogRewards.find(x=>x.id===selection.value);if(!reward)return;
+    if(!confirm('Redeem '+reward.title+' for '+reward.points_cost+' points for '+member.display_name+'?'))return;
+    redeemButton.disabled=true;
+    try{
+     const rows=await rpc('gw_pos_redeem_catalog_reward',{p_token:token(),p_member:member.id,p_reward:reward.id});
+     const result=Array.isArray(rows)?rows[0]:rows;
+     if(!result||!Number.isFinite(Number(result.points_remaining)))throw Error('Redemption response was incomplete');
+     member={...member,points:Number(result.points_remaining)};redeem=Math.min(redeem,Math.max(0,member.points));
+     render();onCartChanged();alert('Reward redeemed. Remaining points: '+member.points);
+    }catch(e){alert('Reward not redeemed: '+e.message);redeemButton.disabled=false;}
+   };
+   const catalogRow=document.createElement('div');catalogRow.className='gw-checkout-rewards-actions';catalogRow.append(selection,redeemButton);checkoutRewards.append(catalogRow);
+  }
+ };
  const render=()=>{
-  root.replaceChildren();
+  root.replaceChildren();renderCheckoutRewards();
   const heading=document.createElement('div');heading.className='gw-phase4-heading';
   heading.innerHTML='<strong>✦ CUSTOMER REWARDS</strong>';const rate=document.createElement('small');rate.textContent=loyaltyConfigReady?'1 point per '+money(Number(loyaltyConfig.earn_per_amount))+' spent · 1 point = '+money(Number(loyaltyConfig.point_value)):'Sign in to view reward rates';heading.append(rate);root.append(heading);
   const field=document.createElement('div');field.className='gw-phase4-field';
@@ -63,7 +95,7 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
    info.append(text,remove);root.append(info);
    const label=document.createElement('label');label.className='gw-loyalty-redeem';label.textContent='Points to redeem (1 point = '+money(Number(loyaltyConfig.point_value))+')';
    const entry=document.createElement('input');entry.type='number';entry.min='0';entry.step='1';entry.max=String(Math.max(0,member.points));entry.value=String(redeem);
-   entry.oninput=()=>{redeem=Math.max(0,Math.min(member.points,Math.max(0,Math.floor(Number(entry.value)||0))));onCartChanged();};
+   entry.oninput=()=>{redeem=Math.max(0,Math.min(member.points,Math.max(0,Math.floor(Number(entry.value)||0))));renderCheckoutRewards();onCartChanged();};
    label.append(entry);root.append(label);
    const catalog=document.createElement('div');catalog.className='gw-pos-offer-list gw-catalog-rewards';
    const catalogTitle=document.createElement('strong');catalogTitle.textContent='Redeem a Catalog Reward';catalog.append(catalogTitle);
@@ -135,6 +167,6 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   }
   return result;
  };
- return {root,favoritesRoot,render,renderFavorites,refreshOffers,toggleFavorite,checkFavorite:id=>favorites.includes(String(id)),
+ return {root,checkoutRewards,favoritesRoot,render,renderFavorites,refreshOffers,toggleFavorite,checkFavorite:id=>favorites.includes(String(id)),
   bestSpecial,preview,estimateRedemption,checkout,refreshLoyaltyConfig,isReady:()=>ready,getMember:()=>member,getRedeem:()=>redeem,clearMember:()=>setMember(null)};
 }
