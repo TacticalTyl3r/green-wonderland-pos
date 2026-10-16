@@ -69,13 +69,13 @@ function receiptLoyaltyRows(s){
  return rows;
 }
 function receiptDiscountRows(s){
- const d=s.loyalty_meta;
+ const d=s.loyalty_meta||s.receipt_financials;
  if(!d)return [];
  const rows=[];
  const add=(label,value)=>{const n=Number(value);if(Number.isFinite(n)&&n>0)rows.push([label,'−'+money(n)]);};
- add('Specials & bundle savings',d.offer_discount);
- add('Manual discount',d.manual_discount);
- add('Loyalty points discount',d.reward_discount);
+ add('Specials & bundle savings',d.offer_discount??d.offerDiscount);
+ add('Manual discount',d.manual_discount??d.discount);
+ add('Loyalty points discount',d.reward_discount??d.rewards);
  return rows;
 }
 function receiptText(s){
@@ -84,7 +84,9 @@ function receiptText(s){
  const rows=['**Green Wonderland Receipt**','Date/Time: '+d,'Employee: '+(s.employee_name||'Unknown'),'','**Ordered**'];
  if(items.length)for(const x of items)rows.push('• '+x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'')+' — '+money(x.total));
  else rows.push('• Itemized products unavailable for this sale');
- rows.push('────────────────────────','• Price: '+money(s.total));
+ rows.push('────────────────────────');
+ if(s.receipt_financials?.subtotal!=null)rows.push('• Subtotal: '+money(s.receipt_financials.subtotal));
+ rows.push('• Price: '+money(s.total));
  if(s.store_share!=null)rows.push('• Store (10% of sale): '+money(s.store_share));
  if(s.employee_share!=null)rows.push('• Employee Keeps: '+money(s.employee_share));
  rows.push('• Fulfillment: '+(s.fulfillment||'pickup'));
@@ -94,6 +96,7 @@ function receiptText(s){
 }
 async function showSaleReceipt(s){
  if(!saleLines(s).length){const cached=cachedReceiptItems(s.sale_id||s.id);if(cached?.length)s.line_items=cached;}
+ if(!s.receipt_financials){try{s.receipt_financials=JSON.parse(localStorage.getItem('gw-receipt-financials-'+String(s.sale_id||s.id))||'null');}catch(e){}}
  const dlg=document.createElement('dialog');dlg.className='gw-choice-dialog gw-receipt-dialog gw-paper-receipt';
  const heading=document.createElement('h3');heading.textContent='GREEN WONDERLAND';
  const subtitle=document.createElement('p');subtitle.textContent='SALES RECEIPT';
@@ -110,7 +113,7 @@ async function showSaleReceipt(s){
  copy.onclick=async()=>{try{await navigator.clipboard.writeText(receiptText(s));copy.textContent='✓ Copied!';}catch(e){const area=document.createElement('textarea');area.value=receiptText(s);area.readOnly=true;dlg.append(area);area.focus();area.select();copy.textContent='Select and copy receipt text';}};
  const close=document.createElement('button');close.type='button';close.className='outline';close.textContent='Close';close.onclick=()=>dlg.close();
  actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,discountsHost,phase4Summary,actions);
- const draw=()=>{itemsHost.replaceChildren();totalsHost.replaceChildren();const items=saleLines(s);note.textContent=items.length?'':'Itemized products not available for this sale.';for(const x of items){const row=document.createElement('div');row.className='gw-paper-item';const name=document.createElement('span');name.textContent=x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'');const price=document.createElement('strong');price.textContent=money(x.total);row.append(name,price);itemsHost.append(row);}for(const [label,value] of [['Price',money(s.total)],...(s.store_share!=null?[['Store (10% of sale)',money(s.store_share)]]:[]),...(s.employee_share!=null?[['Employee Keeps',money(s.employee_share)]]:[]),['Fulfillment',s.fulfillment||'pickup']]){const row=document.createElement('div');row.className='gw-paper-total';const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;row.append(name,amount);totalsHost.append(row);}};
+ const draw=()=>{itemsHost.replaceChildren();totalsHost.replaceChildren();const items=saleLines(s);note.textContent=items.length?'':'Itemized products not available for this sale.';for(const x of items){const row=document.createElement('div');row.className='gw-paper-item';const name=document.createElement('span');name.textContent=x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'');const price=document.createElement('strong');price.textContent=money(x.total);row.append(name,price);itemsHost.append(row);}for(const [label,value] of [...(s.receipt_financials?.subtotal!=null?[['Subtotal',money(s.receipt_financials.subtotal)]]:[]),['Price',money(s.total)],...(s.store_share!=null?[['Store (10% of sale)',money(s.store_share)]]:[]),...(s.employee_share!=null?[['Employee Keeps',money(s.employee_share)]]:[]),['Fulfillment',s.fulfillment||'pickup']]){const row=document.createElement('div');row.className='gw-paper-total';const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;row.append(name,amount);totalsHost.append(row);}};
  draw();
  const showDiscounts=()=>{
   discountsHost.replaceChildren();const rows=receiptDiscountRows(s);
@@ -131,6 +134,7 @@ async function showSaleReceipt(s){
  const saleId=s.sale_id||s.id;
  if(db&&saleId){
   const id=String(saleId);
+  const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}}).catch(error=>console.warn('Saved receipt discounts unavailable:',error.message));
   const details=db.rpc('gw_pos_sale_details',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
    if(Array.isArray(data)&&data.length){s.loyalty_meta=data[0];showDiscounts();showLoyalty();}
@@ -162,7 +166,7 @@ async function showSaleReceipt(s){
    draw();
   })();
   if(!saleLines(s).length)note.textContent='Loading ordered products…';
-  await Promise.allSettled([details,snapshot,products]);
+  await Promise.allSettled([financials,details,snapshot,products]);
  }
 
 }
@@ -218,6 +222,9 @@ $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat
   if(result.sale_id){
    const receiptItems=l.map(({p,qty,choice})=>({name:p.name,qty,choice,total:Math.round(Number(p.price)*qty*100)/100}));
    try{localStorage.setItem(receiptItemsKey(result.sale_id),JSON.stringify(receiptItems));}catch(e){}
+   const receiptFinancials={subtotal:t.subtotal,offer_discount:t.offerDiscount,manual_discount:t.discount,reward_discount:t.rewards,delivery:t.delivery};
+   try{localStorage.setItem('gw-receipt-financials-'+String(result.sale_id),JSON.stringify(receiptFinancials));}catch(e){}
+   try{const {error}=await db.rpc('gw_pos_save_receipt_financials',{p_token:activeToken,p_sale:String(result.sale_id),p_details:receiptFinancials});if(error)throw Error(error.message);}catch(error){console.warn('Receipt discounts were not saved centrally:',error.message);}
    try{
     const {error}=await db.rpc('gw_pos_save_receipt_items',{p_token:activeToken,p_sale:String(result.sale_id),p_items:receiptItems});
     if(error)throw Error(error.message);
