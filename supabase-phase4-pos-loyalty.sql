@@ -85,7 +85,7 @@ begin
  if p_end is not null and p_start is not null and p_end<=p_start then raise exception 'Invalid offer dates';end if;
  if p_type='special' then
   if p_product is null or not exists(select 1 from public.products where id::text=p_product and active) or p_percent<=0 or p_percent>100
-  then raise exception 'Choose an active product and discount from 0.01 to 100%';end if;
+  then raise exception 'Choose an active product and discount from 0.01 to 100%%';end if;
  else
   if p_price is null or p_price<0 or jsonb_typeof(p_items) is distinct from 'array' or jsonb_array_length(p_items) not between 1 and 15 then raise exception 'Invalid bundle';end if;
   for v_item in select value from jsonb_array_elements(p_items) loop
