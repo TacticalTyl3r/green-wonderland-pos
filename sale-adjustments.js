@@ -10,6 +10,7 @@ export async function showSaleAdjustments(host,{call,token,canFeature,cash,make}
  host.append(search,status,list,make('h3','Adjustment History'),journal);
  const rpc=(name,args={})=>call(name,{p_token:token(),...args});
  const canAdjust=canFeature('sales_adjust');
+ if(canAdjust&&!token()){const hint=make('p','Sign in with your employee PIN before issuing refunds or voids so the adjustment records your name.');host.insertBefore(hint,list);}
  const render=async()=>{
   status.textContent='Loading sales…';list.replaceChildren();journal.replaceChildren();
   try{
@@ -23,6 +24,7 @@ export async function showSaleAdjustments(host,{call,token,canFeature,cash,make}
     if(canAdjust&&Number(sale.remaining)>0){
      const button=make('button','Refund / Void','outline');card.append(button);
      button.onclick=()=>{
+      if(!token()){status.textContent='Sign in with your own employee PIN before processing a refund or void, so your name is recorded.';return;}
       card.querySelector('form')?.remove();
       const form=make('form',undefined,'gw-mdt-form');
       const type=document.createElement('select');
