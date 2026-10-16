@@ -376,12 +376,15 @@ async function showRolePermissions(){
   const panelHead=make('div',undefined,'gw-permissions-panel-head');
   panelHead.append(make('h3','◈  Permissions'),make('p','Enable or disable what this position can access.'));
   panel.append(panelHead);
+  const filter=document.createElement('input');filter.type='search';filter.placeholder='Search permissions';panel.append(filter);const summary=make('p','','gw-permissions-count');panel.append(summary);
   const list=make('div',undefined,'gw-permissions-list');panel.append(list);mdtContent.append(panel);
   const footer=make('div',undefined,'gw-permissions-footer');
   const cancel=make('button','↺  Discard Changes','gw-permissions-cancel');cancel.type='button';
   const save=make('button','▣  Save Permissions','gw-permissions-save');save.type='button';
   footer.append(cancel,save);mdtContent.append(footer);
   let pending=new Map(),initial=new Map();
+  const refreshList=()=>{let shown=0;for(const row of list.children){row.hidden=!row.textContent.toLowerCase().includes(filter.value.trim().toLowerCase());if(!row.hidden)shown++;}summary.textContent=[...pending.values()].filter(Boolean).length+' enabled / '+pending.size+' permissions · '+shown+' displayed';};
+  filter.oninput=refreshList;
   function populate(){
    list.replaceChildren();pending=new Map();initial=new Map();
    const role=selector.value;
@@ -397,10 +400,10 @@ async function showRolePermissions(){
     const input=document.createElement('input');input.type='checkbox';input.checked=enabled;input.className='gw-permissions-checkbox';input.setAttribute('aria-label',label);
     const track=make('span',undefined,'gw-permissions-track');
     const state=make('span',enabled?'On':'Off','gw-permissions-state');
-    input.onchange=()=>{pending.set(feature,input.checked);state.textContent=input.checked?'On':'Off';mdtMessage.textContent='Unsaved changes · Click Save Permissions to apply.';};
+    input.onchange=()=>{pending.set(feature,input.checked);state.textContent=input.checked?'On':'Off';refreshList();mdtMessage.textContent='Unsaved changes · Click Save Permissions to apply.';};
     control.append(input,track,state);row.append(badge,detail,control);list.append(row);
    }
-   mdtMessage.textContent='';
+   mdtMessage.textContent='';refreshList();
   }
   selector.onchange=populate;
   cancel.onclick=populate;
