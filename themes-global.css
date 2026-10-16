@@ -81,3 +81,13 @@ body[data-theme] #gwProfilePreview[hidden]{display:none}
 body[data-theme] #gwProfileUrl{flex:1 1 230px;min-width:0;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:12px}
 body[data-theme] #gwProfileSection{border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:16px;margin:20px 0}
 body[data-theme] #gwProfileSection h3{margin:0 0 8px}
+
+/* Prominent rank group headers: theme-aware, with a distinct accent per rank */
+body[data-theme] .gw-roster-section{--rank-color:var(--accent);--rank-tint:color-mix(in srgb,var(--rank-color) 12%,var(--panel2));margin:0 0 28px}
+body[data-theme] .gw-roster-section:nth-child(1){--rank-color:#e8bd66}
+body[data-theme] .gw-roster-section:nth-child(2){--rank-color:#9aacf6}
+body[data-theme] .gw-roster-section:nth-child(3){--rank-color:#68c5b4}
+body[data-theme] .gw-roster-section:nth-child(4){--rank-color:#b9a1d9}
+body[data-theme] .gw-roster-section>h3{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 14px;padding:13px 16px;border:1px solid color-mix(in srgb,var(--rank-color) 45%,var(--line));border-left:5px solid var(--rank-color);border-radius:10px;background:var(--rank-tint);color:var(--rank-color)!important;font-size:16px;font-weight:800;letter-spacing:.35px;text-transform:uppercase}
+body[data-theme] .gw-roster-section>h3::before{content:'';width:8px;height:8px;flex-shrink:0;border-radius:50%;background:var(--rank-color);box-shadow:0 0 0 4px color-mix(in srgb,var(--rank-color) 16%,transparent)}
+body[data-theme] .gw-roster-section .gw-roster-card{border-color:color-mix(in srgb,var(--rank-color) 24%,var(--line))}
