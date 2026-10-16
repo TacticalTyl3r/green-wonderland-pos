@@ -57,6 +57,20 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
     const cards=make('div',undefined,'gw-mdt-stats');
     for(const [name,key] of [['Today','today_sales'],['This Week','weekly_sales'],['Lifetime','lifetime_sales']]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',name+' Sales'),make('strong',cash(rows.reduce((sum,e)=>sum+Number(e[key]||0),0))));cards.append(card);}
     host.insertBefore(cards,list);
+    try{
+     const adjustmentRows=await rpc('gw_mdt_sale_adjustment_totals');
+     const adjustments=Array.isArray(adjustmentRows)?adjustmentRows[0]:adjustmentRows;
+     if(adjustments){
+      const adjusted=make('div',undefined,'gw-mdt-stats');
+      for(const [period,grossKey,adjustKey] of [['Today','today_sales','today_adjustments'],['This Week','weekly_sales','weekly_adjustments'],['Lifetime','lifetime_sales','lifetime_adjustments']]){
+       const refunds=Number(adjustments[adjustKey]||0),gross=rows.reduce((sum,e)=>sum+Number(e[grossKey]||0),0);
+       const card=make('div',undefined,'gw-mdt-stat');
+       card.append(make('small',period+' Refunds / Voids'),make('strong',cash(refunds)),make('small',period+' Net After Adjustments'),make('strong',cash(gross-refunds)));
+       adjusted.append(card);
+      }
+      host.insertBefore(adjusted,list);
+     }
+    }catch(err){const message=make('p','Net adjustment totals are available after the Phase 2 database migration.');host.insertBefore(message,list);}
     const exportReport=make('button','Export Employee Sales CSV','outline');exportReport.onclick=()=>exportCsv('green-wonderland-employee-sales.csv',['Employee','Role','Today','This Week','Lifetime','Orders'],rows.map(e=>[e.employee_name,e.employee_role,e.today_sales,e.weekly_sales,e.lifetime_sales,e.total_orders]));host.insertBefore(exportReport,list);
     const discord=make('button','Copy Weekly Report for Discord','outline');
     discord.onclick=async()=>{const top=[...rows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0)).slice(0,5);
