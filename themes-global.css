@@ -537,3 +537,23 @@ body[data-theme] .gw-adjustment-actor{color:var(--adjust-color);font-weight:800;
 body[data-theme] .gw-adjustment-sale-id{font-size:11px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}
 body[data-theme] .gw-adjustment-field:last-child{grid-column:1/-1}
 @media(max-width:430px){body[data-theme] .gw-adjustment-fields{grid-template-columns:1fr}body[data-theme] .gw-adjustment-field:last-child{grid-column:auto}}
+
+/* Phase 3: theme-aware security, dashboard preferences and milestone cards */
+body[data-theme] .gw-dashboard-widget{margin:22px 0 26px}
+body[data-theme] .gw-dashboard-widget.gw-dashboard-notifications{margin-top:16px;margin-bottom:30px}
+body[data-theme] .gw-dashboard-preferences{display:grid;gap:9px;width:100%}
+body[data-theme] .gw-dashboard-preference{display:flex;align-items:center;gap:12px;padding:9px 11px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+body[data-theme] .gw-dashboard-preference>span{flex:1;color:var(--text);font-size:13px;font-weight:650}
+body[data-theme] .gw-dashboard-preference>input{accent-color:var(--accent);width:17px;height:17px}
+body[data-theme] .gw-dashboard-preference>button{width:34px;min-width:34px;height:32px;padding:0}
+body[data-theme] .gw-achievement-badges{display:flex;gap:8px;flex-wrap:wrap}
+body[data-theme] .gw-achievement-badge{display:inline-flex;align-items:center;padding:7px 11px;border-radius:20px;font-weight:800;font-size:11px;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line))}
+body[data-theme] .gw-site-submenu .gw-admin-security{--sub-icon-color:#58d6ba}
+body[data-theme] .gw-security-session{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;width:100%;padding:10px 0;border-top:1px solid var(--line)}
+body[data-theme] .gw-security-session>span{flex:1;font-size:11px;line-height:1.5;color:var(--muted)}
+body[data-theme] .gw-security-session button{font-size:11px;padding:7px 10px;min-height:30px}
+body[data-theme] .gw-notice-card{transition:border-color .15s ease,background .15s ease}
+body[data-theme] .gw-notice-card.gw-notice-unread{border-left:4px solid var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+body[data-theme] .gw-notice-heading{display:flex;align-items:center;gap:12px;justify-content:space-between;width:100%;flex-wrap:wrap}
+body[data-theme] .gw-notice-heading button{font-size:11px;padding:7px 10px;min-height:30px}
+body[data-theme] .gw-notice-heading button:disabled{opacity:.55;cursor:default}
