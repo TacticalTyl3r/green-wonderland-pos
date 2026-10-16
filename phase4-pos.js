@@ -34,7 +34,7 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   return{subtotal,discount:Math.min(subtotal,Math.round(Math.max(specialDiscount,bestBundle)*100)/100),bundles:bundleDetails};
  };
  const setMember=m=>{member=m;redeem=0;render();onCartChanged();};
- const estimateRedemption=(due)=>Math.min(Math.max(0,Math.floor(due)),member?.points||0,redeem);
+ const estimateRedemption=(due)=>Math.max(0,Math.min(Math.max(0,Math.floor(due)),Math.max(0,member?.points||0),redeem));
  const render=()=>{
   root.replaceChildren();
   const heading=document.createElement('div');heading.className='gw-phase4-heading';
@@ -54,12 +54,12 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   if(member){
    const info=document.createElement('div');info.className='gw-loyalty-member';
    const text=document.createElement('div');text.innerHTML='<strong></strong><small></small>';text.querySelector('strong').textContent=member.display_name+' · '+member.member_code;
-   text.querySelector('small').textContent=member.points+' points available';
+   text.querySelector('small').textContent=member.points<0?'Point balance: '+member.points+' (future points first offset refunded purchases)':member.points+' points available';
    const remove=document.createElement('button');remove.className='outline';remove.textContent='Remove';remove.onclick=()=>setMember(null);
    info.append(text,remove);root.append(info);
    const label=document.createElement('label');label.className='gw-loyalty-redeem';label.textContent='Points to redeem (1 point = $1)';
-   const entry=document.createElement('input');entry.type='number';entry.min='0';entry.step='1';entry.max=String(member.points);entry.value=String(redeem);
-   entry.oninput=()=>{redeem=Math.min(member.points,Math.max(0,Math.floor(Number(entry.value)||0)));onCartChanged();};
+   const entry=document.createElement('input');entry.type='number';entry.min='0';entry.step='1';entry.max=String(Math.max(0,member.points));entry.value=String(redeem);
+   entry.oninput=()=>{redeem=Math.max(0,Math.min(member.points,Math.max(0,Math.floor(Number(entry.value)||0))));onCartChanged();};
    label.append(entry);root.append(label);
   }
   const offerInfo=document.createElement('div');offerInfo.className='gw-pos-offer-list';
