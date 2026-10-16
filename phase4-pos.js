@@ -37,7 +37,8 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  };
  const refreshCatalogRewards=async()=>{if(!token()){catalogRewards=[];catalogReady=false;return;}try{catalogRewards=await rpc('gw_pos_catalog_rewards',{p_token:token()});catalogReady=true;}catch(e){catalogRewards=[];catalogReady=false;}render();};
  const setMember=m=>{member=m;redeem=0;render();onCartChanged();if(m)refreshCatalogRewards();};
- const estimateRedemption=(due)=>loyaltyConfigReady?Math.max(0,Math.min(Math.max(0,due),Math.round(Math.max(0,Math.min(member?.points||0,redeem))*Number(loyaltyConfig.point_value)*100)/100)):0;
+ const applicablePoints=due=>loyaltyConfigReady&&Number(loyaltyConfig.point_value)>0?Math.max(0,Math.min(Math.max(0,Math.floor(member?.points||0)),redeem,Math.floor((Math.max(0,Number(due)||0)+0.000001)/Number(loyaltyConfig.point_value)))):0;
+ const estimateRedemption=due=>Math.round(applicablePoints(due)*Number(loyaltyConfig.point_value)*100)/100;
  const render=()=>{
   root.replaceChildren();
   const heading=document.createElement('div');heading.className='gw-phase4-heading';
@@ -120,12 +121,12 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id].slice(-24);
   localStorage.setItem('gw-pos-favorites',JSON.stringify(favorites));onCartChanged();
  };
- const checkout=async({items,fulfillment,zone,discount,employee,expectedTotal})=>{
+ const checkout=async({items,fulfillment,zone,discount,employee,expectedTotal,availableDue})=>{
   if(!ready)throw Error('Phase 4 SQL migration is not installed or offers are not available');
   if(member){await refreshLoyaltyConfig();if(!loyaltyConfigReady)throw Error('Reward settings unavailable. No sale was recorded.');}
   const rows=await rpc('gw_pos_checkout_v4',{p_token:token(),p_employee:employee||null,
    p_items:items,p_fulfillment:fulfillment,p_zone:zone||null,p_manual_percent:discount,
-   p_member:member?.id||null,p_redeem:Math.min(redeem,Math.max(0,Math.floor((Number(expectedTotal)+0.000001)/Number(loyaltyConfig.point_value||1)))),p_expected_total:expectedTotal});
+   p_member:member?.id||null,p_redeem:applicablePoints(availableDue),p_expected_total:expectedTotal});
   if(!rows?.length)throw Error('Checkout did not return a sale');
   const result=rows[0];
   if(member){
