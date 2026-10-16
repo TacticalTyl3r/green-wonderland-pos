@@ -53,3 +53,12 @@ body[data-theme] .gw-time-type button{background:var(--panel);color:var(--text);
 body[data-theme] .gw-time-type button.active{background:var(--gw-accent-soft);border-color:var(--accent)}
 body[data-theme] .gw-time-employee{color:var(--text);padding:12px;border:1px solid var(--line);border-radius:9px}
 @media(max-width:550px){body[data-theme] .gw-mdt-stats{grid-template-columns:1fr}}
+
+body[data-theme] #adminDialog{width:min(1100px,96vw);max-height:92vh;overflow-y:auto;background:var(--panel);color:var(--text)}
+body[data-theme] .gw-catalog-search{display:block;width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:12px;margin:12px 0}
+body[data-theme] #adminProducts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body[data-theme] .gw-catalog-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;min-width:0}
+body[data-theme] .gw-catalog-editor>input{width:100%;min-width:0;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}
+body[data-theme] .gw-catalog-editor>label:has([data-field="image_url"]),body[data-theme] .gw-catalog-editor>.gw-admin-image-row,body[data-theme] .gw-catalog-editor>.gw-editor-list{grid-column:1/-1}
+body[data-theme] .gw-catalog-editor .gw-admin-image-row img{max-width:100px;max-height:100px;object-fit:contain}
+@media(max-width:850px){body[data-theme] #adminProducts{grid-template-columns:1fr}}
