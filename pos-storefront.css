@@ -110,16 +110,46 @@ body:not(.light){background:#050c0a;color:#eef6f0}
  .gw-site-content .shell .catalog .gw-catalog-sidebar .gw-favorite-items button{width:auto}
 }
 
-/* Short desktop screens: let the whole page scroll to checkout.
-   Avoid clipping the catalog or placing an overlay over order controls. */
-@media (min-width:951px) and (max-height:900px){
+
+/* Desktop: keep Current Order on-screen, scroll its contents, and retain checkout
+   controls at the bottom. Catalog remains in its own unobstructed grid column. */
+@media (min-width:951px){
  .gw-site-content .shell main>.order{
-  position:static!important;
-  top:auto!important;
-  max-height:none!important;
-  overflow:visible!important;
+  position:sticky!important;
+  top:12px!important;
+  height:calc(100dvh - 24px);
+  max-height:calc(100dvh - 24px)!important;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden!important;
  }
- .gw-site-content .shell main{
-  align-items:start;
+ .gw-site-content .shell main>.order>.section-head,
+ .gw-site-content .shell main>.order>.ordertabs{
+  flex-shrink:0;
+ }
+ .gw-site-content .shell main>.order>#cartView{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  overscroll-behavior:contain;
+  display:flex;
+  flex-direction:column;
+ }
+ .gw-site-content .shell main>.order>#cartView>.checkout{
+  position:sticky;
+  bottom:0;
+  z-index:2;
+  flex-shrink:0;
+  margin-top:auto;
+  padding:10px 0 4px;
+  background:var(--panel);
+  border-top:1px solid var(--line);
+ }
+ .gw-site-content .shell main>.order>#ingredientsView:not([hidden]),
+ .gw-site-content .shell main>.order>#historyView:not([hidden]){
+  min-height:0;
+  overflow-y:auto;
  }
 }
