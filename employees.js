@@ -22,7 +22,7 @@ const weeklyHours=document.querySelector('#gwWeeklyHours');
 async function refreshWeeklyHours(){if(!weeklyHours)return;if(!token||!me){weeklyHours.textContent='This Week: —';return;}try{const hours=await call('gw_my_weekly_hours',{p_token:token});weeklyHours.textContent='This Week: '+Number(hours||0).toFixed(2)+' hrs';}catch(e){weeklyHours.textContent='This Week: unavailable';}}
 function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);clockStatus.classList.toggle('off-duty',!me?.clocked_in);}if(quickClock){quickClock.textContent=me?.clocked_in?'Clock Out':'Clock In';quickClock.classList.toggle('on-duty',!!me?.clocked_in);quickClock.classList.toggle('off-duty',!me?.clocked_in);}}
 dlg.querySelector('#gwEmpClose').onclick=()=>dlg.close();
-const button=document.createElement('button');button.className='outline';button.textContent='◷ Employee';button.onclick=async()=>{dlg.showModal();await refresh();};document.querySelector('header .actions')?.append(button);
+const button=document.createElement('button');button.id='gwEmployeeAccess';button.className='outline';button.textContent='◷ Employee';button.onclick=async()=>{dlg.showModal();await refresh();};document.querySelector('header .actions')?.append(button);
 const select=document.createElement('select');select.id='gwSaleEmployee';select.setAttribute('aria-label','Employee credited for this sale');
 const holder=document.createElement('div');holder.className='control';holder.innerHTML='<label>Sale credited to</label>';holder.append(select);
 document.querySelector('#cartView .checkout')?.before(holder);
