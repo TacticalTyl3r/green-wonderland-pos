@@ -46,7 +46,23 @@ async function showSaleReceipt(s){
  actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,actions);
  const draw=()=>{itemsHost.replaceChildren();totalsHost.replaceChildren();const items=saleLines(s);note.textContent=items.length?'':'Itemized products were not saved for this older sale.';for(const x of items){const row=document.createElement('div');row.className='gw-paper-item';const name=document.createElement('span');name.textContent=x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'');const price=document.createElement('strong');price.textContent=money(x.total);row.append(name,price);itemsHost.append(row);}for(const [label,value] of [['Price',money(s.total)],...(s.store_share!=null?[['Store (10% of sale)',money(s.store_share)]]:[]),...(s.employee_share!=null?[['Employee Keeps',money(s.employee_share)]]:[]),['Fulfillment',s.fulfillment||'pickup']]){const row=document.createElement('div');row.className='gw-paper-total';const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;row.append(name,amount);totalsHost.append(row);}};
  draw();dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
- if(s.id&&db){try{const token=sessionStorage.getItem('gw-employee-token')||'';const {data,error}=await db.rpc('gw_sale_receipt_items',{p_token:token,p_sale:String(s.id)});if(!error&&Array.isArray(data)){s.line_items=data;s.store_share=Number(s.total||0)*.1;s.employee_share=Number(s.total||0)*.9;draw();}}catch(e){console.warn('Receipt items unavailable:',e);}}
+ if(db){
+  note.textContent='Loading ordered products…';
+  try{
+   const token=sessionStorage.getItem('gw-employee-token')||'';
+   const args={p_token:token,p_sale:s.id==null?null:String(s.id),p_employee_name:s.employee_name||null,p_created_at:s.created_at||null,p_total:Number(s.total||0)};
+   const {data,error}=await db.rpc('gw_sale_receipt_items_lookup',args);
+   if(error)throw Error(error.message);
+   s.line_items=Array.isArray(data)?data:[];
+   s.store_share=Number(s.total||0)*.1;
+   s.employee_share=Number(s.total||0)*.9;
+   draw();
+   if(!s.line_items.length)note.textContent='No itemized products were recorded for this sale. Sales recorded before the receipt update cannot be reconstructed.';
+  }catch(e){
+   note.textContent='Could not load product details: '+e.message;
+   console.warn('Receipt items unavailable:',e);
+  }
+ }
 }
 function renderHistory(){
  if(tab!=='history')return;
