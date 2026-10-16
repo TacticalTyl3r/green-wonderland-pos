@@ -64,10 +64,18 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
   section.append(make('h3','Purchases & Rewards History'));
   const entries=make('div',undefined,'gw-loyalty-activity-list');
   section.append(entries);profile.append(section);
+  const activityExport=make('button','Export Customer Activity CSV','outline');
+  activityExport.type='button';activityExport.disabled=true;section.insertBefore(activityExport,entries);
   try{
    const rows=await rpc('gw_loyalty_member_activity',{p_member:member.id});
    if(selectedId!==member.id)return;
    if(!rows.length){entries.append(make('p','No reward activity recorded yet.'));return;}
+   activityExport.disabled=false;
+   activityExport.onclick=()=>download('gw-rewards-'+String(member.member_code).replace(/[^a-z0-9_-]/gi,'_')+'.csv',
+    [['Date','Type','Description','Amount','Points Change','Employee','Sale ID','Items'],
+     ...rows.map(event=>[event.entry_date,event.entry_type,event.note||'',
+      event.amount??'',event.points_delta??'',event.performed_by||'',event.sale_id||'',
+      (Array.isArray(event.items)?event.items:[]).map(item=>String(item.qty||0)+' x '+String(item.name||'Item')).join('; ')])]);
    for(const event of rows){
     const card=make('article',undefined,'gw-loyalty-activity-card');
     const top=make('div',undefined,'gw-loyalty-activity-top');
