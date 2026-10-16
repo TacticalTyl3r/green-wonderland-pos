@@ -2,6 +2,7 @@ import {createSalesChart} from './sales-chart.js?v=2';
 import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=audit-detail-20261016';
 import {renderBusinessPage} from './business-mdt.js?v=management-phase2-net-20261016';
 import {showSaleAdjustments} from './sale-adjustments.js?v=actor-name-fix-20261016';
+import {showOffersManager,showProductAnalytics} from './phase4-management.js?v=1';
 import {showSecurityCenter,renderEmployeeAchievements,getDashboardSettings,dashboardSettingsEditor,isDashboardWidgetVisible} from './phase3-tools.js?v=1';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
@@ -55,6 +56,7 @@ async function refresh(){
  updateAttribution();window.gwRefreshRoleNavigation?.();
  }catch(e){msg(e.message);}
 }
+window.gwSelectedEmployee=()=>me?.employee_id||select.value||null;
 window.gwRecordSale=async sale=>{
  if(!employees.length)await roster();
  if(token){const rows=await call('gw_pin_me',{p_token:token});me=rows?.[0]||null;if(!me){token='';sessionStorage.removeItem(key);}}
@@ -414,15 +416,15 @@ if(siteNav&&siteHost){
  const shell=document.querySelector('.shell');
  const topHeader=shell.querySelector('header');
  if(topHeader){const posStatus=document.querySelector('#status');const posSlot=document.querySelector('#gwPosStatusSlot');if(posStatus&&posSlot)posSlot.append(posStatus);const content=document.querySelector('.gw-site-content');content?.insertBefore(topHeader,shell);topHeader.classList.add('gw-global-header');const ribbon=shell.querySelector('.ribbon');if(ribbon){content?.insertBefore(ribbon,shell);ribbon.classList.add('gw-global-ribbon');}}
- const restricted=['overview','employees','sales','history','leaderboard','reports','analytics','adjustments'];
- const businessPages=[['history','Sales History','sales_history'],['leaderboard','Employee Leaderboards','sales_earnings'],['reports','Financial Reports','sales_earnings'],['analytics','Sales Analytics','sales_earnings'],['adjustments','Refunds & Voids','sales_history'],['announcements','Announcements','announcements'],['notes','Employee Notes','employee_notes']];
+ const restricted=['overview','employees','sales','history','leaderboard','reports','analytics','adjustments','productanalytics'];
+ const businessPages=[['history','Sales History','sales_history'],['leaderboard','Employee Leaderboards','sales_earnings'],['reports','Financial Reports','sales_earnings'],['analytics','Sales Analytics','sales_earnings'],['adjustments','Refunds & Voids','sales_history'],['productanalytics','Product Analytics','sales_earnings'],['announcements','Announcements','announcements'],['notes','Employee Notes','employee_notes']];
  const salesSubmenu=document.createElement('div');salesSubmenu.className='gw-site-submenu';salesSubmenu.hidden=true;
- for(const [page,label] of businessPages.filter(([page])=>['history','leaderboard','reports','analytics','adjustments'].includes(page))){const b=document.createElement('button');b.type='button';b.dataset.sitePage=page;b.textContent=label;salesSubmenu.append(b);}
+ for(const [page,label] of businessPages.filter(([page])=>['history','leaderboard','reports','analytics','adjustments','productanalytics'].includes(page))){const b=document.createElement('button');b.type='button';b.dataset.sitePage=page;b.textContent=label;salesSubmenu.append(b);}
  siteNav.querySelector('[data-site-page="sales"]')?.after(salesSubmenu);
 
  const permissionsNav=document.createElement('button');permissionsNav.type='button';permissionsNav.dataset.sitePage='permissions';permissionsNav.innerHTML='<span class="gw-site-icon">⚿</span><span class="gw-site-label">Roles & Permissions</span><span class="gw-site-arrow">›</span>';
  // Roles & Permissions belongs inside the expandable Admin section.
- const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings',history:'sales_history',leaderboard:'sales_earnings',reports:'sales_earnings',analytics:'sales_earnings',adjustments:'sales_history',announcements:'announcements',notes:'employee_notes'};
+ const featureForPage={overview:'dashboard',employees:'employees',time:'time_management',sales:'sales_earnings',history:'sales_history',leaderboard:'sales_earnings',reports:'sales_earnings',analytics:'sales_earnings',adjustments:'sales_history',productanalytics:'sales_earnings',announcements:'announcements',notes:'employee_notes'};
  async function loadGrantedFeatures(){
   grantedFeatures=new Set();
   if(bossAllowed){roleFeatures.forEach(([feature])=>grantedFeatures.add(feature));return;}
@@ -459,11 +461,12 @@ async function showBackupCenter(){
   b.onclick=()=>showSite(page);extraNav.set(page,b);
  }
  const securityLink=document.createElement('button');securityLink.type='button';securityLink.dataset.sitePage='security';securityLink.className='gw-admin-subitem gw-admin-security';securityLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">⚿</span><span class="gw-site-label">Security Center</span>';securityLink.onclick=()=>showSite('security');
+ const offersLink=document.createElement('button');offersLink.type='button';offersLink.dataset.sitePage='offers';offersLink.className='gw-admin-subitem gw-admin-offers';offersLink.innerHTML='<span class="gw-site-icon">✦</span><span class="gw-site-label">Bundles & Specials</span>';offersLink.onclick=()=>showSite('offers');
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
  const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.className='gw-admin-subitem gw-admin-catalog';catalogLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">▦</span><span class="gw-site-label">Products, Images & Settings</span>';
  const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.className='gw-admin-subitem gw-admin-branding';brandingLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">✦</span><span class="gw-site-label">Branding & Images</span>';
   const auditLink=document.createElement('button');auditLink.type='button';auditLink.dataset.sitePage='audit';auditLink.classList.add('gw-admin-subitem','gw-admin-audit');auditLink.innerHTML='<span class="gw-site-icon">▤</span><span class="gw-site-label">Full Audit Log</span>';
- permissionsNav.classList.add('gw-admin-subitem','gw-admin-permissions');adminSubmenu.append(catalogLink,brandingLink,auditLink,permissionsNav,securityLink,extraNav.get('backups'));navButtonAdminPlaceholder();
+ permissionsNav.classList.add('gw-admin-subitem','gw-admin-permissions');adminSubmenu.append(catalogLink,brandingLink,auditLink,permissionsNav,securityLink,offersLink,extraNav.get('backups'));navButtonAdminPlaceholder();
  function navButtonAdminPlaceholder(){siteNav.querySelector('[data-site-page="admin"]')?.after(adminSubmenu);}
  catalogLink.onclick=()=>document.querySelector('#adminBtn')?.click();
  brandingLink.onclick=()=>window.gwOpenBrandingAdmin?.();
@@ -474,10 +477,11 @@ async function showBackupCenter(){
   await checkBoss();
   await loadGrantedFeatures();
   for(const p of restricted)navButton(p).hidden=!canFeature(featureForPage[p]);
-  for(const p of ['history','leaderboard','reports','adjustments'])navButton(p).hidden=!canFeature(featureForPage[p]);
+  for(const p of ['history','leaderboard','reports','adjustments','productanalytics'])navButton(p).hidden=!canFeature(featureForPage[p]);
   navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
   permissionsNav.hidden=!bossAllowed;
   securityLink.hidden=!bossAllowed;
+  offersLink.hidden=!bossAllowed;
    auditLink.hidden=!canFeature('activity_history');
 
    extraNav.get('backups').hidden=!bossAllowed;
@@ -489,21 +493,22 @@ async function showBackupCenter(){
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
   if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin Account':'Admin Login';adminBtn.hidden=false;adminBtn.title=bossAllowed?'Manage your administrator account and product settings':'Sign in with your administrator email and password';}
-  if(currentPage!=='pos'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
+  if(currentPage!=='pos'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&currentPage!=='offers'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
    if(currentPage==='audit'&&!canFeature('activity_history'))await showSite('pos');
-  if((currentPage==='permissions'||currentPage==='security'||currentPage==='backups')&&!bossAllowed)await showSite('pos');
+  if((currentPage==='permissions'||currentPage==='security'||currentPage==='backups'||currentPage==='offers')&&!bossAllowed)await showSite('pos');
  }
  async function showSite(page){
   if(page==='permissions'&&!bossAllowed)return;
    if(page==='audit'&&!canFeature('activity_history'))return;
   if(page==='backups'&&!bossAllowed)return;
   if(page==='security'&&!bossAllowed)return;
+  if(page==='offers'&&!bossAllowed)return;
   if(page==='notifications'&&!canFeature('announcements')&&!canFeature('announcements_manage'))return;
   if(restricted.includes(page)&&!canFeature(featureForPage[page])&&!(page==='announcements'&&canFeature('announcements_manage'))&&!(page==='notes'&&canFeature('employee_notes_manage')&&canFeature('employees')))return;
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
-  if(!['permissions','audit','security','backups'].includes(page))adminSubmenu.hidden=true;
-  salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics','adjustments'].includes(page));
+  if(!['permissions','audit','security','backups','offers'].includes(page))adminSubmenu.hidden=true;
+  salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics','adjustments','productanalytics'].includes(page));
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
@@ -532,6 +537,8 @@ async function showBackupCenter(){
    return;}
   if(page==='backups'){adminSubmenu.hidden=false;await showBackupCenter();return;}
   if(page==='security'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showSecurityCenter(mdtContent,{call,token:()=>token||'',make,cash});return;}
+  if(page==='offers'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showOffersManager(mdtContent,{call,token:()=>token||'',make,cash});return;}
+  if(page==='productanalytics'){mdtMessage.textContent='';await showProductAnalytics(mdtContent,{call,token:()=>token||'',make,cash});return;}
   if(page==='adjustments'){await showSaleAdjustments(mdtContent,{call,token:()=>token||'',canFeature,cash,make});return;}
   if(page==='analytics'){await showAnalytics(mdtContent,{call,token:()=>token||'',cash,make});return;}
   if(businessPages.some(([name])=>name===page)){shell.hidden=true;siteHost.hidden=false;await renderBusinessPage(page,{host:mdtContent,call,token:()=>token||'',canFeature,cash,make});return;}
