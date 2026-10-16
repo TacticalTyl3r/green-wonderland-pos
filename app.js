@@ -72,7 +72,18 @@ $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));for(const name of ['cart','ingredients','history'])$(name==='cart'?'cartView':name+'View').hidden=name!==tab;if(tab==='history')loadSharedHistory();});$('copyIngredients').onclick=async()=>{await navigator.clipboard.writeText(ingredientSummary().map(x=>`${x.name}: ${x.qty} ${x.unit}`).join('\n'));alert('Ingredients copied.');};$('exportIngredients').onclick=()=>{const rows=[['Ingredient','Quantity','Unit'],...ingredientSummary().map(x=>[x.name,x.qty,x.unit])];const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='green-wonderland-ingredients.csv';a.click();URL.revokeObjectURL(a.href);};$('themeBtn').onclick=()=>{document.body.classList.toggle('light');$('themeBtn').textContent=document.body.classList.contains('light')?'☾ Lights Off':'☀ Lights On';};
 const dialog=$('adminDialog'),msg=s=>$('adminMessage').textContent=s;
 $('adminBtn').onclick=async()=>{dialog.showModal();if(db){const {data}=await db.auth.getSession();session=data.session;await updateAuthUI();}else msg('Configure Supabase in config.js and run schema.sql first.');};$('closeAdmin').onclick=()=>dialog.close();$('login').onclick=async()=>{if(!db)return msg('Supabase not configured.');msg('Signing in...');const {data,error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)return msg(error.message);session=data.session;await updateAuthUI();};$('logout').onclick=async()=>{await db.auth.signOut();session=null;await updateAuthUI();};
-async function updateAuthUI(){if(!db){$('loginPanel').hidden=false;$('adminPanel').hidden=true;return;}const {data,error}=await db.rpc('is_admin');const admin=!!session&&!error&&data===true;$('loginPanel').hidden=admin;$('adminPanel').hidden=!admin;if(session&&!admin)msg('This account is not authorized as an administrator.');else msg('');if(admin){$('adminIdentity').textContent=session.user.email;renderAdmin();}}
+async function updateAuthUI(){if(!db){$('loginPanel').hidden=false;$('adminPanel').hidden=true;return;}const {data,error}=await db.rpc('is_admin');const admin=!!session&&!error&&data===true;$('loginPanel').hidden=admin;$('adminPanel').hidden=!admin;if(session&&!admin)msg('This account is not authorized as an administrator.');else msg('');if(admin){
+ const identity=$('adminIdentity');
+ identity.textContent=session.user.email;
+ const employeeToken=sessionStorage.getItem('gw-employee-token');
+ if(employeeToken){
+  try{
+   const {data:staff,error:staffError}=await db.rpc('gw_pin_me',{p_token:employeeToken});
+   if(!staffError&&staff?.[0]?.employee_name)identity.textContent=staff[0].employee_name;
+  }catch(err){console.warn('Unable to resolve character name:',err);}
+ }
+ renderAdmin();
+}}
 
 const defaultChoices=p=>{
  const name=p.name.toLowerCase();
