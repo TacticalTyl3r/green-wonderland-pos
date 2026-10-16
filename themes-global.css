@@ -391,3 +391,22 @@ body[data-theme] .gw-site-submenu button[data-site-page="history"].active,
 body[data-theme] .gw-site-submenu button[data-site-page="leaderboard"].active,
 body[data-theme] .gw-site-submenu button[data-site-page="reports"].active,
 body[data-theme] .gw-site-submenu button[data-site-page="analytics"].active{background:color-mix(in srgb,var(--sales-tint) 18%,var(--panel2))!important;border-color:color-mix(in srgb,var(--sales-tint) 50%,var(--line))!important}
+
+/* Expanded sidebar must fit every submenu label without horizontal scrolling. */
+@media(min-width:721px){
+ body[data-theme] .gw-site-sidebar:not(.collapsed){width:328px!important;flex:0 0 328px!important;max-width:328px;overflow-x:hidden!important;overflow-y:auto}
+}
+body[data-theme] #gwSiteNav{min-width:0;width:100%;box-sizing:border-box}
+body[data-theme] #gwSiteNav .gw-site-submenu{min-width:0;max-width:100%;box-sizing:border-box;margin-left:35px;padding-left:8px}
+body[data-theme] #gwSiteNav .gw-site-submenu button{box-sizing:border-box;min-width:0;max-width:100%;width:100%;white-space:normal!important;overflow-wrap:break-word}
+body[data-theme] #gwSiteNav .gw-site-submenu .gw-site-label{min-width:0;white-space:normal!important;overflow-wrap:break-word;line-height:1.3}
+body[data-theme] #gwSiteNav .gw-site-submenu .gw-admin-subitem{gap:9px}
+body[data-theme] #gwSiteNav .gw-site-submenu .gw-admin-subitem .gw-site-icon{flex-shrink:0}
+@media(max-width:720px){
+ body[data-theme] .gw-site-sidebar:not(.collapsed){width:min(328px,85vw)!important;flex:0 0 min(328px,85vw)!important;overflow-x:hidden!important}
+ body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-brand span,
+ body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-label,
+ body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-arrow,
+ body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-toggle span{display:initial!important}
+ body[data-theme] .gw-site-sidebar:not(.collapsed) #gwSiteNav>button{justify-content:flex-start;padding:8px 10px}
+}
