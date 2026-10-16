@@ -70,7 +70,7 @@ begin
  from public.gw_loyalty_ledger l
  left join public.gw_employees e on e.id=l.performed_by
  where l.member_id=p_member
- order by entry_date desc limit 300;
+ order by 2 desc limit 300;
 end$$;
 
 create or replace function public.gw_loyalty_adjust_points(p_token text,p_member uuid,p_delta integer,p_reason text)
