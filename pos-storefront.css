@@ -111,45 +111,31 @@ body:not(.light){background:#050c0a;color:#eef6f0}
 }
 
 
-/* Desktop: keep Current Order on-screen, scroll its contents, and retain checkout
-   controls at the bottom. Catalog remains in its own unobstructed grid column. */
+
+/* Compact, vertically centered Current Order on 1920x1080 desktops.
+   The catalog remains a separate clickable grid column. */
 @media (min-width:951px){
  .gw-site-content .shell main>.order{
   position:sticky!important;
-  top:12px!important;
-  height:calc(100dvh - 24px);
-  max-height:calc(100dvh - 24px)!important;
-  min-height:0;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden!important;
- }
- .gw-site-content .shell main>.order>.section-head,
- .gw-site-content .shell main>.order>.ordertabs{
-  flex-shrink:0;
- }
- .gw-site-content .shell main>.order>#cartView{
-  flex:1 1 auto;
-  min-height:0;
-  overflow-y:auto;
+  top:50vh!important;
+  transform:translateY(-50%);
+  align-self:start;
+  width:100%;
+  max-height:min(680px,calc(100dvh - 100px))!important;
+  height:auto!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
   scrollbar-width:thin;
   overscroll-behavior:contain;
-  display:flex;
-  flex-direction:column;
+  padding:14px!important;
  }
- .gw-site-content .shell main>.order>#cartView>.checkout{
-  position:sticky;
-  bottom:0;
-  z-index:2;
-  flex-shrink:0;
-  margin-top:auto;
-  padding:10px 0 4px;
-  background:var(--panel);
-  border-top:1px solid var(--line);
- }
- .gw-site-content .shell main>.order>#ingredientsView:not([hidden]),
- .gw-site-content .shell main>.order>#historyView:not([hidden]){
-  min-height:0;
-  overflow-y:auto;
- }
+ .gw-site-content .shell main>.order>.section-head{margin-bottom:6px}
+ .gw-site-content .shell main>.order>.ordertabs{margin-bottom:6px}
+ .gw-site-content .shell main>.order #cartView .control{margin:6px 0}
+ .gw-site-content .shell main>.order #cartView .totals>div{padding:4px 0}
+ .gw-site-content .shell main>.order #cartView .totals .grand{padding:8px 0;margin-top:4px}
+ .gw-site-content .shell main>.order #cartView .checkout{position:static!important;padding:4px 0 0;margin-top:4px}
+}
+@media (min-width:951px) and (max-height:760px){
+ .gw-site-content .shell main>.order{top:12px!important;transform:none;max-height:calc(100dvh - 24px)!important}
 }
