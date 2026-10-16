@@ -59,7 +59,7 @@ begin
  if p_amount is null or p_amount<=0 or round(p_amount,2)<>p_amount
     or p_amount>v_total-v_used then raise exception 'Invalid adjustment amount'; end if;
  if p_type='void' and p_amount<>v_total-v_used then raise exception 'Void must cover the entire remaining balance'; end if;
- select e.name into v_actor from public.gw_employees e where e.id=public.gw_mdt_actor(p_token);
+ v_actor:=public.gw_mdt_actor_name(p_token);
  if v_actor is null then raise exception 'Unknown actor'; end if;
  insert into public.gw_mdt_sale_adjustments(sale_id,adjustment_type,amount,reason,performed_by)
  values(p_sale,p_type,p_amount,trim(p_reason),v_actor);
