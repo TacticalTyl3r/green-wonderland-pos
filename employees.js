@@ -261,29 +261,83 @@ roster().then(refresh).catch(e=>{msg('Employee service not configured yet: '+e.m
 /* Boss-configurable role permission editor */
 const roleFeatures=[['dashboard','Dashboard'],['employees','Employees'],['time_management','Time Management'],['sales_earnings','Sales & Earnings'],['admin_catalog','Products & Settings'],['admin_branding','Branding & Images'],['employee_add','Add Employees'],['employee_edit','Edit Employees'],['employee_deactivate','Deactivate Employees'],['employee_role_assign','Assign Roles'],['employee_pin_reset','Reset PINs'],['time_add','Add Work Time'],['time_remove','Remove Work Time'],['time_history','View Time History'],['sales_history','Sales History'],['announcements','View Announcements'],['announcements_manage','Manage Announcements'],['employee_notes','View Employee Notes'],['employee_notes_manage','Manage Employee Notes'],['recognition_view','View Recognition'],['recognition_manage','Award Recognition'],['activity_history','View Activity History']];
 async function showRolePermissions(){
- mdtContent.replaceChildren(make('h2','Roles & Permissions'),make('p','Choose which MDT sections each employee role may access. Boss always has full access. Existing Boss-only database actions remain protected.'));
+ mdtContent.replaceChildren();
+ const intro=make('div',undefined,'gw-permissions-intro');
+ intro.innerHTML='<small>GREEN WONDERLAND · BOSS PANEL</small><h2>Role Permissions</h2><p>Choose what each position can access within the MDT. Boss retains full access.</p>';
+ mdtContent.append(intro);
  mdtMessage.textContent='Loading permissions…';
  try{
   const records=await call('gw_mdt_role_permissions_admin');
-  const grid=make('div',undefined,'gw-permission-grid');
+  const roles=['Manager','Senior Salesman','Salesman'];
+  const descriptions={
+   dashboard:'View the store dashboard and summary information',employees:'View employee records and roster information',
+   time_management:'Access time clock and management tools',sales_earnings:'View sales performance and employee earnings',
+   admin_catalog:'Edit products, prices, ingredients and images',admin_branding:'Update branding, images and store appearance',
+   employee_add:'Create new employee accounts',employee_edit:'Update employee information',employee_deactivate:'Deactivate employee accounts',
+   employee_role_assign:'Change employee positions',employee_pin_reset:'Reset employee PINs',
+   time_add:'Add work time to employee records',time_remove:'Remove work time from employee records',
+   time_history:'Review historical time adjustments',sales_history:'View customer order and sales history',
+   announcements:'Read store announcements',announcements_manage:'Create and manage announcements',
+   employee_notes:'View employee notes',employee_notes_manage:'Add and manage employee notes',
+   recognition_view:'View employee recognition',recognition_manage:'Award employee recognition',
+   activity_history:'Review MDT administrative activity'
+  };
+  const icons={dashboard:'▥',employees:'♙',time_management:'◷',sales_earnings:'▥',admin_catalog:'▣',admin_branding:'✦',employee_add:'+',employee_edit:'✎',employee_deactivate:'⊘',employee_role_assign:'♛',employee_pin_reset:'⚿',time_add:'+',time_remove:'−',time_history:'◷',sales_history:'▤',announcements:'◈',announcements_manage:'✎',employee_notes:'▤',employee_notes_manage:'✎',recognition_view:'★',recognition_manage:'★',activity_history:'◷'};
+  const selectorPanel=make('section',undefined,'gw-permissions-select-panel');
+  const selectorLabel=make('label','SELECT POSITION','gw-permissions-select-label');
   const selector=document.createElement('select');selector.className='gw-role-selector';selector.setAttribute('aria-label','Select position');
-  for(const roleName of ['Manager','Senior Salesman','Salesman'])selector.add(new Option(roleName,roleName));
-  const selectLabel=make('label','Select Position','gw-role-picker');selectLabel.append(selector);mdtContent.append(selectLabel);
-  selector.onchange=()=>grid.querySelectorAll('.gw-permission-card').forEach(card=>card.hidden=card.dataset.role!==selector.value);
-  for(const role of ['Manager','Senior Salesman','Salesman']){
-   const card=make('section',undefined,'gw-permission-card');card.dataset.role=role;card.hidden=role!=='Manager';
-   card.append(make('h3',role));
+  roles.forEach(role=>selector.add(new Option(role,role)));
+  selectorLabel.append(selector);selectorPanel.append(selectorLabel);mdtContent.append(selectorPanel);
+  const panel=make('section',undefined,'gw-permissions-panel');
+  const panelHead=make('div',undefined,'gw-permissions-panel-head');
+  panelHead.append(make('h3','◈  Permissions'),make('p','Enable or disable what this position can access.'));
+  panel.append(panelHead);
+  const list=make('div',undefined,'gw-permissions-list');panel.append(list);mdtContent.append(panel);
+  const footer=make('div',undefined,'gw-permissions-footer');
+  const cancel=make('button','↺  Discard Changes','gw-permissions-cancel');cancel.type='button';
+  const save=make('button','▣  Save Permissions','gw-permissions-save');save.type='button';
+  footer.append(cancel,save);mdtContent.append(footer);
+  let pending=new Map(),initial=new Map();
+  function populate(){
+   list.replaceChildren();pending=new Map();initial=new Map();
+   const role=selector.value;
    for(const [feature,label] of roleFeatures){
     const entry=records.find(x=>x.role===role&&x.feature===feature);
-    const line=make('label',undefined,'gw-permission-row');
-    const input=document.createElement('input');input.type='checkbox';input.checked=entry?.allowed===true;
-    const name=make('span',label);line.append(input,name);
-    input.onchange=async()=>{input.disabled=true;try{await call('gw_mdt_set_role_permission',{p_role:role,p_feature:feature,p_allowed:input.checked});mdtMessage.textContent='Saved '+role+' · '+label;}catch(e){input.checked=!input.checked;mdtMessage.textContent='Could not save: '+e.message;}finally{input.disabled=false;}};
-    card.append(line);
+    const enabled=entry?.allowed===true;
+    initial.set(feature,enabled);pending.set(feature,enabled);
+    const row=make('label',undefined,'gw-permissions-item');
+    const badge=make('span',icons[feature]||'◆','gw-permissions-icon');
+    const detail=make('span',undefined,'gw-permissions-detail');
+    detail.append(make('strong',label),make('small',descriptions[feature]||'Control access to this feature.'));
+    const control=make('span',undefined,'gw-permissions-control');
+    const input=document.createElement('input');input.type='checkbox';input.checked=enabled;input.className='gw-permissions-checkbox';input.setAttribute('aria-label',label);
+    const track=make('span',undefined,'gw-permissions-track');
+    const state=make('span',enabled?'On':'Off','gw-permissions-state');
+    input.onchange=()=>{pending.set(feature,input.checked);state.textContent=input.checked?'On':'Off';mdtMessage.textContent='Unsaved changes · Click Save Permissions to apply.';};
+    control.append(input,track,state);row.append(badge,detail,control);list.append(row);
    }
-   grid.append(card);
+   mdtMessage.textContent='';
   }
-  mdtContent.append(grid);mdtMessage.textContent='';
+  selector.onchange=populate;
+  cancel.onclick=populate;
+  save.onclick=async()=>{
+   const role=selector.value;
+   const changed=[...pending].filter(([key,value])=>value!==initial.get(key));
+   if(!changed.length){mdtMessage.textContent='No changes to save.';return;}
+   save.disabled=true;selector.disabled=true;cancel.disabled=true;
+   let count=0;
+   try{
+    for(const [feature,allowed] of changed){
+     await call('gw_mdt_set_role_permission',{p_role:role,p_feature:feature,p_allowed:allowed});
+     const entry=records.find(x=>x.role===role&&x.feature===feature);
+     if(entry)entry.allowed=allowed;else records.push({role,feature,allowed});
+     initial.set(feature,allowed);count++;
+    }
+    mdtMessage.textContent='Saved '+count+' permission'+(count===1?'':'s')+' for '+role+'.';
+   }catch(e){mdtMessage.textContent='Saved '+count+' of '+changed.length+' changes. Error: '+e.message;}
+   finally{save.disabled=false;selector.disabled=false;cancel.disabled=false;}
+  };
+  populate();
  }catch(e){mdtMessage.textContent='Permissions unavailable: '+e.message;}
 }
 /* Full-page Store MDT navigation and permission-aware menu */
