@@ -83,7 +83,18 @@ async function loadRosterPhotos(){try{const {data,error}=await db.rpc('gw_employ
 async function loadStaff(page=mdtPage){const feature=page==='time'?'time_management':page==='employees'?'employees':'dashboard';staffRows=await call('gw_mdt_staff_report',{p_token:token||'',p_feature:feature});await loadRosterPhotos();return staffRows;}
 async function loadSales(){salesRows=await call('gw_mdt_sales_report_for_role',{p_token:token||''});}
 const cash=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
+function gwExportCsv(filename,rows){
+ const cell=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
+ const csv='\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\\r\\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ const link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function renderSales(){
+ const exportButton=make('button','Export Earnings CSV','outline');
+ exportButton.onclick=()=>gwExportCsv('green-wonderland-earnings-'+new Date().toISOString().slice(0,10)+'.csv',
+ [['Employee','Role','Orders','Today Sales','Weekly Sales','Lifetime Sales'],...salesRows.map(e=>[e.employee_name,e.employee_role,e.total_orders,e.today_sales,e.weekly_sales,e.lifetime_sales])]);
+ mdtContent.append(exportButton);
  const cards=make('div',undefined,'gw-mdt-stats');
  for(const [label,key] of [['Today','today_sales'],['This Week','weekly_sales'],['Lifetime','lifetime_sales']]){
  const box=make('div',undefined,'gw-mdt-stat');
@@ -202,7 +213,12 @@ async function showTimeHistory(){
  mdtMessage.textContent='Loading adjustment history…';
  try{
   timeHistoryRows=await call('gw_mdt_time_history',{p_token:token||''});
-  const search=document.createElement('input');search.placeholder='Search employee, manager or reason';mdtContent.append(search);
+  const search=document.createElement('input');search.type='search';search.placeholder='Search employee, manager or reason';mdtContent.append(search);
+  const exportButton=make('button','Export Time History CSV','outline');
+  exportButton.onclick=()=>{const q=search.value.trim().toLowerCase();const rows=timeHistoryRows.filter(a=>(String(a.employee_name||'')+' '+String(a.actor_name||'')+' '+String(a.reason||'')).toLowerCase().includes(q));
+   gwExportCsv('green-wonderland-time-audit-'+new Date().toISOString().slice(0,10)+'.csv',
+    [['Date','Employee','Manager','Minutes Changed','Reason'],...rows.map(a=>[a.created_at,a.employee_name,a.actor_name,a.minutes,a.reason])]);};
+  mdtContent.append(exportButton);
   const list=make('div',undefined,'gw-mdt-roster');mdtContent.append(list);
   const draw=()=>{list.replaceChildren();const q=search.value.trim().toLowerCase();for(const a of timeHistoryRows.filter(a=>(a.employee_name+' '+a.actor_name+' '+a.reason).toLowerCase().includes(q))){const row=make('div',undefined,'gw-mdt-employee gw-history-entry '+(a.minutes>0?'gw-history-added':a.minutes<0?'gw-history-removed':'gw-history-neutral'));const detail=make('div',undefined,'gw-history-details');detail.append(make('strong',a.employee_name),make('p',a.reason||'No reason provided'),make('small','By '+a.actor_name+' · '+new Date(a.created_at).toLocaleString()));const badge=make('div',undefined,'gw-history-amount');badge.append(make('strong',(a.minutes>0?'+':a.minutes<0?'−':'')+Math.abs(a.minutes)+' min'),make('small',a.minutes>0?'TIME ADDED':a.minutes<0?'TIME REMOVED':'NO CHANGE'));row.append(detail,badge);list.append(row);}if(!list.children.length)list.append(make('p','No matching adjustments.'));};
   search.oninput=draw;draw();mdtMessage.textContent='';
