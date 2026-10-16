@@ -58,7 +58,7 @@ window.gwRecordSale=async sale=>{
  if(token){const rows=await call('gw_pin_me',{p_token:token});me=rows?.[0]||null;if(!me){token='';sessionStorage.removeItem(key);}}
  const selected=me?.employee_id||select.value;
  if(!selected)throw Error('Select the employee responsible for this sale.');
- return await call('gw_record_sale',{p_token:token||'',p_employee:selected,p_total:sale.total,p_count:sale.count,p_fulfillment:sale.fulfillment});
+ return await call('gw_record_sale_detailed',{p_token:token||'',p_employee:selected,p_total:sale.total,p_count:sale.count,p_fulfillment:sale.fulfillment,p_items:sale.items||[]});
 };
 // Store MDT: uses existing Boss-authorized RPCs. No schema change required.
 const mdtButton=document.createElement('button');mdtButton.className='outline';mdtButton.textContent='▦ Store MDT';mdtButton.hidden=false;document.querySelector('header .actions')?.append(mdtButton);
