@@ -507,3 +507,15 @@ body[data-theme] .gw-dashboard-notifications .gw-mdt-actions{display:flex;justif
 body[data-theme] .gw-dashboard-notifications .gw-mdt-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
 body[data-theme] .gw-dashboard-notifications .gw-feature-card{margin:0;background:var(--panel)}
 body[data-theme] .gw-dashboard-notifications .gw-mdt-form{margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+
+/* Phase 2 management screens share the MDT card design and active theme */
+body[data-theme] .gw-mgmt-search{display:block;width:100%;max-width:520px;margin:16px 0 12px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:9px;padding:12px 14px}
+body[data-theme] .gw-feature-card .gw-mdt-form{width:100%;display:grid;gap:10px;padding:12px;margin-top:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+body[data-theme] .gw-feature-card .gw-mdt-form input,
+body[data-theme] .gw-feature-card .gw-mdt-form select,
+body[data-theme] .gw-feature-card .gw-mdt-form textarea{width:100%;max-width:100%;box-sizing:border-box}
+body[data-theme] .gw-feature-card .gw-mdt-form button{width:100%}
+body[data-theme] .gw-site-submenu button[data-site-page="adjustments"]{--sales-tint:#f28a91;--sales-symbol:"↩";display:flex!important;align-items:center;gap:10px;min-height:47px;padding:7px 10px!important;border-radius:10px;text-align:left}
+body[data-theme] .gw-site-submenu button[data-site-page="adjustments"]::before{content:var(--sales-symbol);display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:9px;font-size:18px;font-weight:800;color:var(--sales-tint);background:color-mix(in srgb,var(--sales-tint) 15%,var(--panel));border:1px solid color-mix(in srgb,var(--sales-tint) 35%,var(--line))}
+body[data-theme] .gw-site-submenu button[data-site-page="adjustments"]:hover{background:color-mix(in srgb,var(--sales-tint) 10%,var(--panel2))!important}
+body[data-theme] .gw-site-submenu button[data-site-page="adjustments"].active{background:color-mix(in srgb,var(--sales-tint) 18%,var(--panel2))!important;border-color:var(--sales-tint)!important}
