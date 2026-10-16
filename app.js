@@ -86,14 +86,14 @@ function editorList(row,kind,items){
  const title=document.createElement('strong');title.textContent=kind==='ingredients'?'Ingredients':'Customer choices (flavors / strains)';
  const entries=document.createElement('div');entries.className='gw-editor-entries';
  const addItem=(item={})=>{
-  const entry=document.createElement('div');entry.className='gw-editor-entry';
+  const entry=document.createElement('div');entry.className='gw-editor-entry gw-editor-'+kind+'-row';
   const name=document.createElement('input');name.placeholder=kind==='ingredients'?'Ingredient name':'Flavor or strain';name.value=kind==='ingredients'?(item.name||''):(typeof item==='string'?item:'');
   entry.append(name);
   if(kind==='ingredients'){const qty=document.createElement('input');qty.type='number';qty.min='0';qty.step='any';qty.placeholder='Quantity';qty.value=item.qty??1;const unit=document.createElement('input');unit.placeholder='Unit (g, pcs, etc.)';unit.value=item.unit||'';entry.append(qty,unit);}
-  const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.className='outline';remove.onclick=()=>entry.remove();entry.append(remove);entries.append(entry);
+  const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.className='gw-editor-remove';remove.onclick=()=>entry.remove();entry.append(remove);entries.append(entry);
  };
  (items||[]).forEach(addItem);
- const add=document.createElement('button');add.type='button';add.textContent=kind==='ingredients'?'+ Add ingredient':'+ Add choice';add.className='outline';add.onclick=()=>addItem();
+ const add=document.createElement('button');add.type='button';add.textContent=kind==='ingredients'?'+ Add ingredient':'+ Add choice';add.className='gw-editor-add';add.onclick=()=>addItem();
  box.append(title,entries,add);return box;
 }
 function readEditorList(row,kind){
