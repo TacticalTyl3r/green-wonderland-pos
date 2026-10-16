@@ -10,7 +10,7 @@ const phase4=createPhase4({db,money,getProducts:()=>products,getLines:()=>lines(
  getToken:()=>sessionStorage.getItem('gw-employee-token')||'',
  onCartChanged:()=>{if(products.length){renderCart();phase4.renderFavorites(chooseProduct);}}});
 document.querySelector('#cartView .control')?.before(phase4.root);
- document.querySelector('#cartView .checkout')?.before(phase4.checkoutRewards);
+
 const catalogSidebar=document.createElement('div');
 catalogSidebar.className='gw-catalog-sidebar';
 $('categories').before(catalogSidebar);
