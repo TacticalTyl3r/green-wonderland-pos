@@ -130,7 +130,7 @@ async function showSaleReceipt(s){
   for(const [label,value] of rows){const row=document.createElement('div');row.className='gw-paper-total';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=value;row.append(a,b);phase4Summary.append(row);}
  };
  showDiscounts();showLoyalty();
- const receiptBuild=document.createElement('p');receiptBuild.className='gw-receipt-note';receiptBuild.textContent='Receipt version: 2026-10-16 / 7';receiptBuild.style.fontSize='10px';receiptBuild.style.opacity='.7';actions.after(receiptBuild);
+ const receiptBuild=document.createElement('p');receiptBuild.className='gw-receipt-note';receiptBuild.textContent='Receipt version: 2026-10-16 / 7';receiptBuild.style.fontSize='10px';receiptBuild.style.opacity='.7';subtitle.after(receiptBuild);
   dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
  // Receipt loyalty details are independent of itemized product lookup.
  // A failed or unavailable items RPC must never hide earned points.
