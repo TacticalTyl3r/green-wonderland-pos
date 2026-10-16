@@ -1,4 +1,4 @@
-import {createPhase4} from './phase4-pos.js?v=checkout-redeem-toggle-20261016';
+import {createPhase4} from './phase4-pos.js?v=loyalty-receipts-20261016';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -49,6 +49,24 @@ function ingredientSummary(){const map=new Map();for(const {p,qty} of lines())fo
 function renderIngredients(){const items=ingredientSummary();$('ingredients').innerHTML=items.length?items.map(x=>`<div class="record">${esc(x.name)} — <b>${x.qty} ${esc(x.unit)}</b></div>`).join(''):'<div class="empty">No ingredient recipes assigned to selected products.</div>';}
 let sharedHistory=[],historyLoading=false,historyError='',historyLoaded=false;
 function saleLines(s){return Array.isArray(s.line_items)?s.line_items:[];}
+const loyaltyReceiptKey=id=>'gw-loyalty-receipt-'+String(id);
+function localLoyaltyReceipt(s){
+ if(s.loyalty_receipt)return s.loyalty_receipt;
+ const id=s.sale_id||s.id;if(!id)return null;
+ try{const data=JSON.parse(localStorage.getItem(loyaltyReceiptKey(id))||'null');return data&&String(data.sale_id)===String(id)?data:null;}catch(e){return null;}
+}
+function receiptLoyaltyRows(s){
+ const d=s.loyalty_meta||{},snapshot=localLoyaltyReceipt(s);
+ if(!snapshot&&!s.loyalty_meta)return [];
+ const rows=[];
+ if(snapshot?.member_code)rows.push(['Customer CID',snapshot.member_code]);
+ if(snapshot?.member_name||d.member_name)rows.push(['Loyalty customer',snapshot?.member_name||d.member_name]);
+ if(d.reward_discount!=null)rows.push(['Points discount','−'+money(d.reward_discount)]);
+ if(d.points_earned!=null||snapshot?.points_earned!=null)rows.push(['Points earned',String(d.points_earned??snapshot.points_earned)]);
+ if(d.points_redeemed!=null||snapshot?.points_redeemed!=null)rows.push(['Points redeemed',String(d.points_redeemed??snapshot.points_redeemed)]);
+ if(snapshot?.points_remaining!=null)rows.push(['Points balance after sale',String(snapshot.points_remaining)]);
+ return rows;
+}
 function receiptText(s){
  const d=s.created_at?new Date(s.created_at).toLocaleString():'Unknown date';
  const items=saleLines(s);
@@ -59,7 +77,8 @@ function receiptText(s){
  if(s.store_share!=null)rows.push('• Store (10% of sale): '+money(s.store_share));
  if(s.employee_share!=null)rows.push('• Employee Keeps: '+money(s.employee_share));
  rows.push('• Fulfillment: '+(s.fulfillment||'pickup'));
- if(s.loyalty_meta){const d=s.loyalty_meta;rows.push('• Offers saved: '+money(d.offer_discount),'• Rewards redeemed: '+money(d.reward_discount),'• Loyalty points earned: '+d.points_earned);}
+ if(s.loyalty_meta?.offer_discount!=null)rows.push('• Offers saved: '+money(s.loyalty_meta.offer_discount));
+ for(const [label,value] of receiptLoyaltyRows(s))rows.push('• '+label+': '+value);
  return rows.join('\n');
 }
 async function showSaleReceipt(s){
@@ -79,7 +98,15 @@ async function showSaleReceipt(s){
  const close=document.createElement('button');close.type='button';close.className='outline';close.textContent='Close';close.onclick=()=>dlg.close();
  actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,phase4Summary,actions);
  const draw=()=>{itemsHost.replaceChildren();totalsHost.replaceChildren();const items=saleLines(s);note.textContent=items.length?'':'Itemized products were not saved for this older sale.';for(const x of items){const row=document.createElement('div');row.className='gw-paper-item';const name=document.createElement('span');name.textContent=x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'');const price=document.createElement('strong');price.textContent=money(x.total);row.append(name,price);itemsHost.append(row);}for(const [label,value] of [['Price',money(s.total)],...(s.store_share!=null?[['Store (10% of sale)',money(s.store_share)]]:[]),...(s.employee_share!=null?[['Employee Keeps',money(s.employee_share)]]:[]),['Fulfillment',s.fulfillment||'pickup']]){const row=document.createElement('div');row.className='gw-paper-total';const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;row.append(name,amount);totalsHost.append(row);}};
- draw();dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
+ draw();
+ const showLoyalty=()=>{
+  phase4Summary.replaceChildren();
+  const rows=receiptLoyaltyRows(s);
+  if(rows.length){const heading=document.createElement('strong');heading.textContent='LOYALTY & REWARDS';phase4Summary.append(heading);}
+  for(const [label,value] of rows){const row=document.createElement('div');row.className='gw-paper-total';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=value;row.append(a,b);phase4Summary.append(row);}
+ };
+ showLoyalty();
+ dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
  if(db){
   note.textContent='Loading ordered products…';
   try{
@@ -95,14 +122,7 @@ async function showSaleReceipt(s){
     try{
      const {data:meta,error:metaError}=await db.rpc('gw_pos_sale_details',{p_token:token,p_sale:String(s.id)});
      if(!metaError&&meta?.length){
-      const d=meta[0];s.loyalty_meta=d;phase4Summary.replaceChildren();
-      for(const [label,val] of [['Original subtotal',money(d.base_subtotal)],['Deals saved','−'+money(d.offer_discount)],
-        ['Manual discount','−'+money(d.manual_discount)],['Rewards redeemed','−'+money(d.reward_discount)],
-        ['Delivery',money(d.delivery_fee)],['Loyalty member',d.member_name||'None'],
-        ['Points earned',String(d.points_earned||0)],['Points redeemed',String(d.points_redeemed||0)]]){
-       const row=document.createElement('div');row.className='gw-paper-total';
-       const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=val;row.append(a,b);phase4Summary.append(row);
-      }
+      const d=meta[0];s.loyalty_meta=d;showLoyalty();
      }
     }catch(err){console.warn('Receipt details unavailable:',err);}
    }
@@ -162,6 +182,10 @@ $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat
   const result=await phase4.checkout({employee:selected,
    items:l.map(({p,qty,choice})=>({id:String(p.id),qty,choice})),
    fulfillment,zone:$('zone').value,discount:Number($('discount').value),expectedTotal:t.total,availableDue:t.total+t.rewards});
+  if(result.sale_id&&result.loyalty_receipt){
+   const snapshot={...result.loyalty_receipt,sale_id:String(result.sale_id),saved_at:new Date().toISOString()};
+   try{localStorage.setItem(loyaltyReceiptKey(result.sale_id),JSON.stringify(snapshot));}catch(e){console.warn('Local loyalty receipt cache unavailable',e);}
+  }
   history.unshift({date:new Date().toISOString(),total:Number(result.total),count,fulfillment,
    sale_id:result.sale_id});
   historyLoaded=false;history=history.slice(0,100);cart={};$('discount').value=0;render();
