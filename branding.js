@@ -91,50 +91,42 @@ root.querySelector('#gwProfileUrl').addEventListener('input',()=>{const image=ro
 
 const message=t=>root.querySelector('#gwSettingsMessage').textContent=t;
 async function refreshAdmin(){
- const {data:{session}}=await db.auth.getSession();
  const wrap=root.querySelector('#gwBrandingAdmin');wrap.replaceChildren();
- if(!session){authorized=false;wrap.textContent='Sign in through Admin to manage store images.';return;}
- const [b,p,staff]=await Promise.all([db.rpc('gw_can_manage_branding'),db.rpc('gw_can_manage_product_images'),db.rpc('gw_is_boss')]);
- canBrand=b.data===true&&!b.error;canProduct=p.data===true&&!p.error;boss=staff.data===true&&!staff.error;
- authorized=canBrand||canProduct;
- if(!authorized&&!boss){wrap.textContent='Store branding is managed by authorized staff.';return;}
- if(authorized){
- const {data:products}=await db.from('products').select('id,name').order('name');
+ const token=sessionStorage.getItem('gw-employee-token')||'';
+ if(!token){authorized=false;wrap.textContent='Sign in with your Boss employee PIN to manage store images.';return;}
+ const {data:allowed,error}=await db.rpc('gw_boss_pin_check',{p_token:token});
+ boss=allowed===true&&!error;canBrand=boss;canProduct=boss;authorized=boss;
+ if(!boss){wrap.textContent='Boss employee PIN session required to manage store images.';return;}
+ const {data:products,error:productsError}=await db.from('products').select('id,name').order('name');
+ if(productsError){wrap.textContent=productsError.message;return;}
  const slot=document.createElement('select');
- const options=[...(canBrand?[['main_logo','Main website logo'],['login_logo','Login logo'],['receipt_logo','Receipt logo'],['dashboard_logo','Dashboard logo'],['favicon','Browser icon']]:[]),...(canProduct?[['product','Product image']]:[])];
- for(const [id,label] of options)slot.add(new Option(label,id));
- const product=document.createElement('select');(products||[]).forEach(p=>product.add(new Option(p.name,p.id)));
- const updateVisibility=()=>product.hidden=slot.value!=='product';slot.onchange=updateVisibility;updateVisibility();
- const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';
- const upload=document.createElement('button');upload.className='primary';upload.textContent='Upload / Replace';
- upload.onclick=async()=>{
- const f=file.files?.[0];if(!f)return message('Select an image first.');
- if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>3*1024*1024)return message('Use PNG, JPG or WebP under 3 MB.');
- if(slot.value==='product'&&!product.value)return message('Select a product.');
- if(slot.value==='product'&&!canProduct||slot.value!=='product'&&!canBrand)return message('Not authorized.');
- upload.disabled=true;message('Uploading...');
- try{
- const path=`${slot.value}/${crypto.randomUUID()}.${f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg'}`;
- const {error:upErr}=await db.storage.from('gw-images').upload(path,f,{contentType:f.type,upsert:false});
- if(upErr)throw upErr;
- const url=db.storage.from('gw-images').getPublicUrl(path).data.publicUrl;
- if(slot.value==='product'){
- const {error}=await db.rpc('gw_set_product_image',{p_product_id:product.value,p_image_url:url});if(error)throw error;
- }else{
- const {error}=await db.from('gw_branding').upsert({slot:slot.value,image_url:url,active:true},{onConflict:'slot'});if(error)throw error;
- }
- await loadBranding();message(slot.value==='favicon'?'Browser icon saved and applied. Some browsers may need a hard refresh to update the tab icon.':'Image saved. Refresh to see product image changes.');
- }catch(e){message(e.message||String(e));}finally{upload.disabled=false;}
+ for(const [id,label] of [['main_logo','Main website logo'],['login_logo','Login logo'],['receipt_logo','Receipt logo'],
+ ['dashboard_logo','Dashboard logo'],['favicon','Browser icon'],['product','Product image']])slot.add(new Option(label,id));
+ const product=document.createElement('select');
+ for(const p of products||[])product.add(new Option(p.name,p.id));
+ const input=document.createElement('input');input.type='url';input.placeholder='https://example.com/image.png';
+ input.setAttribute('aria-label','Direct HTTPS image URL');
+ const hint=document.createElement('p');
+ hint.textContent='Paste a direct HTTPS image URL. Uploading a new file requires a separate secure storage uploader; no public upload access is enabled.';
+ const updateVisibility=()=>product.hidden=slot.value!=='product';
+ slot.onchange=updateVisibility;updateVisibility();
+ const save=document.createElement('button');save.className='primary';save.textContent='Save Image URL';
+ const reset=document.createElement('button');reset.className='outline';reset.textContent='Reset Selected Image';
+ const apply=async url=>{
+  if(url&&!/^https:\/\//i.test(url))return message('Enter an HTTPS image URL.');
+  save.disabled=true;reset.disabled=true;
+  try{
+   const {error:e}=await db.rpc('gw_boss_set_image_url',{p_token:token,p_slot:slot.value,
+     p_product:slot.value==='product'?String(product.value):null,p_url:url||null});
+   if(e)throw e;
+   await loadBranding();
+   message(url?'Image URL saved. Refresh to see your change.':'Image reset successfully.');
+  }catch(e){message('Unable to save image: '+e.message);}finally{save.disabled=false;reset.disabled=false;}
  };
- const reset=document.createElement('button');reset.textContent='Reset selected logo';
- reset.onclick=async()=>{if(slot.value==='product')return message('Select a logo to reset.');if(!canBrand)return;
- if(!confirm('Reset this logo to default?'))return;
- const {error}=await db.from('gw_branding').delete().eq('slot',slot.value);
- if(error)return message(error.message);await loadBranding();message(slot.value==='favicon'?'Browser icon reset.':'Logo reset.');};
+ save.onclick=()=>apply(input.value.trim());
+ reset.onclick=()=>{if(confirm('Reset the selected image?'))apply(null);};
  const label=document.createElement('label');label.textContent='Image location ';label.append(slot);
- wrap.append(label,product,file,upload);if(canBrand)wrap.append(reset);
- }
- if(boss)await renderStaffManager(wrap);
+ wrap.append(label,product,input,hint,save,reset);
 }
 async function renderStaffManager(wrap){
  const heading=document.createElement('h3');heading.textContent='Boss • Staff permissions';wrap.append(heading);
