@@ -591,3 +591,44 @@ body[data-theme] .gw-offer-form [hidden]{display:none!important}
 body[data-theme] .gw-receipt-phase4{display:grid;gap:6px;margin-top:14px;padding-top:12px;border-top:1px dashed #555}
 body[data-theme] .gw-history-filter{width:100%;padding:12px;margin-bottom:12px;color:var(--text);border:1px solid var(--line);background:var(--panel);border-radius:9px}
 body[data-theme] .gw-site-submenu button[data-site-page="productanalytics"]::before{content:"▤";display:inline-grid;place-items:center;width:30px;height:30px;margin-right:8px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--panel));border-radius:7px}
+
+/* Itemized Sales History and Customer Loyalty Management */
+body[data-theme] .gw-sales-history-card{display:grid;gap:8px;padding:16px 18px;margin-bottom:9px;border:1px solid var(--line);border-radius:9px;background:linear-gradient(135deg,var(--panel2),var(--panel));color:var(--text)}
+body[data-theme] .gw-sales-history-head{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap}
+body[data-theme] .gw-sales-history-head strong{font-size:14px;color:var(--text);font-weight:800}
+body[data-theme] .gw-sales-history-card>small{color:var(--muted);font-size:11px}
+body[data-theme] .gw-sales-history-items{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;display:grid;gap:6px}
+body[data-theme] .gw-sales-history-items>small{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--muted)}
+body[data-theme] .gw-sales-history-item{display:flex;align-items:start;justify-content:space-between;gap:12px;padding:6px 8px;border-radius:7px;background:color-mix(in srgb,var(--accent) 4%,var(--panel))}
+body[data-theme] .gw-sales-history-item span{font-size:12px;color:var(--text);overflow-wrap:anywhere}
+body[data-theme] .gw-sales-history-item strong{color:var(--accent);font-size:12px;white-space:nowrap}
+body[data-theme] .gw-loyalty-layout{display:grid;grid-template-columns:minmax(240px,340px) minmax(0,1fr);gap:17px;margin-top:18px;align-items:start}
+body[data-theme] .gw-loyalty-directory{display:grid;gap:9px;align-content:start;max-height:850px;overflow-y:auto}
+body[data-theme] .gw-loyalty-member-card{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;width:100%;border-radius:10px;padding:14px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer}
+body[data-theme] .gw-loyalty-member-card:hover,body[data-theme] .gw-loyalty-member-card.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--panel))}
+body[data-theme] .gw-loyalty-member-card>div{display:grid;gap:5px;min-width:0}
+body[data-theme] .gw-loyalty-member-card strong{font-size:13px;overflow-wrap:anywhere}
+body[data-theme] .gw-loyalty-member-card small{font-size:11px;color:var(--muted)}
+body[data-theme] .gw-loyalty-member-points{font-weight:900;color:var(--accent);font-size:12px;white-space:nowrap}
+body[data-theme] .gw-loyalty-profile{min-width:0;padding:20px;border-radius:13px;border:1px solid var(--line);background:var(--panel2);display:grid;gap:18px}
+body[data-theme] .gw-loyalty-profile-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+body[data-theme] .gw-loyalty-profile-head>div:first-child{display:grid;gap:5px}
+body[data-theme] .gw-loyalty-profile-head small{color:var(--muted);font-size:10px;letter-spacing:.1em}
+body[data-theme] .gw-loyalty-profile-head h3{margin:0;font-size:23px;color:var(--text)}
+body[data-theme] .gw-loyalty-profile-head p{margin:0;font-size:12px;color:var(--muted)}
+body[data-theme] .gw-loyalty-points{display:grid;gap:4px;padding:12px 18px;border-radius:10px;text-align:center;background:color-mix(in srgb,var(--accent) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line))}
+body[data-theme] .gw-loyalty-points strong{font-size:25px;color:var(--accent)}
+body[data-theme] .gw-loyalty-adjust-form{display:grid;gap:9px;padding:15px;border-radius:10px;background:var(--panel);border:1px solid var(--line)}
+body[data-theme] .gw-loyalty-adjust-form h4{margin:0;color:var(--text)}
+body[data-theme] .gw-loyalty-adjust-form p{margin:0;color:var(--muted);font-size:12px}
+body[data-theme] .gw-loyalty-adjust-form input,body[data-theme] .gw-loyalty-adjust-form textarea{width:100%;padding:11px;border-radius:8px;background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+body[data-theme] .gw-loyalty-activity-list{display:grid;gap:9px;margin-top:12px}
+body[data-theme] .gw-loyalty-activity-card{padding:13px 15px;border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--panel);border-radius:9px;display:grid;gap:7px}
+body[data-theme] .gw-loyalty-activity-card.gw-loyalty-negative{border-left-color:#e5737c}
+body[data-theme] .gw-loyalty-activity-card.gw-loyalty-negative .gw-loyalty-activity-top>strong:last-child{color:#e5737c}
+body[data-theme] .gw-loyalty-activity-card.gw-loyalty-positive .gw-loyalty-activity-top>strong:last-child{color:#5dcf91}
+body[data-theme] .gw-loyalty-activity-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+body[data-theme] .gw-loyalty-activity-top strong{color:var(--text);font-size:13px}
+body[data-theme] .gw-loyalty-activity-card>small{font-size:11px;color:var(--muted)}
+body[data-theme] .gw-loyalty-activity-card>p{margin:0;color:var(--text);font-size:12px}
+@media(max-width:860px){body[data-theme] .gw-loyalty-layout{grid-template-columns:1fr}body[data-theme] .gw-loyalty-directory{max-height:350px}}
