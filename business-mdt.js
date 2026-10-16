@@ -100,6 +100,9 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
    if(page==='reports'){
     const cards=make('div',undefined,'gw-mdt-stats');
     for(const [name,key] of [['Today','today_sales'],['This Week','weekly_sales'],['Lifetime','lifetime_sales']]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',name+' Sales'),make('strong',cash(rows.reduce((sum,e)=>sum+Number(e[key]||0),0))));cards.append(card);}
+    const orders=rows.reduce((sum,e)=>sum+Number(e.total_orders||0),0);
+    const lifetime=rows.reduce((sum,e)=>sum+Number(e.lifetime_sales||0),0);
+    const avg=make('div',undefined,'gw-mdt-stat');avg.append(make('small','Recorded Orders'),make('strong',String(orders)),make('small','Average Lifetime Sale'),make('strong',orders?cash(lifetime/orders):cash(0)));cards.append(avg);
     host.insertBefore(cards,list);
     try{
      const adjustmentRows=await rpc('gw_mdt_sale_adjustment_totals');
