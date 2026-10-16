@@ -2,6 +2,16 @@
 -- Run AFTER Phase 2/3 migrations. Existing sales are preserved.
 -- Rewards: 1 point earned per $100 paid on eligible merchandise; 1 point redeems for $1.
 -- All prices, discount limits, and balances are validated on the server.
+-- Offers management is separately permissioned; Boss always retains access.
+alter table public.gw_mdt_role_permissions drop constraint if exists gw_mdt_role_permissions_feature_check;
+alter table public.gw_mdt_role_permissions add constraint gw_mdt_role_permissions_feature_check check(feature in
+('dashboard','employees','time_management','sales_earnings','admin_catalog','admin_branding',
+'employee_add','employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset',
+'time_add','time_remove','time_history','sales_history','sales_adjust','announcements','announcements_manage',
+'employee_notes','employee_notes_manage','recognition_view','recognition_manage','activity_history','offers_manage'));
+insert into public.gw_mdt_role_permissions(role,feature,allowed)
+select r.role,'offers_manage',false from (values('Manager'),('Senior Salesman'),('Salesman')) r(role)
+on conflict (role,feature) do nothing;
 create table if not exists public.gw_pos_offers(
  id bigint generated always as identity primary key,
  title text not null check(length(trim(title)) between 3 and 100),
@@ -70,8 +80,7 @@ returns bigint language plpgsql security definer set search_path=public,pg_temp 
 declare v_actor uuid;v_id bigint;v_item jsonb;
 begin
  v_actor:=public.gw_employee_for_token(p_token);
- if v_actor is null or not exists(select 1 from public.gw_employees where id=v_actor and role='Boss')
- then raise exception 'Boss PIN sign-in required';end if;
+ if not public.gw_mdt_can(p_token,'offers_manage') then raise exception 'Offer management permission required';end if;
  if length(trim(coalesce(p_title,''))) not between 3 and 100 or p_type not in ('special','bundle') then raise exception 'Invalid offer';end if;
  if p_end is not null and p_start is not null and p_end<=p_start then raise exception 'Invalid offer dates';end if;
  if p_type='special' then
@@ -104,8 +113,7 @@ end$$;
 create or replace function public.gw_pos_all_offers(p_token text)
 returns setof public.gw_pos_offers language plpgsql stable security definer set search_path=public,pg_temp as $$
 begin
- if not exists(select 1 from public.gw_employees where id=public.gw_employee_for_token(p_token) and role='Boss')
- then raise exception 'Boss PIN sign-in required';end if;
+ if not public.gw_mdt_can(p_token,'offers_manage') then raise exception 'Offer management permission required';end if;
  return query select * from public.gw_pos_offers order by id desc;
 end$$;
 
