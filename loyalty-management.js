@@ -41,7 +41,12 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
    const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=rule?.enabled!==false;
    const rateLabel=make('label','Spend required to earn 1 point');rateLabel.append(rate);
    const valueLabel=make('label','Dollar value of 1 point');valueLabel.append(value);
-   const enabledLabel=make('label','Enable loyalty earning');enabledLabel.append(enabled);
+   const enabledLabel=make('label',undefined,'gw-loyalty-switch-row');
+   const switchText=make('span',enabled.checked?'Loyalty Earning: ON':'Loyalty Earning: OFF');
+   const switchTrack=make('span',undefined,'gw-loyalty-switch-track');
+   enabled.className='gw-loyalty-switch-input';enabled.setAttribute('role','switch');enabled.setAttribute('aria-label','Enable loyalty earning');
+   enabled.onchange=()=>{switchText.textContent=enabled.checked?'Loyalty Earning: ON':'Loyalty Earning: OFF';};
+   enabledLabel.append(switchText,enabled,switchTrack);
    const save=make('button','Save Reward Rules','primary');save.type='submit';
    const message=make('p','','gw-mdt-message');form.append(rateLabel,valueLabel,enabledLabel,save,message);
    form.onsubmit=async event=>{event.preventDefault();save.disabled=true;try{
