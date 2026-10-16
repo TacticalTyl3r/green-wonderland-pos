@@ -1,4 +1,4 @@
-import {createPhase4} from './phase4-pos.js?v=catalog-rewards-points-20261016';
+import {createPhase4} from './phase4-pos.js?v=checkout-redeem-toggle-20261016';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -10,6 +10,7 @@ const phase4=createPhase4({db,money,getProducts:()=>products,getLines:()=>lines(
  getToken:()=>sessionStorage.getItem('gw-employee-token')||'',
  onCartChanged:()=>{if(products.length){renderCart();phase4.renderFavorites(chooseProduct);}}});
 document.querySelector('#cartView .control')?.before(phase4.root);
+ document.querySelector('#cartView .checkout')?.before(phase4.checkoutRewards);
 const catalogSidebar=document.createElement('div');
 catalogSidebar.className='gw-catalog-sidebar';
 $('categories').before(catalogSidebar);
