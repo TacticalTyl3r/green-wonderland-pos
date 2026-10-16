@@ -30,3 +30,13 @@ body[data-theme] #gwSettings .gw-theme-choice:hover{border-color:var(--accent)}
 body[data-theme] .gw-site-content .shell .empty{border-color:var(--line);color:var(--muted)}
 /* Light themes need legible button text even with a dark brand accent. */
 body[data-theme="light"] .primary,body[data-theme="arctic"] .primary,body[data-theme="cherry"] .primary,body[data-theme="sand"] .primary{color:#fff!important}
+
+/* Management layout refinement: inherit selected theme */
+body[data-theme] .gw-roster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body[data-theme] .gw-roster-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px;gap:12px}
+body[data-theme] .gw-roster-card>div:first-child{display:flex;flex-direction:column;align-items:center;gap:8px}
+body[data-theme] .gw-roster-avatar{width:60px;height:60px;border-radius:50%;background:var(--gw-accent-soft);color:var(--accent);display:grid;place-items:center;font-size:20px;font-weight:800}
+body[data-theme] .gw-role-picker{display:grid;gap:8px;margin:15px 0}
+body[data-theme] .gw-role-selector{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:12px}
+body[data-theme] .gw-permission-card[hidden]{display:none!important}
+@media(max-width:750px){body[data-theme] .gw-roster-grid{grid-template-columns:1fr}}
