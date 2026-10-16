@@ -11,7 +11,13 @@ returns uuid language plpgsql security definer set search_path=public,pg_temp as
 declare v_member uuid;
 begin
  if public.gw_employee_for_token(p_token) is null then raise exception 'Sign in with employee PIN';end if;
- if trim(coalesce(p_code,'')) !~ '^[a-zA-Z0-9_-]{1,40}
+ if trim(coalesce(p_code,'')) !~ '^[a-zA-Z0-9_-]{1,40} or length(trim(coalesce(p_name,''))) not between 2 and 100
+ then raise exception 'Enter a 1-40 character Customer CID and a name';end if;
+ insert into public.gw_loyalty_members(member_code,display_name)
+ values(trim(p_code),trim(p_name)) returning id into v_member;
+ return v_member;
+end$$;
+
  or length(trim(coalesce(p_name,''))) not between 2 and 100
  then raise exception 'Enter a 1-40 character Customer CID and a name';end if;
  insert into public.gw_loyalty_members(member_code,display_name)
