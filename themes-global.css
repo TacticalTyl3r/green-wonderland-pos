@@ -410,3 +410,23 @@ body[data-theme] #gwSiteNav .gw-site-submenu .gw-admin-subitem .gw-site-icon{fle
  body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-toggle span{display:initial!important}
  body[data-theme] .gw-site-sidebar:not(.collapsed) #gwSiteNav>button{justify-content:flex-start;padding:8px 10px}
 }
+
+/* Keep Current Order visible in the right column as the catalog scrolls. */
+@media(min-width:951px){
+ body[data-theme] .gw-site-content .shell main>.order{
+  position:sticky!important;
+  top:clamp(92px,calc(50vh - 280px),180px)!important;
+  align-self:start;
+  max-height:calc(100vh - 112px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+ }
+}
+@media(max-width:950px){
+ body[data-theme] .gw-site-content .shell main>.order{
+  position:static!important;
+  max-height:none;
+  overflow:visible;
+ }
+}
