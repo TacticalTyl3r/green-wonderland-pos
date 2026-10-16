@@ -138,3 +138,15 @@ body[data-theme] .gw-catalog-modal .gw-editor-add:hover,body[data-theme] .gw-cat
 body[data-theme] .gw-catalog-modal-actions button[data-cancel-editor]{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
 body[data-theme] .gw-catalog-modal button:focus-visible,body[data-theme] .gw-catalog-actions button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media(max-width:540px){body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row{grid-template-columns:minmax(0,1fr) 75px;gap:7px}body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row input:first-child{grid-column:1/-1}body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row input:nth-child(3){grid-column:1}body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row .gw-editor-remove{grid-column:2;grid-row:3}}
+
+/* Product active status — accessible on/off switch */
+body[data-theme] .gw-catalog-modal .gw-active-toggle-field{display:flex!important;align-items:center;justify-content:flex-start;gap:12px;align-self:center;color:var(--text);font-weight:650;cursor:pointer;min-height:42px}
+body[data-theme] .gw-active-switch{position:relative;display:inline-flex;width:52px;height:28px;flex:0 0 52px;align-items:center}
+body[data-theme] .gw-active-switch input{position:absolute;inset:0;width:100%!important;height:100%;margin:0;opacity:0;cursor:pointer;z-index:1}
+body[data-theme] .gw-active-switch-track{display:block;width:52px;height:28px;border-radius:999px;background:#87343b;border:1px solid #b4555d;transition:background .18s}
+body[data-theme] .gw-active-switch-track::after{content:'';display:block;position:absolute;top:4px;left:4px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 1px 4px #0005;transition:transform .18s}
+body[data-theme] .gw-active-switch input:checked+.gw-active-switch-track{background:#238e59;border-color:#38b875}
+body[data-theme] .gw-active-switch input:checked+.gw-active-switch-track::after{transform:translateX(24px)}
+body[data-theme] .gw-active-switch input:focus-visible+.gw-active-switch-track{outline:3px solid var(--accent);outline-offset:3px}
+body[data-theme] .gw-active-state{font-size:12px;font-weight:800;min-width:25px;color:var(--muted)}
+body[data-theme] .gw-active-switch:has(input:checked)+.gw-active-state{color:#40bc7e}
