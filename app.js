@@ -123,13 +123,49 @@ function chooseProduct(p){
 }
 function adminRow(p,type){if(type==='zone')return `<div class="adminrow zone" data-id="${esc(p.id)}"><input data-field="name" value="${esc(p.name)}" placeholder="Zone"><input data-field="fee" type="number" min="0" value="${p.fee}"><div><button data-save-zone="${esc(p.id)}">Save</button> <button data-delete-zone="${esc(p.id)}">✕</button></div></div>`;return `<div class="adminrow gw-catalog-editor" data-id="${esc(p.id)}"><input data-field="name" value="${esc(p.name)}" placeholder="Name"><input data-field="category" value="${esc(p.category)}" placeholder="Category"><input data-field="price" type="number" min="0" step=".01" value="${p.price}"><label><input data-field="active" type="checkbox" ${p.active?'checked':''}> Active</label><div><button data-save-product="${esc(p.id)}">Save</button> <button data-delete-product="${esc(p.id)}">✕</button></div><label style="grid-column:1/-1">Product image URL<input data-field="image_url" type="url" placeholder="https://example.com/product.png" value="${esc(p.image_url||'')}"></label><div class="gw-admin-image-row"><img src="${esc(p.image_url||'')}" alt="" loading="lazy" ${p.image_url?'':'hidden'}><span>Paste a direct HTTPS image link, then save this product.</span></div></div>`;}
 function renderAdmin(){
- const list=$('adminProducts');const filter=document.getElementById('gwAdminProductSearch')?.value.trim().toLowerCase()||'';
- list.innerHTML=products.filter(p=>(p.name+' '+p.category).toLowerCase().includes(filter)).map(p=>adminRow(p,'product')).join('');
- hydrateProductEditors();$('adminZones').innerHTML=zones.map(z=>adminRow(z,'zone')).join('');$('maxDiscount').value=settings.max_discount;}
+ const list=$('adminProducts'),filter=document.getElementById('gwAdminProductSearch')?.value.trim().toLowerCase()||'';
+ const category=document.getElementById('gwCatalogCategory')?.value||'All Categories';
+ const state=document.getElementById('gwCatalogState')?.value||'all';
+ const filtered=products.filter(p=>(p.name+' '+p.category).toLowerCase().includes(filter)&&(category==='All Categories'||p.category===category)&&(state==='all'||Boolean(p.active)===(state==='active')));
+ list.innerHTML='<div class="gw-catalog-table"><div class="gw-catalog-heading"><span>Product</span><span>Category</span><span>Price</span><span>Status</span><span>Actions</span></div>'+filtered.map(p=>`<div class="gw-catalog-product" data-id="${esc(p.id)}"><div class="gw-catalog-name">${p.image_url?`<img src="${esc(p.image_url)}" alt="" loading="lazy">`:'<span class="gw-catalog-noimage">▣</span>'}<strong>${esc(p.name)}</strong></div><span>${esc(p.category)}</span><strong>${money(p.price)}</strong><span class="${p.active?'gw-active-pill':'gw-inactive-pill'}">${p.active?'Active':'Inactive'}</span><div class="gw-catalog-actions"><button type="button" data-edit-product="${esc(p.id)}" aria-label="Edit ${esc(p.name)}" title="Edit product">✎</button><button type="button" data-delete-product="${esc(p.id)}" aria-label="Delete ${esc(p.name)}" title="Delete product">✕</button></div></div>`).join('')+'</div>';
+ $('adminZones').innerHTML=zones.map(z=>adminRow(z,'zone')).join('');$('maxDiscount').value=settings.max_discount;
+ const selector=document.getElementById('gwCatalogCategory');
+ if(selector){const previous=selector.value;selector.replaceChildren(new Option('All Categories','All Categories'));[...new Set(products.map(p=>p.category))].sort().forEach(cat=>selector.add(new Option(cat,cat)));selector.value=[...selector.options].some(o=>o.value===previous)?previous:'All Categories';}
+}
+function editCatalogProduct(p){
+ const dialog=document.createElement('dialog');dialog.className='gw-catalog-modal';
+ dialog.innerHTML='<div class="gw-catalog-modal-head"><h2>Edit Product</h2><button type="button" data-close-editor aria-label="Close">✕</button></div><div class="gw-catalog-modal-body"></div><div class="gw-catalog-modal-actions"><button type="button" data-cancel-editor>Cancel</button><button type="button" class="primary" data-confirm-editor>Save Changes</button></div>';
+ const body=dialog.querySelector('.gw-catalog-modal-body');body.innerHTML=adminRow(p,'product');const row=body.querySelector('.adminrow');
+ row.append(editorList(row,'ingredients',Array.isArray(p.ingredients)?p.ingredients:[]),editorList(row,'options',Array.isArray(p.options)?p.options:[]));
+ const oldActions=row.querySelector('[data-save-product]')?.parentElement;if(oldActions)oldActions.remove();
+ const close=()=>dialog.close();
+ dialog.querySelector('[data-close-editor]').onclick=close;dialog.querySelector('[data-cancel-editor]').onclick=close;
+ dialog.querySelector('[data-confirm-editor]').onclick=async()=>{
+  const button=dialog.querySelector('[data-confirm-editor]');try{
+   const v=rowValues(row,['name','category','price','active','image_url']);v.price=Number(v.price);v.image_url=v.image_url.trim()||null;
+   if(v.image_url&&!/^https:\/\//i.test(v.image_url))throw Error('Product image must use an HTTPS URL.');
+   v.ingredients=readEditorList(row,'ingredients');v.options=readEditorList(row,'options');
+   if(v.ingredients.some(x=>!Number.isFinite(x.qty)||x.qty<0)||!v.name.trim()||!v.category.trim()||!Number.isFinite(v.price)||v.price<0)throw Error('Check product fields.');
+   button.disabled=true;const saved=await mutate('products','update',v,p.id);if(saved)close();
+  }catch(err){msg(err.message);}finally{button.disabled=false;}
+ };
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+}
 function rowValues(row,fields){const o={};for(const field of fields){const input=row.querySelector(`[data-field="${field}"]`);o[field]=input.type==='checkbox'?input.checked:input.value;}return o;}
 async function mutate(table,method,payload,id){if(!db||!session){msg('Sign in as an administrator first.');return false;}msg('Saving...');let q=db.from(table);let result;if(method==='insert')result=await q.insert(payload).select('id');else if(method==='delete')result=await q.delete().eq('id',id).select('id');else result=await q.update(payload).eq('id',id).select('*');if(result.error){msg('Save failed: '+result.error.message+(result.error.message.includes('image_url')?' — Run the product images SQL migration.':''));return false;}if(!result.data?.length){msg('Nothing was saved. Check your administrator permissions and database policies.');return false;}await load();if(table==='products'&&method==='update'&&Object.prototype.hasOwnProperty.call(payload,'image_url')){const saved=products.find(p=>String(p.id)===String(id));if(!saved||saved.image_url!==payload.image_url){msg('Save could not be verified. Check your product image column and permissions.');return false;}}renderAdmin();msg('Saved and verified in the shared catalog.');return true;}
-const catalogSearch=document.createElement('input');catalogSearch.id='gwAdminProductSearch';catalogSearch.type='search';catalogSearch.placeholder='Search products by name or category…';catalogSearch.className='gw-catalog-search';$('adminProducts').before(catalogSearch);catalogSearch.addEventListener('input',renderAdmin);
-$('adminProducts').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const row=b.closest('.adminrow'),id=row.dataset.id;if(b.dataset.deleteProduct){if(confirm('Delete this product?'))await mutate('products','delete',null,id);return;}if(b.dataset.saveProduct){try{const v=rowValues(row,['name','category','price','active','image_url']);v.price=Number(v.price);v.image_url=v.image_url.trim()||null;if(v.image_url&&!/^https:\/\//i.test(v.image_url))throw Error('Product image must use an HTTPS URL.');v.ingredients=readEditorList(row,'ingredients');v.options=readEditorList(row,'options');if(v.ingredients.some(x=>!Number.isFinite(x.qty)||x.qty<0)||!v.name.trim()||!v.category.trim()||!Number.isFinite(v.price)||v.price<0)throw Error('Check product fields.');await mutate('products','update',v,id);}catch(err){msg(err.message);}}};$('adminZones').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const row=b.closest('.adminrow'),id=row.dataset.id;if(b.dataset.deleteZone){if(confirm('Delete this delivery zone?'))await mutate('delivery_zones','delete',null,id);return;}if(b.dataset.saveZone){const v=rowValues(row,['name','fee']);v.fee=Number(v.fee);if(!v.name.trim()||!Number.isFinite(v.fee)||v.fee<0)return msg('Invalid zone.');await mutate('delivery_zones','update',v,id);}};
+const catalogTools=document.createElement('div');catalogTools.className='gw-catalog-toolbar';
+const catalogSearch=document.createElement('input');catalogSearch.id='gwAdminProductSearch';catalogSearch.type='search';catalogSearch.placeholder='Search products…';
+const catalogCategory=document.createElement('select');catalogCategory.id='gwCatalogCategory';catalogCategory.add(new Option('All Categories','All Categories'));
+const catalogState=document.createElement('select');catalogState.id='gwCatalogState';for(const [name,value] of [['All Products','all'],['Active Only','active'],['Inactive Only','inactive']])catalogState.add(new Option(name,value));
+catalogTools.append(catalogSearch,catalogCategory,catalogState);$('adminProducts').before(catalogTools);
+for(const control of [catalogSearch,catalogCategory,catalogState])control.addEventListener(control===catalogSearch?'input':'change',renderAdmin);
+$('adminProducts').onclick=async e=>{
+ const b=e.target.closest('button');if(!b)return;
+ const id=b.dataset.editProduct||b.dataset.deleteProduct,p=products.find(p=>String(p.id)===String(id));if(!p)return;
+ if(b.dataset.editProduct){editCatalogProduct(p);return;}
+ if(b.dataset.deleteProduct&&confirm('Delete '+p.name+'?'))await mutate('products','delete',null,id);
+};
+$('adminZones').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const row=b.closest('.adminrow'),id=row.dataset.id;if(b.dataset.deleteZone){if(confirm('Delete this delivery zone?'))await mutate('delivery_zones','delete',null,id);return;}if(b.dataset.saveZone){const v=rowValues(row,['name','fee']);v.fee=Number(v.fee);if(!v.name.trim()||!Number.isFinite(v.fee)||v.fee<0)return msg('Invalid zone.');await mutate('delivery_zones','update',v,id);}};
 $('addProduct').onclick=()=>mutate('products','insert',{name:'New product',category:'Other',price:0,active:false,ingredients:[]});$('addZone').onclick=()=>mutate('delivery_zones','insert',{name:'New zone',fee:0});$('saveSettings').onclick=()=>{const n=Number($('maxDiscount').value);if(!Number.isInteger(n)||n<0||n>100)return msg('Discount must be between 0 and 100.');mutate('app_settings','update',{max_discount:n},1);};
 if(db){db.auth.onAuthStateChange((_event,s)=>{session=s;});db.channel('catalog-updates').on('postgres_changes',{event:'*',schema:'public',table:'products'},load).on('postgres_changes',{event:'*',schema:'public',table:'delivery_zones'},load).on('postgres_changes',{event:'*',schema:'public',table:'app_settings'},load).subscribe();}
 load();
