@@ -193,3 +193,22 @@ body[data-theme] .gw-permissions-save:hover{background:#2da266}
 body[data-theme] .gw-permissions-footer button:disabled{opacity:.55;cursor:wait}
 @media(max-width:650px){body[data-theme] .gw-permissions-panel-head{display:block}body[data-theme] .gw-permissions-panel-head p{margin-top:5px}body[data-theme] .gw-permissions-item{gap:9px;padding:10px 8px}body[data-theme] .gw-permissions-icon{flex-basis:34px;width:34px;height:34px;font-size:18px}body[data-theme] .gw-permissions-detail small{font-size:11px}body[data-theme] .gw-permissions-control{gap:6px}}
 @media(max-width:420px){body[data-theme] .gw-permissions-footer{grid-template-columns:1fr}}
+
+/* Two-column boss permissions layout; retains one-column mobile layout */
+body[data-theme] .gw-permissions-list{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:10px 14px;
+ align-items:stretch;
+}
+body[data-theme] .gw-permissions-item{
+ min-width:0;
+ height:100%;
+ margin:0;
+}
+body[data-theme] .gw-permissions-detail{min-width:0}
+body[data-theme] .gw-permissions-detail strong{overflow-wrap:anywhere}
+body[data-theme] .gw-permissions-detail small{letter-spacing:normal;overflow-wrap:anywhere}
+@media(max-width:900px){
+ body[data-theme] .gw-permissions-list{grid-template-columns:1fr}
+}
