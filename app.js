@@ -1,4 +1,4 @@
-import {createPhase4} from './phase4-pos.js?v=catalog-redemption-20261016';
+import {createPhase4} from './phase4-pos.js?v=catalog-rewards-points-20261016';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -160,7 +160,7 @@ $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat
   if(!selected)throw Error('Sign in as the employee processing this order.');
   const result=await phase4.checkout({employee:selected,
    items:l.map(({p,qty,choice})=>({id:String(p.id),qty,choice})),
-   fulfillment,zone:$('zone').value,discount:Number($('discount').value),expectedTotal:t.total});
+   fulfillment,zone:$('zone').value,discount:Number($('discount').value),expectedTotal:t.total,availableDue:t.total+t.rewards});
   history.unshift({date:new Date().toISOString(),total:Number(result.total),count,fulfillment,
    sale_id:result.sale_id});
   historyLoaded=false;history=history.slice(0,100);cart={};$('discount').value=0;render();
