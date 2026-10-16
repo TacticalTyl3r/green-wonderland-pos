@@ -343,7 +343,7 @@ async function showRolePermissions(){
    employee_add:'Create new employee accounts',employee_edit:'Update employee information',employee_deactivate:'Deactivate employee accounts',
    employee_role_assign:'Change employee positions',employee_pin_reset:'Reset employee PINs',
    time_add:'Add work time to employee records',time_remove:'Remove work time from employee records',
-   time_history:'Review historical time adjustments',sales_history:'View customer order and sales history',sales_adjust:'Authorize partial refunds and voids with required reasons',
+   time_history:'Review historical time adjustments',sales_history:'View customer order and sales history',sales_adjust:'Authorize partial refunds and voids with required reasons',offers_manage:'Create, edit and disable product bundles and specials',
    announcements:'Read store announcements',announcements_manage:'Create and manage announcements',
    employee_notes:'View employee notes',employee_notes_manage:'Add and manage employee notes',
    recognition_view:'View employee recognition',recognition_manage:'Award employee recognition',
@@ -493,7 +493,7 @@ async function showBackupCenter(){
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
   if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin Account':'Admin Login';adminBtn.hidden=false;adminBtn.title=bossAllowed?'Manage your administrator account and product settings':'Sign in with your administrator email and password';}
-  if(currentPage!=='pos'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
+  if(currentPage!=='pos'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&currentPage!=='offers'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
    if(currentPage==='audit'&&!canFeature('activity_history'))await showSite('pos');
   if(currentPage==='offers'&&!canFeature('offers_manage'))await showSite('pos');
   if((currentPage==='permissions'||currentPage==='security'||currentPage==='backups')&&!bossAllowed)await showSite('pos');
