@@ -62,3 +62,11 @@ body[data-theme] .gw-catalog-editor>input{width:100%;min-width:0;background:var(
 body[data-theme] .gw-catalog-editor>label:has([data-field="image_url"]),body[data-theme] .gw-catalog-editor>.gw-admin-image-row,body[data-theme] .gw-catalog-editor>.gw-editor-list{grid-column:1/-1}
 body[data-theme] .gw-catalog-editor .gw-admin-image-row img{max-width:100px;max-height:100px;object-fit:contain}
 @media(max-width:850px){body[data-theme] #adminProducts{grid-template-columns:1fr}}
+
+body[data-theme] .gw-leader-panel{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px;margin:16px 0}
+body[data-theme] .gw-leader-panel h3{margin:0 0 16px;color:var(--text)}
+body[data-theme] .gw-leader-item{display:grid;gap:7px;margin:12px 0}
+body[data-theme] .gw-leader-caption{display:flex;justify-content:space-between;gap:12px;color:var(--text);font-size:13px}
+body[data-theme] .gw-leader-caption strong{color:var(--muted)}
+body[data-theme] .gw-leader-track{height:8px;border-radius:20px;background:var(--line);overflow:hidden}
+body[data-theme] .gw-leader-fill{height:100%;background:var(--accent);border-radius:20px}
