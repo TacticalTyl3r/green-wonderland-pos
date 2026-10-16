@@ -7,6 +7,11 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
  const controls=make('div',undefined,'gw-mdt-actions'),search=document.createElement('input'),reload=make('button','Refresh','outline');
  search.type='search';search.placeholder='Search Customer CID or name';search.setAttribute('aria-label','Search loyalty members');
  controls.append(search,reload);
+ const exportCsv=make('button','Export Customers CSV','outline');
+ exportCsv.type='button';exportCsv.disabled=true;controls.append(exportCsv);
+ const csvCell=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
+ const download=(name,rows)=>{const blob=new Blob(['\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\\r\\n')],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);};
  const stats=make('div',undefined,'gw-mdt-stats');
  const layout=make('div',undefined,'gw-loyalty-layout');
  const directory=make('section',undefined,'gw-loyalty-directory');
@@ -16,6 +21,9 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
  const rpc=(name,args={})=>call(name,{p_token:token(),...args});
  const canEdit=()=>canFeature('loyalty_adjust');
  let members=[],selectedId=null,request=0;
+ exportCsv.onclick=()=>download('green-wonderland-loyalty-'+new Date().toISOString().slice(0,10)+'.csv',
+  [['CID','Customer','Available Points','Lifetime Earned','Purchases','Total Spent','Member Since'],
+   ...members.map(m=>[m.member_code,m.display_name,m.points,m.lifetime_earned,m.orders,m.total_spent,m.created_at])]);
  const showDetails=async member=>{
   selectedId=member.id;profile.replaceChildren();
   for(const el of directory.querySelectorAll('[data-loyalty-member]'))el.classList.toggle('selected',el.dataset.loyaltyMember===String(member.id));
@@ -99,12 +107,12 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
   try{
    const rows=await rpc('gw_loyalty_members_admin',{p_query:search.value.trim()});
    if(id!==request)return;
-   members=rows||[];draw();
+   members=rows||[];exportCsv.disabled=!members.length;draw();
    const chosen=members.find(m=>m.id===(select||selectedId));
    if(chosen)await showDetails(chosen);
    else if(members.length===1)await showDetails(members[0]);
    else{selectedId=null;profile.replaceChildren(make('p','Select a customer to see their rewards profile and history.'));}
-   status.textContent=members.length+' customers shown (up to 200 per search).';
+   status.textContent=members.length+' customers shown (up to 200 per search). CSV exports only the displayed search results.';
   }catch(error){status.textContent='Loyalty management requires its SQL migration and an authorized employee PIN: '+error.message;}
  }
  let debounce;
