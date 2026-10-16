@@ -91,3 +91,35 @@ body[data-theme] .gw-roster-section:nth-child(4){--rank-color:#b9a1d9}
 body[data-theme] .gw-roster-section>h3{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 14px;padding:13px 16px;border:1px solid color-mix(in srgb,var(--rank-color) 45%,var(--line));border-left:5px solid var(--rank-color);border-radius:10px;background:var(--rank-tint);color:var(--rank-color)!important;font-size:16px;font-weight:800;letter-spacing:.35px;text-transform:uppercase}
 body[data-theme] .gw-roster-section>h3::before{content:'';width:8px;height:8px;flex-shrink:0;border-radius:50%;background:var(--rank-color);box-shadow:0 0 0 4px color-mix(in srgb,var(--rank-color) 16%,transparent)}
 body[data-theme] .gw-roster-section .gw-roster-card{border-color:color-mix(in srgb,var(--rank-color) 24%,var(--line))}
+
+/* Catalog list + focused product editor */
+body[data-theme] #adminProducts{display:block!important}
+body[data-theme] .gw-catalog-toolbar{display:grid;grid-template-columns:minmax(160px,2fr) minmax(120px,1fr) minmax(120px,1fr);gap:10px;margin:14px 0}
+body[data-theme] .gw-catalog-toolbar input,body[data-theme] .gw-catalog-toolbar select{width:100%;min-width:0;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text)}
+body[data-theme] .gw-catalog-table{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--panel2)}
+body[data-theme] .gw-catalog-heading,body[data-theme] .gw-catalog-product{display:grid;grid-template-columns:minmax(175px,2.3fr) minmax(125px,1.4fr) minmax(75px,.7fr) minmax(75px,.7fr) minmax(95px,.8fr);align-items:center;gap:10px;min-width:660px;padding:12px 14px}
+body[data-theme] .gw-catalog-heading{background:var(--panel);color:var(--muted);font-size:12px;font-weight:700}
+body[data-theme] .gw-catalog-product{border-top:1px solid var(--line);color:var(--text);font-size:13px}
+body[data-theme] .gw-catalog-product:hover{background:var(--gw-accent-soft)}
+body[data-theme] .gw-catalog-name{display:flex;align-items:center;gap:10px;min-width:0}
+body[data-theme] .gw-catalog-name img,body[data-theme] .gw-catalog-noimage{width:43px;height:43px;object-fit:contain;border-radius:8px;background:var(--panel);border:1px solid var(--line);flex-shrink:0}
+body[data-theme] .gw-catalog-noimage{display:grid;place-items:center;color:var(--muted)}
+body[data-theme] .gw-active-pill{color:var(--accent);font-weight:700}
+body[data-theme] .gw-inactive-pill{color:var(--muted)}
+body[data-theme] .gw-catalog-actions{display:flex;gap:7px}
+body[data-theme] .gw-catalog-actions button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:9px 12px;cursor:pointer}
+body[data-theme] .gw-catalog-actions button:hover{border-color:var(--accent);color:var(--accent)}
+body[data-theme] .gw-catalog-modal{width:min(710px,96vw);max-height:90vh;overflow-y:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;box-shadow:0 24px 70px #0009}
+body[data-theme] .gw-catalog-modal::backdrop{background:#000b;backdrop-filter:blur(3px)}
+body[data-theme] .gw-catalog-modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+body[data-theme] .gw-catalog-modal-head h2{margin:0;font-size:19px}
+body[data-theme] .gw-catalog-modal-head button{background:transparent;color:var(--muted);border:0;font-size:20px;cursor:pointer}
+body[data-theme] .gw-catalog-modal-body{padding:18px}
+body[data-theme] .gw-catalog-modal .gw-catalog-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;background:transparent;border:0;padding:0}
+body[data-theme] .gw-catalog-modal .gw-catalog-editor input:not([type=checkbox]){width:100%;min-width:0;padding:10px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px}
+body[data-theme] .gw-catalog-modal .gw-catalog-editor>label:has([data-field="image_url"]),body[data-theme] .gw-catalog-modal .gw-admin-image-row,body[data-theme] .gw-catalog-modal .gw-editor-list{grid-column:1/-1}
+body[data-theme] .gw-catalog-modal .gw-editor-list{background:var(--panel2)}
+body[data-theme] .gw-catalog-modal-actions{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;background:var(--panel);border-top:1px solid var(--line)}
+body[data-theme] .gw-catalog-modal-actions button{padding:11px 18px;border-radius:8px}
+body[data-theme] .gw-catalog-modal-actions .primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+@media(max-width:650px){body[data-theme] .gw-catalog-toolbar{grid-template-columns:1fr 1fr}body[data-theme] .gw-catalog-toolbar input{grid-column:1/-1}body[data-theme] .gw-catalog-modal .gw-catalog-editor{grid-template-columns:1fr}}
