@@ -77,7 +77,7 @@ let timeHistoryRows=[],activityRows=[],mdtTab='hours',employeeSearch='';
 const canFeature=feature=>bossAllowed||grantedFeatures.has(feature);
 const formatHours=n=>(Number(n||0)/60).toFixed(2);
 const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
-async function checkBoss(){try{const {data:{session}}=await db.auth.getSession();if(!session){bossAllowed=false;}else{const {data,error}=await db.rpc('gw_is_boss');bossAllowed=!error&&data===true;}mdtButton.hidden=false;}catch(e){bossAllowed=false;mdtButton.hidden=false;}return bossAllowed;}
+async function checkBoss(){try{if(!token){bossAllowed=false;}else{const {data,error}=await db.rpc('gw_boss_pin_check',{p_token:token});bossAllowed=!error&&data===true;}mdtButton.hidden=false;}catch(e){bossAllowed=false;mdtButton.hidden=false;}return bossAllowed;}
 window.gwEmployeeProfileImages={};
 async function loadRosterPhotos(){try{const {data,error}=await db.rpc('gw_employee_profile_images',{p_token:token||''});if(error)throw error;window.gwEmployeeProfileImages=Object.fromEntries((data||[]).map(x=>[String(x.employee_id),x.profile_image_url]));}catch(e){console.warn('Roster profile pictures unavailable:',e.message);}}
 async function loadStaff(page=mdtPage){const feature=page==='time'?'time_management':page==='employees'?'employees':'dashboard';staffRows=await call('gw_mdt_staff_report',{p_token:token||'',p_feature:feature});await loadRosterPhotos();return staffRows;}
@@ -317,7 +317,7 @@ function renderMdt(){
 }
 async function switchPage(page){mdtPage=page;mdt.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='sales'){mdtMessage.textContent='Loading sales…';try{await loadSales();mdtMessage.textContent='';}catch(e){mdtContent.replaceChildren();mdtMessage.textContent='Sales report unavailable: '+e.message;return;}}renderMdt();}
 mdt.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>switchPage(b.dataset.page));
-mdtButton.onclick=async()=>{mdt.showModal();mdtMessage.textContent='Checking management access…';if(!await checkBoss()){mdtContent.replaceChildren(make('h3','Management sign-in required'),make('p','Sign in using the Admin button with your Boss account, then reopen Store MDT. If already signed in, sign out and sign back in to refresh your session.'));mdtMessage.textContent='Your current website session does not have Boss access.';return;}mdtMessage.textContent='Loading employees…';try{await loadStaff();mdtMessage.textContent='';switchPage('overview');}catch(e){mdtMessage.textContent=e.message;}};
+mdtButton.onclick=async()=>{mdt.showModal();mdtMessage.textContent='Checking management access…';if(!await checkBoss()){mdtContent.replaceChildren(make('h3','Management sign-in required'),make('p','Sign in to the employee time clock with your Boss PIN. Your role determines your access; no email login is required.'));mdtMessage.textContent='Your employee PIN session does not have Boss access.';return;}mdtMessage.textContent='Loading employees…';try{await loadStaff();mdtMessage.textContent='';switchPage('overview');}catch(e){mdtMessage.textContent=e.message;}};
 document.querySelector('#adminBtn')?.addEventListener('click',()=>setTimeout(checkBoss,400));
 document.querySelector('#login')?.addEventListener('click',()=>setTimeout(checkBoss,800));
 document.querySelector('#logout')?.addEventListener('click',()=>{bossAllowed=false;mdtButton.hidden=false;mdt.close();});
@@ -335,7 +335,7 @@ async function showRolePermissions(){
  mdtContent.append(intro);
  mdtMessage.textContent='Loading permissions…';
  try{
-  const records=await call('gw_mdt_role_permissions_admin');
+  const records=await call('gw_boss_role_permissions',{p_token:token||''});
   const roles=['Manager','Senior Salesman','Salesman'];
   const descriptions={
    dashboard:'View the store dashboard and summary information',employees:'View employee records and roster information',
@@ -396,7 +396,7 @@ async function showRolePermissions(){
    let count=0;
    try{
     for(const [feature,allowed] of changed){
-     await call('gw_mdt_set_role_permission',{p_role:role,p_feature:feature,p_allowed:allowed});
+     await call('gw_boss_set_role_permission',{p_token:token||'',p_role:role,p_feature:feature,p_allowed:allowed});
      const entry=records.find(x=>x.role===role&&x.feature===feature);
      if(entry)entry.allowed=allowed;else records.push({role,feature,allowed});
      initial.set(feature,allowed);count++;
@@ -494,7 +494,7 @@ async function showBackupCenter(){
 
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
-  if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin Account':'Admin Login';adminBtn.hidden=false;adminBtn.title=bossAllowed?'Manage your administrator account and product settings':'Sign in with your administrator email and password';}
+  if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin Tools':'Admin Tools';adminBtn.hidden=false;adminBtn.title=bossAllowed?'Manage store catalog and settings':'Boss employee PIN required for store catalog and settings';}
   if(currentPage!=='pos'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&currentPage!=='offers'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
    if(currentPage==='audit'&&!canFeature('activity_history'))await showSite('pos');
   if(currentPage==='offers'&&!canFeature('offers_manage'))await showSite('pos');
