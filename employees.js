@@ -3,7 +3,7 @@ import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.j
 import {renderBusinessPage} from './business-mdt.js?v=sale-items-20261016';
 import {showSaleAdjustments} from './sale-adjustments.js?v=actor-name-fix-20261016';
 import {showOffersManager,showProductAnalytics} from './phase4-management.js?v=1';
-import {renderLoyaltyManagement} from './loyalty-management.js?v=1';
+import {renderLoyaltyManagement} from './loyalty-management.js?v=activity-export-20261016';
 import {showSecurityCenter,renderEmployeeAchievements,getDashboardSettings,dashboardSettingsEditor,isDashboardWidgetVisible} from './phase3-tools.js?v=1';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
@@ -220,7 +220,8 @@ async function showTimeHistory(){
     [['Date','Employee','Manager','Minutes Changed','Reason'],...rows.map(a=>[a.created_at,a.employee_name,a.actor_name,a.minutes,a.reason])]);};
   mdtContent.append(exportButton);
   const list=make('div',undefined,'gw-mdt-roster');mdtContent.append(list);
-  const draw=()=>{list.replaceChildren();const q=search.value.trim().toLowerCase();for(const a of timeHistoryRows.filter(a=>(a.employee_name+' '+a.actor_name+' '+a.reason).toLowerCase().includes(q))){const row=make('div',undefined,'gw-mdt-employee gw-history-entry '+(a.minutes>0?'gw-history-added':a.minutes<0?'gw-history-removed':'gw-history-neutral'));const detail=make('div',undefined,'gw-history-details');detail.append(make('strong',a.employee_name),make('p',a.reason||'No reason provided'),make('small','By '+a.actor_name+' · '+new Date(a.created_at).toLocaleString()));const badge=make('div',undefined,'gw-history-amount');badge.append(make('strong',(a.minutes>0?'+':a.minutes<0?'−':'')+Math.abs(a.minutes)+' min'),make('small',a.minutes>0?'TIME ADDED':a.minutes<0?'TIME REMOVED':'NO CHANGE'));row.append(detail,badge);list.append(row);}if(!list.children.length)list.append(make('p','No matching adjustments.'));};
+  const historySummary=make('p','','gw-history-intro');mdtContent.insertBefore(historySummary,list);
+  const draw=()=>{list.replaceChildren();const q=search.value.trim().toLowerCase();const matched=timeHistoryRows.filter(a=>(String(a.employee_name||'')+' '+String(a.actor_name||'')+' '+String(a.reason||'')).toLowerCase().includes(q));historySummary.textContent=matched.length+' adjustments · '+matched.filter(a=>Number(a.minutes)>0).reduce((n,a)=>n+Number(a.minutes||0),0)+' minutes added · '+Math.abs(matched.filter(a=>Number(a.minutes)<0).reduce((n,a)=>n+Number(a.minutes||0),0))+' minutes removed';for(const a of timeHistoryRows.filter(a=>(a.employee_name+' '+a.actor_name+' '+a.reason).toLowerCase().includes(q))){const row=make('div',undefined,'gw-mdt-employee gw-history-entry '+(a.minutes>0?'gw-history-added':a.minutes<0?'gw-history-removed':'gw-history-neutral'));const detail=make('div',undefined,'gw-history-details');detail.append(make('strong',a.employee_name),make('p',a.reason||'No reason provided'),make('small','By '+a.actor_name+' · '+new Date(a.created_at).toLocaleString()));const badge=make('div',undefined,'gw-history-amount');badge.append(make('strong',(a.minutes>0?'+':a.minutes<0?'−':'')+Math.abs(a.minutes)+' min'),make('small',a.minutes>0?'TIME ADDED':a.minutes<0?'TIME REMOVED':'NO CHANGE'));row.append(detail,badge);list.append(row);}if(!list.children.length)list.append(make('p','No matching adjustments.'));};
   search.oninput=draw;draw();mdtMessage.textContent='';
  }catch(err){mdtMessage.textContent='History unavailable: '+err.message;}
 }
