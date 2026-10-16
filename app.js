@@ -54,7 +54,7 @@ function cachedReceiptItems(id){try{const v=JSON.parse(localStorage.getItem(rece
 const loyaltyReceiptKey=id=>'gw-loyalty-receipt-'+String(id);
 function localLoyaltyReceipt(s){
  if(s.loyalty_receipt)return s.loyalty_receipt;
- const id=s.sale_id||s.id;if(!id)return null;
+ const id=s.id||s.sale_id;if(!id)return null;
  try{const data=JSON.parse(localStorage.getItem(loyaltyReceiptKey(id))||'null');return data&&String(data.sale_id)===String(id)?data:null;}catch(e){return null;}
 }
 function receiptLoyaltyRows(s){
@@ -95,8 +95,8 @@ function receiptText(s){
  return rows.join('\n');
 }
 async function showSaleReceipt(s){
- if(!saleLines(s).length){const cached=cachedReceiptItems(s.sale_id||s.id);if(cached?.length)s.line_items=cached;}
- if(!s.receipt_financials){try{s.receipt_financials=JSON.parse(localStorage.getItem('gw-receipt-financials-'+String(s.sale_id||s.id))||'null');}catch(e){}}
+ if(!saleLines(s).length){const cached=cachedReceiptItems(s.id||s.sale_id);if(cached?.length)s.line_items=cached;}
+ if(!s.receipt_financials){try{s.receipt_financials=JSON.parse(localStorage.getItem('gw-receipt-financials-'+String(s.id||s.sale_id))||'null');}catch(e){}}
  const dlg=document.createElement('dialog');dlg.className='gw-choice-dialog gw-receipt-dialog gw-paper-receipt';
  const heading=document.createElement('h3');heading.textContent='GREEN WONDERLAND';
  const subtitle=document.createElement('p');subtitle.textContent='SALES RECEIPT';
@@ -131,7 +131,7 @@ async function showSaleReceipt(s){
  // Receipt loyalty details are independent of itemized product lookup.
  // A failed or unavailable items RPC must never hide earned points.
  const token=sessionStorage.getItem('gw-employee-token')||'';
- const saleId=s.sale_id||s.id;
+ const saleId=s.id||s.sale_id;
  if(db&&saleId){
   const id=String(saleId);
   const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}}).catch(error=>console.warn('Saved receipt discounts unavailable:',error.message));
@@ -197,7 +197,7 @@ async function loadSharedHistory(){
    const {data:enhanced,error:enhancedError}=await db.rpc('gw_pos_search_sales',{p_token:token,p_query:''});
    if(!enhancedError&&Array.isArray(enhanced)){
     const m=new Map(enhanced.map(x=>[String(x.sale_id),x]));
-    sharedHistory=sharedHistory.map(x=>({...x,...(m.get(String(x.id))||{})}));
+    sharedHistory=sharedHistory.map(x=>({...x,...(m.get(String(x.id))||{}),id:x.id,sale_id:x.id}));
    }
   }catch(e){console.warn('Advanced receipt search unavailable:',e);}
   historyLoaded=true;
