@@ -107,7 +107,29 @@ async function refreshAdmin(){
  const input=document.createElement('input');input.type='url';input.placeholder='https://example.com/image.png';
  input.setAttribute('aria-label','Direct HTTPS image URL');
  const hint=document.createElement('p');
- hint.textContent='Paste a direct HTTPS image URL. Uploading a new file requires a separate secure storage uploader; no public upload access is enabled.';
+ hint.textContent='Upload a PNG, JPG or WebP (up to 3 MB), or paste an HTTPS image URL. Uploads use Boss PIN verification on a secure Supabase function.';
+ const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';
+ file.setAttribute('aria-label','Choose an image to upload');file.className='gw-admin-image-file';
+ const upload=document.createElement('button');upload.className='primary';upload.textContent='Upload Image';
+ upload.type='button';
+ upload.onclick=async()=>{
+  const picked=file.files?.[0];
+  if(!picked)return message('Choose an image file to upload.');
+  if(picked.size===0||picked.size>3*1024*1024||!['image/png','image/jpeg','image/webp'].includes(picked.type))
+   return message('Select a PNG, JPG or WebP image under 3 MB.');
+  upload.disabled=true;message('Uploading securely…');
+  const form=new FormData();form.append('slot',slot.value);form.append('product',slot.value==='product'?product.value:'');form.append('file',picked);
+  try{
+   const {data,error:e}=await db.functions.invoke('boss-image-upload',{
+    body:form,headers:{'x-gw-employee-token':token}
+   });
+   if(e||!data?.ok)throw Error(data?.error||e?.message||'Upload was not accepted');
+   await loadBranding();
+   input.value=data.url;file.value='';
+   message('Image uploaded and saved. '+(slot.value==='favicon'?'Refresh the page to update the browser tab.':''));
+  }catch(e){message('Upload failed: '+e.message+'. Verify the boss-image-upload Edge Function is deployed.');}
+  finally{upload.disabled=false;}
+ };
  const updateVisibility=()=>product.hidden=slot.value!=='product';
  slot.onchange=updateVisibility;updateVisibility();
  const save=document.createElement('button');save.className='primary';save.textContent='Save Image URL';
@@ -126,7 +148,7 @@ async function refreshAdmin(){
  save.onclick=()=>apply(input.value.trim());
  reset.onclick=()=>{if(confirm('Reset the selected image?'))apply(null);};
  const label=document.createElement('label');label.textContent='Image location ';label.append(slot);
- wrap.append(label,product,input,hint,save,reset);
+ wrap.append(label,product,file,upload,hint,input,save,reset);
 }
 async function renderStaffManager(wrap){
  const heading=document.createElement('h3');heading.textContent='Boss • Staff permissions';wrap.append(heading);
