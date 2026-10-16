@@ -651,3 +651,31 @@ body[data-theme] .gw-permissions-count{margin:6px 16px 12px;color:var(--muted);f
 body[data-theme] .gw-permissions-item[hidden]{display:none!important}
 body[data-theme] .gw-loyalty-activity>button{margin-top:8px}
 body[data-theme] .gw-history-intro{line-height:1.65}
+
+/* Checkout accessibility: keep action buttons reachable on short desktop displays.
+   The order panel scrolls independently, with a visible sticky action footer. */
+@media (min-width:951px){
+ body[data-theme] .gw-site-content .shell main>.order{
+  top:12px!important;
+  max-height:calc(100dvh - 24px)!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-gutter:stable;
+ }
+ body[data-theme] .gw-site-content .shell .order #cartView .checkout{
+  position:sticky;
+  bottom:0;
+  z-index:4;
+  padding:12px 0 max(12px,env(safe-area-inset-bottom));
+  background:var(--panel);
+  border-top:1px solid var(--line);
+ }
+}
+@media (max-width:950px){
+ body[data-theme] .gw-site-content .shell main>.order{
+  position:static!important;
+  max-height:none!important;
+  overflow:visible!important;
+ }
+}
