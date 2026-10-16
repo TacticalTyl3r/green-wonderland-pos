@@ -486,3 +486,14 @@ body[data-header-effect=neon-scan] .gw-site-content .gw-global-header .brand h1{
 body[data-header-effect=haze-particles] .gw-site-content .gw-global-header::before{opacity:.45;inset:-80%;background:radial-gradient(ellipse,var(--accent),transparent 60%);filter:blur(22px);animation:gw-header-drift 12s ease-in-out infinite alternate}
 body[data-header-effect=glow-trail] .gw-site-content .gw-global-header::before{opacity:.5;background:linear-gradient(110deg,transparent 30%,color-mix(in srgb,var(--accent) 35%,transparent) 50%,transparent 70%);background-size:220% 100%;animation:gw-header-sweep 7s linear infinite}
 body[data-header-effect=glow-trail] .gw-site-content .gw-global-header{border-bottom:2px solid var(--accent)}
+
+/* Additional MDT management tools follow the existing themed card system */
+body[data-theme] .gw-feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}
+body[data-theme] .gw-feature-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--text);margin:8px 0}
+body[data-theme] .gw-feature-card h3{font-size:18px;margin:0;color:var(--text)}
+body[data-theme] .gw-feature-card strong{font-size:15px;color:var(--text)}
+body[data-theme] .gw-feature-card p{margin:0;color:var(--muted);line-height:1.55;white-space:pre-wrap}
+body[data-theme] .gw-feature-card small{color:var(--accent)}
+body[data-theme] .gw-feature-card button{margin-top:auto}
+body[data-theme] .gw-site-submenu .gw-admin-notifications{--sub-icon-color:#55d3a0}
+body[data-theme] .gw-site-submenu .gw-admin-backups{--sub-icon-color:#64baff}
