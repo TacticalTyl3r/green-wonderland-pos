@@ -105,6 +105,9 @@ async function showSaleReceipt(s){
  const section=document.createElement('strong');section.className='gw-paper-section';section.textContent='Ordered';
  const itemsHost=document.createElement('div');itemsHost.className='gw-paper-items';
  const note=document.createElement('p');note.className='gw-receipt-note';
+ const receiptDiagnostics=[];
+ const diagnostics=document.createElement('p');diagnostics.className='gw-receipt-note';diagnostics.style.whiteSpace='pre-wrap';
+ const reportReceiptError=(source,error)=>{receiptDiagnostics.push(source+': '+(error?.message||error));diagnostics.textContent='Receipt data issue — '+receiptDiagnostics.join(' | ');};
  const totalsHost=document.createElement('div');totalsHost.className='gw-paper-totals';
  const actions=document.createElement('div');actions.className='gw-receipt-actions';
  const discountsHost=document.createElement('div');discountsHost.className='gw-receipt-phase4';
@@ -112,7 +115,7 @@ async function showSaleReceipt(s){
  const copy=document.createElement('button');copy.type='button';copy.className='primary';copy.textContent='Copy for Discord';
  copy.onclick=async()=>{try{await navigator.clipboard.writeText(receiptText(s));copy.textContent='✓ Copied!';}catch(e){const area=document.createElement('textarea');area.value=receiptText(s);area.readOnly=true;dlg.append(area);area.focus();area.select();copy.textContent='Select and copy receipt text';}};
  const close=document.createElement('button');close.type='button';close.className='outline';close.textContent='Close';close.onclick=()=>dlg.close();
- actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,discountsHost,phase4Summary,actions);
+ actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,diagnostics,totalsHost,discountsHost,phase4Summary,actions);
  const draw=()=>{itemsHost.replaceChildren();totalsHost.replaceChildren();const items=saleLines(s);note.textContent=items.length?'':'Itemized products not available for this sale.';for(const x of items){const row=document.createElement('div');row.className='gw-paper-item';const name=document.createElement('span');name.textContent=x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'');const price=document.createElement('strong');price.textContent=money(x.total);row.append(name,price);itemsHost.append(row);}for(const [label,value] of [...(s.receipt_financials?.subtotal!=null?[['Subtotal',money(s.receipt_financials.subtotal)]]:[]),['Price',money(s.total)],...(s.store_share!=null?[['Store (10% of sale)',money(s.store_share)]]:[]),...(s.employee_share!=null?[['Employee Keeps',money(s.employee_share)]]:[]),['Fulfillment',s.fulfillment||'pickup']]){const row=document.createElement('div');row.className='gw-paper-total';const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;row.append(name,amount);totalsHost.append(row);}};
  draw();
  const showDiscounts=()=>{
@@ -134,11 +137,11 @@ async function showSaleReceipt(s){
  const saleId=s.id||s.sale_id;
  if(db&&saleId){
   const id=String(saleId);
-  const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}}).catch(error=>console.warn('Saved receipt discounts unavailable:',error.message));
+  const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}}).catch(error=>console.warn('Saved receipt discounts unavailable:',error.message);reportReceiptError('Discounts',error));
   const details=db.rpc('gw_pos_sale_details',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
    if(Array.isArray(data)&&data.length){s.loyalty_meta=data[0];showDiscounts();showLoyalty();}
-  }).catch(error=>console.warn('Sale loyalty details unavailable:',error.message));
+  }).catch(error=>console.warn('Sale loyalty details unavailable:',error.message);reportReceiptError('Sale details',error));
   const snapshot=db.rpc('gw_pos_get_loyalty_receipt',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
    if(Array.isArray(data)&&data.length){s.loyalty_receipt=data[0];showLoyalty();}
@@ -149,7 +152,7 @@ async function showSaleReceipt(s){
     const {data,error}=await db.rpc('gw_pos_get_receipt_items',{p_token:token,p_sale:id});
     if(error)throw Error(error.message);
     if(Array.isArray(data)&&data.length)items=data;
-   }catch(error){console.warn('Stored receipt item lookup unavailable:',error.message);}
+   }catch(error){console.warn('Stored receipt item lookup unavailable:',error.message);reportReceiptError('Saved items',error);}
    if(!items){
     try{
      const {data,error}=await db.rpc('gw_sale_receipt_items_lookup',{
@@ -161,6 +164,7 @@ async function showSaleReceipt(s){
     }catch(error){console.warn('Legacy receipt item lookup unavailable:',error.message);}
    }
    if(!items)items=cachedReceiptItems(id);
+   if(items?.length)diagnostics.textContent='';
    if(items?.length){s.line_items=items;try{localStorage.setItem(receiptItemsKey(id),JSON.stringify(items));}catch(e){}}
    s.store_share=Number(s.total||0)*.1;s.employee_share=Number(s.total||0)*.9;
    draw();
