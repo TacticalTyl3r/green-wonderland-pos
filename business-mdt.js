@@ -47,7 +47,7 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
     for(const c of ['General','Recognition','Commendation','Coaching','Verbal Warning','Written Warning','Disciplinary'])category.add(new Option(c,c));
     body.placeholder='Private management note';body.required=true;body.minLength=3;body.maxLength=3000;
     form.append(category,body,submit);host.insertBefore(form,list);
-    form.onsubmit=async ev=>{ev.preventDefault();submit.disabled=true;try{await rpc('gw_mdt_note_create',{p_employee:picker.value,p_category:category.value,p_body:body.value});body.value='';await reload();}catch(e){status.textContent=e.message;}finally{submit.disabled=false;}};
+    form.onsubmit=async ev=>{ev.preventDefault();submit.disabled=true;try{await rpc('gw_mdt_note_create',{p_employee:picker.value,p_category:category.value==='Commendation'?'Recognition':['Coaching','Verbal Warning','Written Warning'].includes(category.value)?'Disciplinary':category.value,p_body:['Commendation','Coaching','Verbal Warning','Written Warning'].includes(category.value)?'['+category.value+'] '+body.value:body.value});body.value='';await reload();}catch(e){status.textContent=e.message;}finally{submit.disabled=false;}};
    }
    picker.onchange=reload;await reload();
   }else if(page==='leaderboard'||page==='reports'){
