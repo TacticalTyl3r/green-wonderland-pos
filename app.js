@@ -136,7 +136,7 @@ const dialog=$('adminDialog'),msg=s=>$('adminMessage').textContent=s;
 const getBossToken=()=>sessionStorage.getItem('gw-employee-token')||'';
 $('adminBtn').onclick=async()=>{dialog.showModal();await updateAuthUI();};
 $('closeAdmin').onclick=()=>dialog.close();
-$('login').onclick=async()=>{msg('Sign in from the Employee Time Clock using your Boss PIN.');};
+$('login').onclick=()=>{dialog.close();const control=document.getElementById('gwEmployeeAccess');if(control)control.click();else msg('Employee login is still loading. Try again shortly.');};
 $('logout').onclick=async()=>{const t=getBossToken();if(t&&db)await db.rpc('gw_pin_logout',{p_token:t});sessionStorage.removeItem('gw-employee-token');window.dispatchEvent(new Event('gw-employee-session-changed'));await updateAuthUI();};
 async function updateAuthUI(){
  if(!db){$('loginPanel').hidden=false;$('adminPanel').hidden=true;msg('Database not configured.');return;}
