@@ -17,9 +17,53 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
    const list=box(),download=make('button','Export Filtered CSV','outline');filter.append(download);
    const reload=async()=>{status.textContent='Loading sales…';try{
     const rows=await rpc('gw_mdt_sales_history',{p_from:from.value?new Date(from.value+'T00:00:00').toISOString():null,p_to:to.value?new Date(new Date(to.value+'T00:00:00').getTime()+86400000).toISOString():null,p_employee:null});
-    const sorted=[...rows].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));const filtered=()=>sorted.filter(s=>(String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')+' '+String(s.id||'')+' '+dateText(s.created_at)).toLowerCase().includes(search.value.toLowerCase()));
-    download.onclick=()=>exportCsv('green-wonderland-sales-history.csv',['Employee','Amount','Items','Fulfillment','Date'],filtered().map(s=>[s.employee_name,s.total,s.item_count,s.fulfillment,s.created_at]));
-    const draw=()=>{list.replaceChildren();let total=0;let count=0;for(const s of filtered()){total+=Number(s.total||0);count++;line(list,cash(s.total)+' · '+(s.employee_name||'Unknown employee'),dateText(s.created_at)+' · '+s.item_count+' items · '+s.fulfillment);}status.textContent=count+' recorded sales · '+cash(total)+' total · Newest first';if(!count)line(list,'No matching sales','Try changing your filters.');};search.oninput=draw;draw();
+    const sorted=[...rows].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    const itemBySale=new Map();let itemNotice='';
+    try{
+     const ids=sorted.map(s=>String(s.id)).filter(Boolean).slice(0,200);
+     if(ids.length){
+      const details=await rpc('gw_mdt_sales_items_batch',{p_sales:ids});
+      for(const detail of details||[])itemBySale.set(String(detail.sale_id),Array.isArray(detail.items)?detail.items:[]);
+     }
+    }catch(error){itemNotice=' · Item details require the latest database migration';}
+    const itemText=s=>{
+     const items=itemBySale.get(String(s.id))||[];
+     return items.map(i=>Number(i.qty||0)+'× '+(i.name||'Unknown item')+(i.choice?' ('+i.choice+')':'')).join(' · ');
+    };
+    const filtered=()=>sorted.filter(s=>
+     (String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')+' '+String(s.id||'')+
+      ' '+dateText(s.created_at)+' '+itemText(s)).toLowerCase().includes(search.value.toLowerCase()));
+    search.placeholder='Search employee, product, flavor, amount, or sale ID';
+    download.onclick=()=>exportCsv('green-wonderland-sales-history.csv',
+     ['Employee','Amount','Item Count','Purchased Items','Fulfillment','Date','Sale ID'],
+     filtered().map(s=>[s.employee_name,s.total,s.item_count,itemText(s),s.fulfillment,s.created_at,s.id]));
+    const draw=()=>{
+     list.replaceChildren();let total=0;let count=0;
+     for(const s of filtered()){
+      total+=Number(s.total||0);count++;
+      const card=make('article',undefined,'gw-sales-history-card');
+      const heading=make('div',undefined,'gw-sales-history-head');
+      heading.append(make('strong',cash(s.total)+' · '+(s.employee_name||'Unknown employee')));
+      const number=make('small',dateText(s.created_at)+' · '+s.item_count+' items · '+s.fulfillment);
+      const details=make('div',undefined,'gw-sales-history-items');
+      const items=itemBySale.get(String(s.id))||[];
+      if(items.length){
+       details.append(make('small','PURCHASED ITEMS'));
+       for(const item of items){
+        const entry=make('div',undefined,'gw-sales-history-item');
+        const name=make('span',(Number(item.qty||0))+'× '+String(item.name||'Item')+(item.choice?' · '+item.choice:''));
+        const price=make('strong',item.total!=null?cash(item.total):'');
+        entry.append(name,price);details.append(entry);
+       }
+      }else{
+       details.append(make('small','Itemized details unavailable for this sale.'));
+      }
+      card.append(heading,number,details);list.append(card);
+     }
+     status.textContent=count+' recorded sales · '+cash(total)+' total · Newest first'+itemNotice;
+     if(!count)line(list,'No matching sales','Try changing your filters.');
+    };
+    search.oninput=draw;draw();
    }catch(e){status.textContent=e.message;}};
    from.onchange=reload;to.onchange=reload;await reload();
   }else if(page==='announcements'){
