@@ -2,6 +2,7 @@ import {createSalesChart} from './sales-chart.js?v=2';
 import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=audit-detail-20261016';
 import {renderBusinessPage} from './business-mdt.js?v=management-phase2-net-20261016';
 import {showSaleAdjustments} from './sale-adjustments.js?v=actor-name-fix-20261016';
+import {showSecurityCenter,renderEmployeeAchievements,getDashboardSettings,dashboardSettingsEditor,isDashboardWidgetVisible} from './phase3-tools.js?v=1';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const db=createClient(SUPABASE_URL,SUPABASE_ANON_KEY), key='gw-employee-token';
@@ -260,12 +261,36 @@ function renderMdt(){
  if(mdtPage==='time'){const clockCard=make('div',undefined,'gw-mdt-stat');clockCard.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const openClock=make('button','Open Time Clock','primary');openClock.onclick=()=>button.click();clockCard.append(openClock);mdtContent.append(clockCard);if(canFeature('time_history')){const history=make('button','Adjustment History','outline');history.onclick=showTimeHistory;mdtContent.append(history);}}
  const active=staffRows.filter(e=>e.active!==false),onDuty=active.filter(e=>e.clocked_in).length;
  if(mdtPage==='sales'){renderSales();}else if(mdtPage==='overview'){
-  if(canFeature('announcements')||canFeature('announcements_manage')){const notices=make('section',undefined,'gw-dashboard-notifications');mdtContent.append(notices);showNotifications(notices);}
+  const actor=me?.employee_id||'guest';
+  const head=make('div',undefined,'gw-mdt-head');
+  head.append(make('h2','Store Dashboard'),make('p','Your store at a glance, with personalized sections.'));
+  const customize=make('button','⚙ Customize Dashboard','outline');head.append(customize);mdtContent.append(head);
+  const preferences=make('div');mdtContent.append(preferences);
+  customize.onclick=()=>{if(preferences.childElementCount){preferences.replaceChildren();return;}
+   dashboardSettingsEditor(preferences,{employeeId:actor,make,refresh:()=>renderMdt()});};
+  const sections=new Map();
+  const section=(id,cls)=>{const host=make('section',undefined,'gw-dashboard-widget '+(cls||''));sections.set(id,host);return host;};
+  if(canFeature('announcements')||canFeature('announcements_manage')){const host=section('notifications','gw-dashboard-notifications');showNotifications(host);}
+  const stats=section('stats');
   const cards=make('div',undefined,'gw-mdt-stats');
-  for(const [label,value] of [['Active Employees',active.length],['Currently Clocked In',onDuty],['Recorded Staff Hours',formatHours(staffRows.reduce((sum,e)=>sum+Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0),0))],...(canFeature('sales_earnings')?[['Sales This Week',cash(salesRows.reduce((sum,e)=>sum+Number(e.weekly_sales||0),0))],['Top Seller',salesRows.length?[...salesRows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0))[0].employee_name:'None']]:[] )]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',String(value)));cards.append(card);}mdtContent.append(cards);
-  const duty=staffRows.filter(e=>e.clocked_in);mdtContent.append(make('h3','Currently Working'),make('p',duty.length?duty.map(e=>e.name).join(' · '):'No employees currently clocked in.'));
-  if(canFeature('sales_earnings')&&salesRows.length){const top=[...salesRows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0)).slice(0,3);mdtContent.append(make('h3','Top Performers This Week'));for(const [i,e] of top.entries())mdtContent.append(make('p',(i+1)+'. '+e.employee_name+' · '+cash(e.weekly_sales)));}
-  if(canFeature('recognition_view')||canFeature('recognition_manage')){const awards=make('div');mdtContent.append(make('h3','Recent Recognition'),awards);showRecognition(awards,null,{call,token:()=>token||'',canFeature,make});}
+  for(const [label,value] of [['Active Employees',active.length],['Currently Clocked In',onDuty],['Recorded Staff Hours',formatHours(staffRows.reduce((sum,e)=>sum+Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0),0))],...(canFeature('sales_earnings')?[['Sales This Week',cash(salesRows.reduce((sum,e)=>sum+Number(e.weekly_sales||0),0))],['Top Seller',salesRows.length?[...salesRows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0))[0].employee_name:'None']]:[] )]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',String(value)));cards.append(card);}stats.append(cards);
+  const working=section('working');
+  const duty=staffRows.filter(e=>e.clocked_in);working.append(make('h3','Currently Working'),make('p',duty.length?duty.map(e=>e.name).join(' · '):'No employees currently clocked in.'));
+  if(canFeature('sales_earnings')){
+   const performers=section('performers');performers.append(make('h3','Top Performers This Week'));
+   const top=[...salesRows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0)).slice(0,3);
+   if(!top.length)performers.append(make('p','No recorded sales yet.'));
+   for(const [i,e] of top.entries())performers.append(make('p',(i+1)+'. '+e.employee_name+' · '+cash(e.weekly_sales)));
+  }
+  if(canFeature('recognition_view')||canFeature('recognition_manage')){
+   const awards=section('recognition');awards.append(make('h3','Recent Recognition'));
+   const target=make('div');awards.append(target);showRecognition(target,null,{call,token:()=>token||'',canFeature,make});
+  }
+  if(canFeature('employees')){
+   const achievements=section('achievements');achievements.append(make('h3','Employee Achievements'));
+   const grid=make('div');achievements.append(grid);renderEmployeeAchievements(grid,{staff:staffRows,sales:salesRows,make,cash});
+  }
+  for(const id of getDashboardSettings(actor)){const host=sections.get(id);if(host&&isDashboardWidgetVisible(actor,id))mdtContent.append(host);}
 
  }else{
   const head=make('div',undefined,'gw-mdt-head');head.append(make('h3',mdtPage==='employees'?'Employee Roster':'Employee Hours'));
