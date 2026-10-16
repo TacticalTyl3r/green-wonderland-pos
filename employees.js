@@ -576,6 +576,7 @@ async function showBackupCenter(){
  document.querySelector('#gwEmpClose')?.addEventListener('click',()=>{updateClockStatus();refreshNavigation();if(currentPage==='time')showSite('time');});
  refreshNavigation();updateClockStatus();refreshWeeklyHours();
  window.gwRefreshRoleNavigation=refreshNavigation;
+ window.addEventListener('gw-employee-session-changed',async()=>{token=sessionStorage.getItem(key)||'';if(!token)me=null;await refreshNavigation();updateClockStatus();});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token)refreshWeeklyHours();});
  setInterval(()=>{if(token&&me?.clocked_in)refreshWeeklyHours();},60000);
 }
