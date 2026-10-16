@@ -657,3 +657,45 @@ body[data-theme] .gw-history-intro{line-height:1.65}
 #status[data-connection="connecting"]{color:#f6cb55!important;border-color:#c49b32!important;background:rgba(246,203,85,.13)!important}
 #status[data-connection="offline"]{color:#ff7777!important;border-color:#c84646!important;background:rgba(200,55,55,.13)!important}
 #status[data-connection="online"]{color:#75e6a0!important;border-color:#319c60!important;background:rgba(49,156,96,.13)!important}
+
+/* POS order viewport: override legacy theme sticky/static rules. */
+@media (min-width:951px){
+ body[data-theme] .gw-site-content .shell main>.order{
+  position:sticky!important;
+  top:var(--gw-pos-header-bottom,130px)!important;
+  transform:none!important;
+  align-self:start!important;
+  box-sizing:border-box;
+  height:calc(100dvh - var(--gw-pos-header-bottom,130px) - 8px)!important;
+  max-height:calc(100dvh - var(--gw-pos-header-bottom,130px) - 8px)!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  padding:12px!important;
+ }
+ body[data-theme] .gw-site-content .shell main>.order>.section-head,
+ body[data-theme] .gw-site-content .shell main>.order>.ordertabs{flex-shrink:0}
+ body[data-theme] .gw-site-content .shell main>.order>#cartView:not([hidden]){
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  scrollbar-width:thin;
+ }
+ body[data-theme] .gw-site-content .shell main>.order>#cartView>.checkout{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:2;
+  flex-shrink:0;
+  margin-top:auto!important;
+  padding:8px 0 2px!important;
+  background:var(--panel,#14251c);
+ }
+ body[data-theme] .gw-site-content .shell main>.order>#ingredientsView:not([hidden]),
+ body[data-theme] .gw-site-content .shell main>.order>#historyView:not([hidden]){
+  min-height:0;overflow-y:auto!important;flex:1 1 auto;
+ }
+}
