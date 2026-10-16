@@ -107,7 +107,7 @@ async function refreshAdmin(){
  const input=document.createElement('input');input.type='url';input.placeholder='https://example.com/image.png';
  input.setAttribute('aria-label','Direct HTTPS image URL');
  const hint=document.createElement('p');
- hint.textContent='Upload a PNG, JPG or WebP (up to 3 MB), or paste an HTTPS image URL. Uploads use Boss PIN verification on a secure Supabase function.';
+ hint.textContent='Upload a PNG, JPG or WebP (up to 3 MB), or paste an HTTPS image URL. Uploads use Boss PIN verification and short-lived Supabase Storage permissions; no Edge Function required.';
  const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';
  file.setAttribute('aria-label','Choose an image to upload');file.className='gw-admin-image-file';
  const upload=document.createElement('button');upload.className='primary';upload.textContent='Upload Image';
@@ -118,16 +118,30 @@ async function refreshAdmin(){
   if(picked.size===0||picked.size>3*1024*1024||!['image/png','image/jpeg','image/webp'].includes(picked.type))
    return message('Select a PNG, JPG or WebP image under 3 MB.');
   upload.disabled=true;message('Uploading securely…');
-  const form=new FormData();form.append('slot',slot.value);form.append('product',slot.value==='product'?product.value:'');form.append('file',picked);
   try{
-   const {data,error:e}=await db.functions.invoke('boss-image-upload',{
-    body:form,headers:{'x-gw-employee-token':token}
-   });
-   if(e||!data?.ok)throw Error(data?.error||e?.message||'Upload was not accepted');
+   // Anonymous Supabase Auth supplies an RLS identity, not employee authorization.
+   // The short-lived Storage grant is issued only after server-side Boss PIN verification.
+   let {data:authData,error:authError}=await db.auth.getSession();
+   if(authError)throw authError;
+   if(!authData.session){
+    const signed=await db.auth.signInAnonymously();
+    if(signed.error)throw Error('Enable Anonymous Sign-Ins in Supabase Authentication: '+signed.error.message);
+   }
+   const grant=await db.rpc('gw_authorize_image_upload',{p_token:token});
+   if(grant.error||grant.data!==true)throw Error(grant.error?.message||'Boss PIN verification failed');
+   const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[picked.type];
+   const path='boss/'+crypto.randomUUID()+'.'+ext;
+   const result=await db.storage.from('gw-images').upload(path,picked,{contentType:picked.type,upsert:false,cacheControl:'3600'});
+   if(result.error)throw result.error;
+   const {data:publicImage}=db.storage.from('gw-images').getPublicUrl(path);
+   const url=publicImage.publicUrl;
+   const saved=await db.rpc('gw_boss_set_image_url',{p_token:token,p_slot:slot.value,
+    p_product:slot.value==='product'?String(product.value):null,p_url:url});
+   if(saved.error)throw Error('Uploaded, but could not assign image: '+saved.error.message);
    await loadBranding();
-   input.value=data.url;file.value='';
+   input.value=url;file.value='';
    message('Image uploaded and saved. '+(slot.value==='favicon'?'Refresh the page to update the browser tab.':''));
-  }catch(e){message('Upload failed: '+e.message+'. Verify the boss-image-upload Edge Function is deployed.');}
+  }catch(e){message('Upload failed: '+e.message+'. Confirm the Boss browser-upload SQL is installed and Anonymous Sign-Ins are enabled.');}
   finally{upload.disabled=false;}
  };
  const updateVisibility=()=>product.hidden=slot.value!=='product';
