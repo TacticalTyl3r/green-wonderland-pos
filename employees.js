@@ -158,12 +158,17 @@ function employeeForm(e){
  mdtContent.replaceChildren(form);name.focus();
 }
 async function adjustTime(e){
- const form=make('form',undefined,'gw-mdt-form');form.append(make('h3','Adjust Time — '+e.name));
- const mins=document.createElement('input');mins.type='number';mins.step='1';mins.required=true;mins.placeholder='e.g. 30 or -15';
- const reason=document.createElement('input');reason.required=true;reason.minLength=5;reason.maxLength=500;reason.placeholder='Reason for adjustment';
- for(const [name,input] of [['Minutes to add or subtract',mins],['Reason (recorded in audit history)',reason]]){const label=make('label',name);label.append(input);form.append(label);}
- const actions=make('div',undefined,'gw-mdt-actions'),save=make('button','Save Adjustment','primary'),cancel=make('button','Cancel','outline');save.type='submit';cancel.type='button';cancel.onclick=()=>renderMdt();actions.append(save,cancel);form.append(actions);
- form.onsubmit=async ev=>{ev.preventDefault();const value=Number(mins.value);if(!Number.isSafeInteger(value)||value===0){mdtMessage.textContent='Enter a nonzero whole number of minutes.';return;}if(!canFeature(value>0?'time_add':'time_remove')){mdtMessage.textContent='You do not have permission for this adjustment.';return;}save.disabled=true;try{await call('gw_mdt_adjust_time',{p_token:token||'',p_employee:e.id,p_minutes:value,p_reason:reason.value.trim()});await loadStaff();mdtMessage.textContent='Time adjustment saved with reason.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
+ const form=make('form',undefined,'gw-mdt-form gw-time-adjust-form');form.append(make('h2','Adjust Employee Hours'));
+ const employee=make('label','Employee');const name=make('strong',e.name,'gw-time-employee');employee.append(name);form.append(employee);
+ const hoursSummary=make('div',undefined,'gw-mdt-stats');
+ const total=Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0);
+ for(const [label,value] of [['Recorded Hours',formatHours(Number(e.worked_minutes||0))],['Adjusted Total',formatHours(total)]]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));hoursSummary.append(card);}form.append(hoursSummary);
+ const type=make('div',undefined,'gw-time-type');const add=make('button','Add Time','active'),remove=make('button','Remove Time');add.type=remove.type='button';let sign=1;
+ const toggle=value=>{sign=value;add.classList.toggle('active',sign===1);remove.classList.toggle('active',sign===-1);};add.onclick=()=>toggle(1);remove.onclick=()=>toggle(-1);type.append(add,remove);form.append(make('label','Adjustment Type'),type);
+ const fields=make('div',undefined,'gw-time-fields');const hrs=document.createElement('input'),mins=document.createElement('input');hrs.type=mins.type='number';hrs.min='0';mins.min='0';mins.max='59';hrs.step=mins.step='1';hrs.value='0';mins.value='30';for(const [label,input] of [['Hours',hrs],['Minutes',mins]]){const field=make('label',label);field.append(input);fields.append(field);}form.append(fields);
+ const reason=document.createElement('textarea');reason.required=true;reason.minLength=5;reason.maxLength=500;reason.placeholder='Example: Employee forgot to clock in';const reasonLabel=make('label','Reason for Adjustment');reasonLabel.append(reason);form.append(reasonLabel);
+ const actions=make('div',undefined,'gw-mdt-actions'),save=make('button','Save Time Adjustment','primary'),cancel=make('button','Cancel','outline');save.type='submit';cancel.type='button';cancel.onclick=()=>renderMdt();actions.append(save,cancel);form.append(actions);
+ form.onsubmit=async ev=>{ev.preventDefault();const h=Number(hrs.value),m=Number(mins.value);if(!Number.isSafeInteger(h)||!Number.isSafeInteger(m)||h<0||m<0||m>59||h*60+m===0){mdtMessage.textContent='Enter valid hours and minutes greater than zero.';return;}const value=sign*(h*60+m);if(!canFeature(value>0?'time_add':'time_remove')){mdtMessage.textContent='You do not have permission for this adjustment.';return;}save.disabled=true;try{await call('gw_mdt_adjust_time',{p_token:token||'',p_employee:e.id,p_minutes:value,p_reason:reason.value.trim()});await loadStaff();mdtMessage.textContent='Time adjustment saved with reason.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
  mdtContent.replaceChildren(form);
 }
 async function showActivityLog(){
@@ -227,8 +232,8 @@ function renderMdt(){
   const head=make('div',undefined,'gw-mdt-head');head.append(make('h3',mdtPage==='employees'?'Employee Roster':'Employee Hours'));
   if(mdtPage==='employees'&&canFeature('employee_add')){const add=make('button','+ Add Employee','primary');add.onclick=()=>employeeForm();head.append(add);}mdtContent.append(head);
   if(mdtPage==='employees'){const search=document.createElement('input');search.type='search';search.placeholder='Search employees by name or position';search.value=employeeSearch;search.oninput=()=>{employeeSearch=search.value;renderMdt();const field=mdtContent.querySelector('input[type=search]');field?.focus();field?.setSelectionRange(employeeSearch.length,employeeSearch.length);};mdtContent.append(search);}
-  const table=make('div',undefined,'gw-mdt-roster');
-  for(const e of staffRows.filter(e=>mdtPage!=='employees'||(e.name+' '+e.role).toLowerCase().includes(employeeSearch.toLowerCase()))){const row=make('div',undefined,'gw-mdt-employee');const info=make('div');if(mdtPage==='employees'){const profile=make('button',e.name,'outline');profile.onclick=async()=>{try{if(canFeature('sales_earnings'))await loadSales();else salesRows=[];employeeProfile(e);}catch(err){mdtMessage.textContent=err.message;employeeProfile(e);}};info.append(profile);}else info.append(make('strong',e.name));info.append(make('p',e.role+' · '+(e.active===false?'Inactive':e.clocked_in?'On duty':'Off duty')+' · '+formatHours(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))+' hours'));const actions=make('div',undefined,'gw-mdt-actions');if(mdtPage==='employees'&&['employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset'].some(canFeature)){const edit=make('button','Edit / PIN','outline');edit.onclick=()=>employeeForm(e);actions.append(edit);}if(canFeature('time_add')||canFeature('time_remove')){const adjust=make('button','Adjust Time','outline');adjust.onclick=()=>adjustTime(e);actions.append(adjust);}row.append(info,actions);table.append(row);}if(!staffRows.length)table.append(make('p','No employees found. Add your first employee to get started.'));mdtContent.append(table);
+  const table=make('div',undefined,mdtPage==='employees'?'gw-mdt-roster gw-roster-grid':'gw-mdt-roster');
+  for(const e of staffRows.filter(e=>mdtPage!=='employees'||(e.name+' '+e.role).toLowerCase().includes(employeeSearch.toLowerCase()))){const row=make('div',undefined,mdtPage==='employees'?'gw-mdt-employee gw-roster-card':'gw-mdt-employee');const info=make('div');if(mdtPage==='employees'){const avatar=make('span',e.name.split(/\\s+/).map(part=>part[0]||'').slice(0,2).join('').toUpperCase(),'gw-roster-avatar');info.append(avatar);}if(mdtPage==='employees'){const profile=make('button',e.name,'outline');profile.onclick=async()=>{try{if(canFeature('sales_earnings'))await loadSales();else salesRows=[];employeeProfile(e);}catch(err){mdtMessage.textContent=err.message;employeeProfile(e);}};info.append(profile);}else info.append(make('strong',e.name));info.append(make('p',e.role+' · '+(e.active===false?'Inactive':e.clocked_in?'On duty':'Off duty')+' · '+formatHours(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))+' hours'));const actions=make('div',undefined,'gw-mdt-actions');if(mdtPage==='employees'&&['employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset'].some(canFeature)){const edit=make('button','Edit / PIN','outline');edit.onclick=()=>employeeForm(e);actions.append(edit);}if(canFeature('time_add')||canFeature('time_remove')){const adjust=make('button','Adjust Time','outline');adjust.onclick=()=>adjustTime(e);actions.append(adjust);}row.append(info,actions);table.append(row);}if(!staffRows.length)table.append(make('p','No employees found. Add your first employee to get started.'));mdtContent.append(table);
  }
 }
 async function switchPage(page){mdtPage=page;mdt.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='sales'){mdtMessage.textContent='Loading sales…';try{await loadSales();mdtMessage.textContent='';}catch(e){mdtContent.replaceChildren();mdtMessage.textContent='Sales report unavailable: '+e.message;return;}}renderMdt();}
@@ -250,8 +255,12 @@ async function showRolePermissions(){
  try{
   const records=await call('gw_mdt_role_permissions_admin');
   const grid=make('div',undefined,'gw-permission-grid');
+  const selector=document.createElement('select');selector.className='gw-role-selector';selector.setAttribute('aria-label','Select position');
+  for(const roleName of ['Manager','Senior Salesman','Salesman'])selector.add(new Option(roleName,roleName));
+  const selectLabel=make('label','Select Position','gw-role-picker');selectLabel.append(selector);mdtContent.append(selectLabel);
+  selector.onchange=()=>grid.querySelectorAll('.gw-permission-card').forEach(card=>card.hidden=card.dataset.role!==selector.value);
   for(const role of ['Manager','Senior Salesman','Salesman']){
-   const card=make('section',undefined,'gw-permission-card');
+   const card=make('section',undefined,'gw-permission-card');card.dataset.role=role;card.hidden=role!=='Manager';
    card.append(make('h3',role));
    for(const [feature,label] of roleFeatures){
     const entry=records.find(x=>x.role===role&&x.feature===feature);
