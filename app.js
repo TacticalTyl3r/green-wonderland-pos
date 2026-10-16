@@ -135,6 +135,9 @@ async function showSaleReceipt(s){
  // A failed or unavailable items RPC must never hide earned points.
  const token=sessionStorage.getItem('gw-employee-token')||'';
  const saleId=s.id||s.sale_id;
+ if(!db)reportReceiptError('Connection','Database client unavailable');
+ else if(!saleId)reportReceiptError('Sale identifier','Sales History returned this sale without an ID. Item and discount lookups cannot run.');
+ else if(!token)reportReceiptError('Session','Employee PIN session token missing');
  if(db&&saleId){
   const id=String(saleId);
   const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}else reportReceiptError('Discounts','No saved discount breakdown for sale '+id);}).catch(error=>{console.warn('Saved receipt discounts unavailable:',error.message);reportReceiptError('Discounts',error);});
