@@ -365,10 +365,10 @@ if(siteNav&&siteHost){
   try{const rows=await call('gw_mdt_my_permissions',{p_token:token});for(const item of rows||[])if(item.allowed)grantedFeatures.add(item.feature);}catch(e){console.warn('Unable to load MDT role permissions',e);}
  }
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
- const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.textContent='Products, Images & Settings';
- const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.textContent='Branding & Images';
-  const auditLink=document.createElement('button');auditLink.type='button';auditLink.dataset.sitePage='audit';auditLink.innerHTML='<span class="gw-site-icon">▤</span><span class="gw-site-label">Full Audit Log</span>';
- adminSubmenu.append(catalogLink,brandingLink,auditLink,permissionsNav);navButtonAdminPlaceholder();
+ const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.className='gw-admin-subitem gw-admin-catalog';catalogLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">▦</span><span class="gw-site-label">Products, Images & Settings</span>';
+ const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.className='gw-admin-subitem gw-admin-branding';brandingLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">✦</span><span class="gw-site-label">Branding & Images</span>';
+  const auditLink=document.createElement('button');auditLink.type='button';auditLink.dataset.sitePage='audit';auditLink.classList.add('gw-admin-subitem','gw-admin-audit');auditLink.innerHTML='<span class="gw-site-icon">▤</span><span class="gw-site-label">Full Audit Log</span>';
+ permissionsNav.classList.add('gw-admin-subitem','gw-admin-permissions');adminSubmenu.append(catalogLink,brandingLink,auditLink,permissionsNav);navButtonAdminPlaceholder();
  function navButtonAdminPlaceholder(){siteNav.querySelector('[data-site-page="admin"]')?.after(adminSubmenu);}
  catalogLink.onclick=()=>document.querySelector('#adminBtn')?.click();
  brandingLink.onclick=()=>window.gwOpenBrandingAdmin?.();
