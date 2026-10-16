@@ -143,13 +143,13 @@ async function renderEmployeeNotes(e,host){
   host.replaceChildren();
   if(canFeature('employee_notes_manage')){
    const form=make('form',undefined,'gw-mdt-form'),category=document.createElement('select'),body=document.createElement('textarea'),submit=make('button','Add Note','primary');
-   for(const kind of ['General','Recognition','Disciplinary'])category.add(new Option(kind,kind));
+   for(const kind of ['General','Recognition','Commendation','Coaching','Verbal Warning','Written Warning','Disciplinary'])category.add(new Option(kind,kind));
    body.placeholder='Private employee note';body.required=true;body.minLength=3;body.maxLength=3000;
    form.append(category,body,submit);host.append(form);
-   form.onsubmit=async ev=>{ev.preventDefault();submit.disabled=true;try{await call('gw_mdt_note_create',{p_token:token||'',p_employee:e.id,p_category:category.value,p_body:body.value});await renderEmployeeNotes(e,host);}catch(err){mdtMessage.textContent=err.message;}finally{submit.disabled=false;}};
+   form.onsubmit=async ev=>{ev.preventDefault();submit.disabled=true;try{await call('gw_mdt_note_create',{p_token:token||'',p_employee:e.id,p_category:category.value==='Commendation'?'Recognition':['Coaching','Verbal Warning','Written Warning'].includes(category.value)?'Disciplinary':category.value,p_body:['Commendation','Coaching','Verbal Warning','Written Warning'].includes(category.value)?'['+category.value+'] '+body.value:body.value});await renderEmployeeNotes(e,host);}catch(err){mdtMessage.textContent=err.message;}finally{submit.disabled=false;}};
   }
   const list=make('div',undefined,'gw-mdt-roster');
-  for(const n of notes){const row=make('div',undefined,'gw-mdt-employee'),info=make('div');info.append(make('strong',n.category+' · '+n.author),make('p',n.body+' · '+new Date(n.created_at).toLocaleString()));row.append(info);list.append(row);}
+  for(const n of notes){const card=make('article',undefined,'gw-feature-card');card.append(make('strong',n.category+' · '+n.author),make('p',n.body),make('small',new Date(n.created_at).toLocaleString()));list.append(card);}
   if(!notes.length)list.append(make('p','No employee notes yet.'));
   host.append(list);
  }catch(err){host.replaceChildren(make('p','Unable to load notes: '+err.message));}
