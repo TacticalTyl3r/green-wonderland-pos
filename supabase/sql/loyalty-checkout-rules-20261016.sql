@@ -13,7 +13,10 @@ BEGIN
  OR position('v_earned:=floor(greatest(v_sub-v_off-v_manual-v_reward,0)/100);' in v_updated)=0
  THEN RAISE EXCEPTION 'Checkout implementation differs from expected version. No changes made.'; END IF;
  v_updated := replace(v_updated,
-  'v_reward:=v_redeem;v_total:=v_total-v_reward;',
+  'or v_redeem>floor(v_total) then raise exception ''Invalid points redemption'';end if;',
+  'then raise exception ''Invalid points redemption'';end if;');
+ v_updated := replace(v_updated,
+  'v_reward:=v_redeem;v_total:=v_total-v_reward;');
   'select round(v_redeem*c.point_value,2) into v_reward from public.gw_loyalty_config c where c.id=1;
    if v_reward is null or v_reward>v_total then raise exception ''Invalid points redemption for current reward value'';end if;
    v_total:=v_total-v_reward;');
