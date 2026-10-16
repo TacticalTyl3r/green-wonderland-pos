@@ -10,7 +10,10 @@ const phase4=createPhase4({db,money,getProducts:()=>products,getLines:()=>lines(
  getToken:()=>sessionStorage.getItem('gw-employee-token')||'',
  onCartChanged:()=>{if(products.length){renderCart();phase4.renderFavorites(chooseProduct);}}});
 document.querySelector('#cartView .control')?.before(phase4.root);
-document.querySelector('.catalog .section-head')?.after(phase4.favoritesRoot);
+const catalogSidebar=document.createElement('div');
+catalogSidebar.className='gw-catalog-sidebar';
+$('categories').before(catalogSidebar);
+catalogSidebar.append($('categories'),phase4.favoritesRoot);
 phase4.render();
 function saveLocal(){localStorage.setItem('gw-cart',JSON.stringify(cart));localStorage.setItem('gw-history',JSON.stringify(history));}
 async function load(){if(!db){products=demoProducts;zones=[{id:'city',name:'City',fee:50},{id:'sandy',name:'Sandy',fee:100},{id:'paleto',name:'Paleto',fee:150}];$('status').textContent='MDT Offline · Demo Mode';render();return;}const [p,z,s]=await Promise.all([db.from('products').select('*').order('sort_order').order('name'),db.from('delivery_zones').select('*').order('sort_order'),db.from('app_settings').select('*').eq('id',1).single()]);if(p.error||z.error||s.error){$('status').textContent='MDT Offline';$('adminMessage').textContent=[p.error?.message,z.error?.message,s.error?.message].filter(Boolean).join(' / ');return;}products=p.data;zones=z.data;settings=s.data;await phase4.refreshOffers();$('status').textContent='● MDT Online';render();}
