@@ -150,3 +150,46 @@ body[data-theme] .gw-active-switch input:checked+.gw-active-switch-track::after{
 body[data-theme] .gw-active-switch input:focus-visible+.gw-active-switch-track{outline:3px solid var(--accent);outline-offset:3px}
 body[data-theme] .gw-active-state{font-size:12px;font-weight:800;min-width:25px;color:var(--muted)}
 body[data-theme] .gw-active-switch:has(input:checked)+.gw-active-state{color:#40bc7e}
+
+/* Boss panel — polished permissions interface, driven by the selected MDT theme */
+body[data-theme] .gw-permissions-intro{padding:6px 0 18px}
+body[data-theme] .gw-permissions-intro small{display:block;color:var(--accent);font-size:11px;font-weight:800;letter-spacing:1.3px}
+body[data-theme] .gw-permissions-intro h2{margin:8px 0 6px;font-size:clamp(24px,3vw,32px);font-weight:850;letter-spacing:-.6px;color:var(--text)}
+body[data-theme] .gw-permissions-intro p{margin:0;color:var(--muted);font-size:14px}
+body[data-theme] .gw-permissions-select-panel,body[data-theme] .gw-permissions-panel{background:var(--panel2);border:1px solid var(--line);border-radius:15px;box-shadow:0 8px 24px #0001}
+body[data-theme] .gw-permissions-select-panel{padding:18px;margin:0 0 16px}
+body[data-theme] .gw-permissions-select-label{display:grid;gap:10px;color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.8px}
+body[data-theme] .gw-permissions-select-panel .gw-role-selector{width:100%;min-height:48px;padding:12px 14px;border-radius:10px;background:var(--panel);color:var(--text);border:1px solid var(--line);font-size:15px;font-weight:700;letter-spacing:0;cursor:pointer}
+body[data-theme] .gw-permissions-select-panel .gw-role-selector:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body[data-theme] .gw-permissions-panel{padding:15px}
+body[data-theme] .gw-permissions-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:3px 6px 16px}
+body[data-theme] .gw-permissions-panel-head h3{font-size:18px;margin:0;color:var(--accent);font-weight:800}
+body[data-theme] .gw-permissions-panel-head p{font-size:12px;color:var(--muted);margin:0}
+body[data-theme] .gw-permissions-list{display:grid;gap:7px}
+body[data-theme] .gw-permissions-item{display:flex;align-items:center;gap:14px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:var(--panel);cursor:pointer;transition:border-color .15s,background .15s}
+body[data-theme] .gw-permissions-item:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+body[data-theme] .gw-permissions-icon{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border-radius:10px;background:color-mix(in srgb,var(--accent) 13%,var(--panel2));color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 32%,var(--line));font-size:23px;font-weight:800}
+body[data-theme] .gw-permissions-item:nth-child(5n + 2) .gw-permissions-icon{color:#a88af0;background:#a88af018;border-color:#a88af055}
+body[data-theme] .gw-permissions-item:nth-child(5n + 3) .gw-permissions-icon{color:#5caff2;background:#5caff218;border-color:#5caff255}
+body[data-theme] .gw-permissions-item:nth-child(5n + 4) .gw-permissions-icon{color:#f1ac54;background:#f1ac5418;border-color:#f1ac5455}
+body[data-theme] .gw-permissions-item:nth-child(5n) .gw-permissions-icon{color:#f07691;background:#f0769118;border-color:#f0769155}
+body[data-theme] .gw-permissions-detail{display:grid;gap:4px;min-width:0;flex:1}
+body[data-theme] .gw-permissions-detail strong{font-size:14px;color:var(--text);font-weight:750}
+body[data-theme] .gw-permissions-detail small{font-size:12px;color:var(--muted);line-height:1.35}
+body[data-theme] .gw-permissions-control{display:flex;align-items:center;gap:11px;position:relative;flex-shrink:0}
+body[data-theme] .gw-permissions-checkbox{position:absolute;left:0;top:0;width:52px;height:29px;opacity:0;cursor:pointer;z-index:1}
+body[data-theme] .gw-permissions-track{position:relative;display:block;width:52px;height:29px;border-radius:30px;background:#87343b;border:1px solid #b4555d;transition:background .2s}
+body[data-theme] .gw-permissions-track::after{content:'';position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 4px #0005;transition:transform .2s}
+body[data-theme] .gw-permissions-checkbox:checked+.gw-permissions-track{background:#218451;border-color:#36ae6f}
+body[data-theme] .gw-permissions-checkbox:checked+.gw-permissions-track::after{transform:translateX(23px)}
+body[data-theme] .gw-permissions-checkbox:focus-visible+.gw-permissions-track{outline:3px solid var(--accent);outline-offset:3px}
+body[data-theme] .gw-permissions-state{min-width:24px;color:#d86d77;font-size:12px;font-weight:800}
+body[data-theme] .gw-permissions-checkbox:checked~.gw-permissions-state{color:#41c77c}
+body[data-theme] .gw-permissions-footer{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+body[data-theme] .gw-permissions-footer button{border-radius:10px;min-height:48px;padding:12px 18px;font-size:14px;font-weight:800;cursor:pointer}
+body[data-theme] .gw-permissions-cancel{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
+body[data-theme] .gw-permissions-save{background:#218451;border:1px solid #36ae6f;color:#fff;box-shadow:0 5px 16px #21845133}
+body[data-theme] .gw-permissions-save:hover{background:#2da266}
+body[data-theme] .gw-permissions-footer button:disabled{opacity:.55;cursor:wait}
+@media(max-width:650px){body[data-theme] .gw-permissions-panel-head{display:block}body[data-theme] .gw-permissions-panel-head p{margin-top:5px}body[data-theme] .gw-permissions-item{gap:9px;padding:10px 8px}body[data-theme] .gw-permissions-icon{flex-basis:34px;width:34px;height:34px;font-size:18px}body[data-theme] .gw-permissions-detail small{font-size:11px}body[data-theme] .gw-permissions-control{gap:6px}}
+@media(max-width:420px){body[data-theme] .gw-permissions-footer{grid-template-columns:1fr}}
