@@ -699,3 +699,18 @@ body[data-theme] .gw-history-intro{line-height:1.65}
   min-height:0;overflow-y:auto!important;flex:1 1 auto;
  }
 }
+
+/* Loyalty earning switch and compact checkout redemption controls. */
+.gw-loyalty-switch-row{display:flex!important;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+.gw-loyalty-switch-input{position:absolute;opacity:0;width:1px;height:1px}
+.gw-loyalty-switch-track{position:relative;display:inline-block;flex:none;width:48px;height:26px;border-radius:99px;background:#58655e;border:1px solid var(--line,#506354);transition:background .15s}
+.gw-loyalty-switch-track:before{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s}
+.gw-loyalty-switch-input:checked+.gw-loyalty-switch-track{background:#268b55}
+.gw-loyalty-switch-input:checked+.gw-loyalty-switch-track:before{transform:translateX(22px)}
+.gw-loyalty-switch-input:focus-visible+.gw-loyalty-switch-track{outline:2px solid var(--accent,#78d49d);outline-offset:3px}
+.gw-checkout-rewards{display:flex;flex-direction:column;gap:5px;margin:7px 0;padding:8px;border:1px solid var(--line,#30473a);border-radius:8px;background:var(--panel2,#12261a)}
+.gw-checkout-rewards>strong{font-size:13px}
+.gw-checkout-rewards>small{font-size:11px;line-height:1.3}
+.gw-checkout-rewards-actions{display:flex;gap:6px;align-items:center}
+.gw-checkout-rewards-actions input,.gw-checkout-rewards-actions select{min-width:0;flex:1;height:33px;padding:5px}
+.gw-checkout-rewards-actions button{flex:none;min-height:33px;padding:5px 9px;font-size:11px}
