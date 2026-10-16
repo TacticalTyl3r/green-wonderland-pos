@@ -85,7 +85,7 @@ async function loadSales(){salesRows=await call('gw_mdt_sales_report_for_role',{
 const cash=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
 function gwExportCsv(filename,rows){
  const cell=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
- const csv='\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\\r\\n');
+ const csv='\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
  const link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -462,7 +462,7 @@ async function showBackupCenter(){
    if(!Array.isArray(rows)||!rows.length){status.textContent='No records available for '+label+'.';return;}
    const headers=[...new Set(rows.flatMap(row=>Object.keys(row)))];
    const esc=v=>'"'+String(v==null?'':typeof v==='object'?JSON.stringify(v):v).replaceAll('"','""')+'"';
-   const csv=[headers,...rows.map(row=>headers.map(key=>row[key]))].map(line=>line.map(esc).join(',')).join('\\r\\n');
+   const csv=[headers,...rows.map(row=>headers.map(key=>row[key]))].map(line=>line.map(esc).join(',')).join('\r\n');
    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='green-wonderland-'+filename+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
    status.textContent='Exported '+rows.length+' records. Some queries may be limited by the database.';
   }catch(e){status.textContent='Export failed: '+e.message;}finally{button.disabled=false;}};
