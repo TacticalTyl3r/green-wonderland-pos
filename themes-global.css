@@ -40,3 +40,16 @@ body[data-theme] .gw-role-picker{display:grid;gap:8px;margin:15px 0}
 body[data-theme] .gw-role-selector{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:12px}
 body[data-theme] .gw-permission-card[hidden]{display:none!important}
 @media(max-width:750px){body[data-theme] .gw-roster-grid{grid-template-columns:1fr}}
+
+body[data-theme] .gw-mdt-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body[data-theme] .gw-mdt-stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px;min-height:95px}
+body[data-theme] .gw-mdt-stat small{color:var(--muted);font-size:12px}
+body[data-theme] .gw-mdt-stat strong{color:var(--text);font-size:22px}
+body[data-theme] .gw-time-adjust-form{max-width:750px;margin:0 auto;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px}
+body[data-theme] .gw-time-adjust-form label{display:grid;gap:8px;color:var(--muted)}
+body[data-theme] .gw-time-adjust-form input,body[data-theme] .gw-time-adjust-form textarea{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px}
+body[data-theme] .gw-time-fields,body[data-theme] .gw-time-type{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+body[data-theme] .gw-time-type button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:12px}
+body[data-theme] .gw-time-type button.active{background:var(--gw-accent-soft);border-color:var(--accent)}
+body[data-theme] .gw-time-employee{color:var(--text);padding:12px;border:1px solid var(--line);border-radius:9px}
+@media(max-width:550px){body[data-theme] .gw-mdt-stats{grid-template-columns:1fr}}
