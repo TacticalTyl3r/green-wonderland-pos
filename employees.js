@@ -326,7 +326,7 @@ roster().then(refresh).catch(e=>{msg('Employee service not configured yet: '+e.m
 
 
 /* Boss-configurable role permission editor */
-const roleFeatures=[['dashboard','Dashboard'],['employees','Employees'],['time_management','Time Management'],['sales_earnings','Sales & Earnings'],['admin_catalog','Products & Settings'],['admin_branding','Branding & Images'],['employee_add','Add Employees'],['employee_edit','Edit Employees'],['employee_deactivate','Deactivate Employees'],['employee_role_assign','Assign Roles'],['employee_pin_reset','Reset PINs'],['time_add','Add Work Time'],['time_remove','Remove Work Time'],['time_history','View Time History'],['sales_history','Sales History'],['sales_adjust','Refund / Void Sales'],['announcements','View Announcements'],['announcements_manage','Manage Announcements'],['employee_notes','View Employee Notes'],['employee_notes_manage','Manage Employee Notes'],['recognition_view','View Recognition'],['recognition_manage','Award Recognition'],['activity_history','View Activity History']];
+const roleFeatures=[['dashboard','Dashboard'],['employees','Employees'],['time_management','Time Management'],['sales_earnings','Sales & Earnings'],['admin_catalog','Products & Settings'],['admin_branding','Branding & Images'],['employee_add','Add Employees'],['employee_edit','Edit Employees'],['employee_deactivate','Deactivate Employees'],['employee_role_assign','Assign Roles'],['employee_pin_reset','Reset PINs'],['time_add','Add Work Time'],['time_remove','Remove Work Time'],['time_history','View Time History'],['sales_history','Sales History'],['sales_adjust','Refund / Void Sales'],['offers_manage','Manage Bundles & Specials'],['announcements','View Announcements'],['announcements_manage','Manage Announcements'],['employee_notes','View Employee Notes'],['employee_notes_manage','Manage Employee Notes'],['recognition_view','View Recognition'],['recognition_manage','Award Recognition'],['activity_history','View Activity History']];
 async function showRolePermissions(){
  mdtContent.replaceChildren();
  const intro=make('div',undefined,'gw-permissions-intro');
@@ -481,11 +481,11 @@ async function showBackupCenter(){
   navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
   permissionsNav.hidden=!bossAllowed;
   securityLink.hidden=!bossAllowed;
-  offersLink.hidden=!bossAllowed;
+  offersLink.hidden=!canFeature('offers_manage');
    auditLink.hidden=!canFeature('activity_history');
 
    extraNav.get('backups').hidden=!bossAllowed;
-  navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding')||grantedFeatures.has('activity_history')||grantedFeatures.has('announcements'));
+  navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding')||grantedFeatures.has('activity_history')||grantedFeatures.has('announcements')||grantedFeatures.has('offers_manage'));
   catalogLink.hidden=!bossAllowed;
   brandingLink.hidden=!bossAllowed;
   if(!bossAllowed)adminSubmenu.hidden=true;
@@ -493,16 +493,17 @@ async function showBackupCenter(){
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
   if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin Account':'Admin Login';adminBtn.hidden=false;adminBtn.title=bossAllowed?'Manage your administrator account and product settings':'Sign in with your administrator email and password';}
-  if(currentPage!=='pos'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&currentPage!=='offers'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
+  if(currentPage!=='pos'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
    if(currentPage==='audit'&&!canFeature('activity_history'))await showSite('pos');
-  if((currentPage==='permissions'||currentPage==='security'||currentPage==='backups'||currentPage==='offers')&&!bossAllowed)await showSite('pos');
+  if(currentPage==='offers'&&!canFeature('offers_manage'))await showSite('pos');
+  if((currentPage==='permissions'||currentPage==='security'||currentPage==='backups')&&!bossAllowed)await showSite('pos');
  }
  async function showSite(page){
   if(page==='permissions'&&!bossAllowed)return;
    if(page==='audit'&&!canFeature('activity_history'))return;
   if(page==='backups'&&!bossAllowed)return;
   if(page==='security'&&!bossAllowed)return;
-  if(page==='offers'&&!bossAllowed)return;
+  if(page==='offers'&&!canFeature('offers_manage'))return;
   if(page==='notifications'&&!canFeature('announcements')&&!canFeature('announcements_manage'))return;
   if(restricted.includes(page)&&!canFeature(featureForPage[page])&&!(page==='announcements'&&canFeature('announcements_manage'))&&!(page==='notes'&&canFeature('employee_notes_manage')&&canFeature('employees')))return;
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
