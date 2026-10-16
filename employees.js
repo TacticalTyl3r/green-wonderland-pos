@@ -259,12 +259,12 @@ function renderMdt(){
  if(mdtPage==='time'){const clockCard=make('div',undefined,'gw-mdt-stat');clockCard.append(make('h3','Employee Time Clock'),make('p',me?(me.employee_name+' · '+(me.clocked_in?'Clocked In':'Clocked Out')):'Sign in with your employee PIN to clock in or out.'));const openClock=make('button','Open Time Clock','primary');openClock.onclick=()=>button.click();clockCard.append(openClock);mdtContent.append(clockCard);if(canFeature('time_history')){const history=make('button','Adjustment History','outline');history.onclick=showTimeHistory;mdtContent.append(history);}}
  const active=staffRows.filter(e=>e.active!==false),onDuty=active.filter(e=>e.clocked_in).length;
  if(mdtPage==='sales'){renderSales();}else if(mdtPage==='overview'){
+  if(canFeature('announcements')||canFeature('announcements_manage')){const notices=make('section',undefined,'gw-dashboard-notifications');mdtContent.append(notices);showNotifications(notices);}
   const cards=make('div',undefined,'gw-mdt-stats');
   for(const [label,value] of [['Active Employees',active.length],['Currently Clocked In',onDuty],['Recorded Staff Hours',formatHours(staffRows.reduce((sum,e)=>sum+Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0),0))],...(canFeature('sales_earnings')?[['Sales This Week',cash(salesRows.reduce((sum,e)=>sum+Number(e.weekly_sales||0),0))],['Top Seller',salesRows.length?[...salesRows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0))[0].employee_name:'None']]:[] )]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',String(value)));cards.append(card);}mdtContent.append(cards);
   const duty=staffRows.filter(e=>e.clocked_in);mdtContent.append(make('h3','Currently Working'),make('p',duty.length?duty.map(e=>e.name).join(' · '):'No employees currently clocked in.'));
   if(canFeature('sales_earnings')&&salesRows.length){const top=[...salesRows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0)).slice(0,3);mdtContent.append(make('h3','Top Performers This Week'));for(const [i,e] of top.entries())mdtContent.append(make('p',(i+1)+'. '+e.employee_name+' · '+cash(e.weekly_sales)));}
   if(canFeature('recognition_view')||canFeature('recognition_manage')){const awards=make('div');mdtContent.append(make('h3','Recent Recognition'),awards);showRecognition(awards,null,{call,token:()=>token||'',canFeature,make});}
-  if(canFeature('announcements')||canFeature('announcements_manage')){const notices=make('section',undefined,'gw-dashboard-notifications');mdtContent.append(notices);showNotifications(notices);}
 
  }else{
   const head=make('div',undefined,'gw-mdt-head');head.append(make('h3',mdtPage==='employees'?'Employee Roster':'Employee Hours'));
