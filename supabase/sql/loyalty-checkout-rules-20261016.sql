@@ -24,3 +24,13 @@ BEGIN
    if v_earned is null then raise exception ''Loyalty configuration missing'';end if;');
  EXECUTE v_updated;
 END $migration$;
+
+-- PIN-authenticated checkout rate lookup; separate from management permissions.
+create or replace function public.gw_loyalty_checkout_config(p_token text)
+returns table(earn_per_amount numeric,point_value numeric,enabled boolean)
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if public.gw_employee_for_token(p_token) is null then raise exception 'Employee PIN required';end if;
+ return query select c.earn_per_amount,c.point_value,c.enabled from public.gw_loyalty_config c where c.id=1;
+end $$;
+grant execute on function public.gw_loyalty_checkout_config(text) to anon,authenticated;
