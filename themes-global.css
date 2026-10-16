@@ -70,3 +70,14 @@ body[data-theme] .gw-leader-caption{display:flex;justify-content:space-between;g
 body[data-theme] .gw-leader-caption strong{color:var(--muted)}
 body[data-theme] .gw-leader-track{height:8px;border-radius:20px;background:var(--line);overflow:hidden}
 body[data-theme] .gw-leader-fill{height:100%;background:var(--accent);border-radius:20px}
+
+body[data-theme] .gw-roster-section{margin:0 0 24px}
+body[data-theme] .gw-roster-section>h3{font-size:16px;font-weight:750;margin:0 0 12px;padding:0 0 10px;border-bottom:1px solid var(--line);color:var(--accent)}
+body[data-theme] .gw-roster-photo{width:60px;height:60px;object-fit:cover;border-radius:50%;border:2px solid var(--accent)}
+body[data-theme] .gw-roster-avatar[hidden]{display:none}
+body[data-theme] .gw-profile-settings{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0}
+body[data-theme] #gwProfilePreview{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)}
+body[data-theme] #gwProfilePreview[hidden]{display:none}
+body[data-theme] #gwProfileUrl{flex:1 1 230px;min-width:0;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:12px}
+body[data-theme] #gwProfileSection{border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:16px;margin:20px 0}
+body[data-theme] #gwProfileSection h3{margin:0 0 8px}
