@@ -226,6 +226,7 @@ async function renderDashboardAnnouncements(host){
   host.append(list);
  }catch(err){host.replaceChildren(make('p','Unable to load announcements: '+err.message));}
 }
+let dashboardPrefsOpen=false;
 async function showNotifications(host=mdtContent){
  host.replaceChildren();
  const heading=make('div',undefined,'gw-mdt-head');heading.append(make('h2','Notifications'),make('p','Company announcements and important updates.'));
@@ -247,11 +248,19 @@ async function showNotifications(host=mdtContent){
  }
  try{
   const rows=await call('gw_mdt_announcements_list',{p_token:token||''});
-  status.textContent=rows?.length?rows.length+' announcement'+(rows.length===1?'':'s'):'';
+  const seenKey='gw-notifications-seen-'+String(me?.employee_id||'guest');
+  let seen=[];try{seen=JSON.parse(localStorage.getItem(seenKey)||'[]');if(!Array.isArray(seen))seen=[];}catch(e){}
+  const idOf=a=>String(a.id||a.created_at+'-'+a.title);
+  const updateCount=()=>{const unread=(rows||[]).filter(a=>!seen.includes(idOf(a))).length;status.textContent=(rows?.length||0)+' announcements · '+unread+' unread on this browser';};
+  updateCount();
   if(!rows?.length){list.append(make('p','No announcements yet.'));return;}
   for(const item of rows){
-   const card=make('article',undefined,'gw-feature-card');
-   card.append(make('strong',item.title||'Announcement'),make('p',item.body||''),make('small',(item.author||'Management')+' · '+new Date(item.created_at).toLocaleString()));
+   const card=make('article',undefined,'gw-feature-card gw-notice-card');
+   if(!seen.includes(idOf(item)))card.classList.add('gw-notice-unread');
+   const title=make('div',undefined,'gw-notice-heading');title.append(make('strong',item.title||'Announcement'));
+   const mark=make('button',seen.includes(idOf(item))?'Read':'Mark as Read','outline');
+   mark.disabled=seen.includes(idOf(item));mark.onclick=()=>{seen.push(idOf(item));localStorage.setItem(seenKey,JSON.stringify([...new Set(seen)].slice(-1000)));card.classList.remove('gw-notice-unread');mark.textContent='Read';mark.disabled=true;updateCount();};
+   title.append(mark);card.append(title,make('p',item.body||''),make('small',(item.author||'Management')+' · '+new Date(item.created_at).toLocaleString()));
    list.append(card);
   }
  }catch(e){status.textContent='Unable to load announcements: '+e.message;}
@@ -266,8 +275,8 @@ function renderMdt(){
   head.append(make('h2','Store Dashboard'),make('p','Your store at a glance, with personalized sections.'));
   const customize=make('button','⚙ Customize Dashboard','outline');head.append(customize);mdtContent.append(head);
   const preferences=make('div');mdtContent.append(preferences);
-  customize.onclick=()=>{if(preferences.childElementCount){preferences.replaceChildren();return;}
-   dashboardSettingsEditor(preferences,{employeeId:actor,make,refresh:()=>renderMdt()});};
+  customize.onclick=()=>{dashboardPrefsOpen=!dashboardPrefsOpen;renderMdt();};
+  if(dashboardPrefsOpen)dashboardSettingsEditor(preferences,{employeeId:actor,make,refresh:()=>renderMdt()});
   const sections=new Map();
   const section=(id,cls)=>{const host=make('section',undefined,'gw-dashboard-widget '+(cls||''));sections.set(id,host);return host;};
   if(canFeature('announcements')||canFeature('announcements_manage')){const host=section('notifications','gw-dashboard-notifications');showNotifications(host);}
