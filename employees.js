@@ -1,5 +1,5 @@
 import {createSalesChart} from './sales-chart.js?v=2';
-import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=1';
+import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=audit-detail-20261016';
 import {renderBusinessPage} from './business-mdt.js?v=sales-history-employee-20261015';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
