@@ -10,7 +10,7 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
  const exportCsv=make('button','Export Customers CSV','outline');
  exportCsv.type='button';exportCsv.disabled=true;controls.append(exportCsv);
  const csvCell=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
- const download=(name,rows)=>{const blob=new Blob(['\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\\r\\n')],{type:'text/csv;charset=utf-8'});
+ const download=(name,rows)=>{const blob=new Blob(['\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);};
  const stats=make('div',undefined,'gw-mdt-stats');
  const layout=make('div',undefined,'gw-loyalty-layout');
