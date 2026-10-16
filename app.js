@@ -106,6 +106,15 @@ async function showSaleReceipt(s){
   for(const [label,value] of rows){const row=document.createElement('div');row.className='gw-paper-total';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=value;row.append(a,b);phase4Summary.append(row);}
  };
  showLoyalty();
+ if(db&&(s.id||s.sale_id)){
+  try{
+   const {data:stored,error}=await db.rpc('gw_pos_get_loyalty_receipt',{
+    p_token:sessionStorage.getItem('gw-employee-token')||'',p_sale:String(s.sale_id||s.id)
+   });
+   if(error)throw Error(error.message);
+   if(Array.isArray(stored)&&stored.length){s.loyalty_receipt=stored[0];showLoyalty();}
+  }catch(error){console.warn('Saved loyalty receipt unavailable:',error.message);}
+ }
  dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
  if(db){
   note.textContent='Loading ordered products…';
@@ -185,6 +194,16 @@ $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat
   if(result.sale_id&&result.loyalty_receipt){
    const snapshot={...result.loyalty_receipt,sale_id:String(result.sale_id),saved_at:new Date().toISOString()};
    try{localStorage.setItem(loyaltyReceiptKey(result.sale_id),JSON.stringify(snapshot));}catch(e){console.warn('Local loyalty receipt cache unavailable',e);}
+   try{
+    const {data:stored,error}=await db.rpc('gw_pos_save_loyalty_receipt',{
+     p_token:activeToken,p_sale:String(result.sale_id),p_member_code:result.loyalty_receipt.member_code
+    });
+    if(error)throw Error(error.message);
+    if(Array.isArray(stored)&&stored.length){
+     result.loyalty_receipt=stored[0];
+     try{localStorage.setItem(loyaltyReceiptKey(result.sale_id),JSON.stringify({...stored[0],saved_at:new Date().toISOString()}));}catch(e){}
+    }
+   }catch(error){console.warn('Sale completed, but permanent loyalty receipt could not be saved:',error.message);}
   }
   history.unshift({date:new Date().toISOString(),total:Number(result.total),count,fulfillment,
    sale_id:result.sale_id});
