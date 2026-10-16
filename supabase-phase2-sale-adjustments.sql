@@ -82,3 +82,17 @@ revoke all on function public.gw_mdt_sale_adjustments_list(text) from public,ano
 grant execute on function public.gw_mdt_adjustable_sales(text,text) to anon,authenticated;
 grant execute on function public.gw_mdt_adjust_sale(text,text,text,numeric,text) to anon,authenticated;
 grant execute on function public.gw_mdt_sale_adjustments_list(text) to anon,authenticated;
+
+-- Refund totals are reported by adjustment date, not by the original sale date.
+create or replace function public.gw_mdt_sale_adjustment_totals(p_token text)
+returns table(today_adjustments numeric,weekly_adjustments numeric,lifetime_adjustments numeric)
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if not public.gw_mdt_can(p_token,'sales_earnings') then raise exception 'Access denied'; end if;
+ return query
+ select coalesce(sum(a.amount) filter(where a.created_at >= date_trunc('day',now())),0)::numeric,
+ coalesce(sum(a.amount) filter(where a.created_at >= date_trunc('week',now())),0)::numeric,
+ coalesce(sum(a.amount),0)::numeric from public.gw_mdt_sale_adjustments a;
+end$$;
+revoke all on function public.gw_mdt_sale_adjustment_totals(text) from public,anon,authenticated;
+grant execute on function public.gw_mdt_sale_adjustment_totals(text) to anon,authenticated;
