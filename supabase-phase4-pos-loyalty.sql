@@ -165,11 +165,11 @@ begin
  end loop;
  if v_count>10000 or v_sub>100000000 then raise exception 'Order exceeds limits';end if;
  -- A product special discounts eligible units. Multiple specials use the highest active rate.
- select coalesce(sum((line->>'total')::numeric*
+ select coalesce(sum((line.value->>'total')::numeric*
   coalesce((select max(o.percent_off) from public.gw_pos_offers o
-   where o.offer_type='special' and o.active and o.product_id=line->>'id'
+   where o.offer_type='special' and o.active and o.product_id=line.value->>'id'
    and (o.begins_at is null or o.begins_at<=now()) and (o.ends_at is null or o.ends_at>now())),0)/100),0)
- into v_off from jsonb_array_elements(v_lines) line;
+ into v_off from jsonb_array_elements(v_lines) AS line(value);
  -- Bundles apply to remaining merchandise value, once for each complete matching set.
  -- Discount cannot exceed the original gross bundle value or remaining subtotal.
  for v_offer in select * from public.gw_pos_offers o where o.offer_type='bundle' and o.active
@@ -178,10 +178,10 @@ begin
   v_bundle_copies:=2147483647;v_bundle_gross:=0;
   for v_part in select value from jsonb_array_elements(v_offer.items) loop
    v_required:=(v_part->>'qty')::integer;
-   select least(v_bundle_copies,coalesce(sum((line->>'qty')::integer),0)/v_required),
-    v_bundle_gross+coalesce(max((line->>'unit_price')::numeric),0)*v_required
+   select least(v_bundle_copies,coalesce(sum((line.value->>'qty')::integer),0)/v_required),
+    v_bundle_gross+coalesce(max((line.value->>'unit_price')::numeric),0)*v_required
    into v_bundle_copies,v_bundle_gross
-   from jsonb_array_elements(v_lines) line where line->>'id'=v_part->>'id';
+   from jsonb_array_elements(v_lines) AS line(value) where line.value->>'id'=v_part->>'id';
   end loop;
   if v_bundle_copies>0 and v_bundle_copies<2147483647 then
    v_discount:=greatest(0,v_bundle_gross-v_offer.bundle_price)*v_bundle_copies;
