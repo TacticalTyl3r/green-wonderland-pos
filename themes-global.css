@@ -249,3 +249,19 @@ body[data-header-effect=botanical] .gw-site-content .shell>header::before{opacit
 @keyframes gw-header-border{50%{box-shadow:inset 0 0 0 1px var(--accent),0 0 22px color-mix(in srgb,var(--accent) 38%,transparent)}}
 @keyframes gw-header-breathe{50%{transform:scale(1.1);opacity:.65}}
 @media(prefers-reduced-motion:reduce){body[data-theme] .gw-site-content .shell>header,body[data-theme] .gw-site-content .shell>header::before,body[data-theme] .gw-site-content .shell>header::after,body[data-theme] .gw-site-content .shell>header .brand h1{animation:none!important}}
+
+body[data-theme] .gw-history-intro{color:var(--muted);font-size:13px;margin-bottom:16px}
+body[data-theme] .gw-history-entry{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;margin:10px 0;border-radius:12px;border:1px solid var(--line);background:var(--panel2)}
+body[data-theme] .gw-history-entry.gw-history-added{border-left:4px solid #31c783}
+body[data-theme] .gw-history-entry.gw-history-removed{border-left:4px solid #f26d73}
+body[data-theme] .gw-history-details{min-width:0;flex:1}
+body[data-theme] .gw-history-details strong{display:block;color:var(--text);font-size:15px}
+body[data-theme] .gw-history-details p{margin:7px 0;color:var(--text);font-size:13px}
+body[data-theme] .gw-history-details small{color:var(--muted);font-size:12px}
+body[data-theme] .gw-history-amount{min-width:118px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+body[data-theme] .gw-history-amount strong{font-size:19px}
+body[data-theme] .gw-history-amount small{font-size:10px;font-weight:800;letter-spacing:.6px}
+body[data-theme] .gw-history-added .gw-history-amount{background:rgba(35,170,99,.12);border-color:#31c783;color:#31c783}
+body[data-theme] .gw-history-removed .gw-history-amount{background:rgba(207,55,70,.12);border-color:#f26d73;color:#f26d73}
+body[data-theme] .gw-history-added .gw-history-amount *,body[data-theme] .gw-history-removed .gw-history-amount *{color:inherit}
+@media(max-width:560px){body[data-theme] .gw-history-entry{flex-wrap:wrap}body[data-theme] .gw-history-amount{min-width:0}}
