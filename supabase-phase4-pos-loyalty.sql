@@ -131,7 +131,7 @@ end$$;
 
 create or replace function public.gw_pos_checkout_v4(p_token text,p_employee uuid,
  p_items jsonb,p_fulfillment text,p_zone text,p_manual_percent numeric,
- p_member uuid,p_redeem integer)
+ p_member uuid,p_redeem integer,p_expected_total numeric)
 returns table(sale_id uuid,total numeric,offer_discount numeric,manual_discount numeric,
  reward_discount numeric,points_earned integer,points_redeemed integer)
 language plpgsql security definer set search_path=public,pg_temp as $$
@@ -140,7 +140,7 @@ declare
  v_qty integer;v_sub numeric:=0;v_off numeric:=0;v_manual numeric:=0;v_reward numeric:=0;
  v_delivery numeric:=0;v_total numeric;v_cap numeric:=100;v_available integer;v_earned integer:=0;
  v_redeem integer:=coalesce(p_redeem,0);v_count integer:=0;v_lines jsonb:='[]'::jsonb;
- v_bundle_gross numeric;v_bundle_copies integer;v_required integer;v_discount numeric;
+ v_bundle_gross numeric;v_bundle_copies integer;v_required integer;v_discount numeric;v_best_bundle numeric:=0;
 begin
  v_employee:=coalesce(public.gw_employee_for_token(p_token),p_employee);
  if v_employee is null or not exists(select 1 from public.gw_employees where id=v_employee and active)
@@ -184,10 +184,11 @@ begin
   end loop;
   if v_bundle_copies>0 and v_bundle_copies<2147483647 then
    v_discount:=greatest(0,v_bundle_gross-v_offer.bundle_price)*v_bundle_copies;
-   v_off:=least(v_sub,v_off+v_discount);
+   v_best_bundle:=greatest(v_best_bundle,v_discount);
   end if;
  end loop;
- v_off:=least(v_sub,round(v_off,2));
+ -- Apply the strongest savings path rather than stacking overlapping bundle and special offers.
+ v_off:=least(v_sub,round(greatest(v_off,v_best_bundle),2));
  v_manual:=round((v_sub-v_off)*p_manual_percent/100,2);
  if p_fulfillment='delivery' then
   select fee into v_delivery from public.delivery_zones where id::text=p_zone;
@@ -202,6 +203,9 @@ begin
   v_reward:=v_redeem;v_total:=v_total-v_reward;
   v_earned:=floor(greatest(v_sub-v_off-v_manual-v_reward,0)/100);
  elsif v_redeem<>0 then raise exception 'Choose a member to redeem points';end if;
+ if p_expected_total is null or abs(round(p_expected_total,2)-v_total)>0.01 then
+  raise exception 'Checkout total changed. Refresh the POS and confirm the updated price.';
+ end if;
  v_sale:=public.gw_record_sale(p_token,v_employee,v_total,v_count,p_fulfillment);
  insert into public.gw_sale_receipt_details(sale_id,items) values(v_sale::text,v_lines);
  insert into public.gw_pos_sale_meta(sale_id,member_id,base_subtotal,offer_discount,manual_discount,
@@ -248,7 +252,7 @@ revoke all on function public.gw_pos_manage_offers(text,bigint,text,text,text,nu
 revoke all on function public.gw_pos_all_offers(text) from public,anon,authenticated;
 revoke all on function public.gw_loyalty_find(text,text) from public,anon,authenticated;
 revoke all on function public.gw_loyalty_register(text,text,text) from public,anon,authenticated;
-revoke all on function public.gw_pos_checkout_v4(text,uuid,jsonb,text,text,numeric,uuid,integer) from public,anon,authenticated;
+revoke all on function public.gw_pos_checkout_v4(text,uuid,jsonb,text,text,numeric,uuid,integer,numeric) from public,anon,authenticated;
 revoke all on function public.gw_pos_product_analytics(text) from public,anon,authenticated;
 revoke all on function public.gw_pos_sale_details(text,text) from public,anon,authenticated;
 grant execute on function public.gw_pos_active_offers() to anon,authenticated;
@@ -256,7 +260,7 @@ grant execute on function public.gw_pos_manage_offers(text,bigint,text,text,text
 grant execute on function public.gw_pos_all_offers(text) to anon,authenticated;
 grant execute on function public.gw_loyalty_find(text,text) to anon,authenticated;
 grant execute on function public.gw_loyalty_register(text,text,text) to anon,authenticated;
-grant execute on function public.gw_pos_checkout_v4(text,uuid,jsonb,text,text,numeric,uuid,integer) to anon,authenticated;
+grant execute on function public.gw_pos_checkout_v4(text,uuid,jsonb,text,text,numeric,uuid,integer,numeric) to anon,authenticated;
 grant execute on function public.gw_pos_product_analytics(text) to anon,authenticated;
 grant execute on function public.gw_pos_sale_details(text,text) to anon,authenticated;
 
