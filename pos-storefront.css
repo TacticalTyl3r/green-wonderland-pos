@@ -96,3 +96,16 @@ body:not(.light){background:#050c0a;color:#eef6f0}
 #adminDialog [data-field="image_url"]{display:block;width:100%;margin-top:6px}
 @media(max-width:850px){.gw-site-content .shell #products.gw-products-grouped .gw-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:460px){.gw-site-content .shell #products.gw-products-grouped .gw-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px}}
+
+/* Keep Quick Favorites directly under the catalog category menu. */
+.gw-site-content .shell .catalog .gw-catalog-sidebar{grid-column:1;grid-row:2;display:flex;flex-direction:column;align-self:start;gap:12px;min-width:0}
+.gw-site-content .shell .catalog .gw-catalog-sidebar #categories{display:flex;flex-direction:column;gap:6px;min-width:0}
+.gw-site-content .shell .catalog .gw-catalog-sidebar .gw-pos-favorites{margin:0;padding:12px;min-width:0;overflow-wrap:anywhere}
+.gw-site-content .shell .catalog .gw-catalog-sidebar .gw-favorite-items{display:flex;flex-direction:column;gap:6px}
+.gw-site-content .shell .catalog .gw-catalog-sidebar .gw-favorite-items button{width:100%;white-space:normal;text-align:left}
+@media(max-width:600px){
+ .gw-site-content .shell .catalog .gw-catalog-sidebar{grid-column:1;grid-row:2}
+ .gw-site-content .shell .catalog .gw-catalog-sidebar #categories{flex-direction:row;overflow-x:auto;flex-wrap:nowrap}
+ .gw-site-content .shell .catalog .gw-catalog-sidebar .gw-favorite-items{flex-direction:row;flex-wrap:wrap}
+ .gw-site-content .shell .catalog .gw-catalog-sidebar .gw-favorite-items button{width:auto}
+}
