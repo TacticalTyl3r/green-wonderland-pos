@@ -16,31 +16,37 @@ function renderCart(){const l=lines();$('count').textContent=`${l.reduce((n,x)=>
 function ingredientSummary(){const map=new Map();for(const {p,qty} of lines())for(const item of (Array.isArray(p.ingredients)?p.ingredients:[])){if(!item?.name)continue;const key=`${item.name}|${item.unit||''}`;const v=map.get(key)||{name:item.name,unit:item.unit||'',qty:0};v.qty+=Number(item.qty||0)*qty;map.set(key,v)}return [...map.values()];}
 function renderIngredients(){const items=ingredientSummary();$('ingredients').innerHTML=items.length?items.map(x=>`<div class="record">${esc(x.name)} — <b>${x.qty} ${esc(x.unit)}</b></div>`).join(''):'<div class="empty">No ingredient recipes assigned to selected products.</div>';}
 let sharedHistory=[],historyLoading=false,historyError='',historyLoaded=false;
+function saleLines(s){return Array.isArray(s.line_items)?s.line_items:[];}
 function receiptText(s){
- const date=s.created_at?new Date(s.created_at).toLocaleString():'Unknown date';
- return ['GREEN WONDERLAND | SALES RECEIPT','━━━━━━━━━━━━━━━━━━━━',
- 'Employee: '+(s.employee_name||'Unknown employee'),
- 'Date: '+date,
- 'Sale total: '+money(s.total),
- 'Items: '+Number(s.item_count||0),
- 'Fulfillment: '+(s.fulfillment||'Not specified'),
- '━━━━━━━━━━━━━━━━━━━━',
- 'Thank you for shopping at Green Wonderland!'].join('\\n');
+ const d=s.created_at?new Date(s.created_at).toLocaleString():'Unknown date';
+ const items=saleLines(s);
+ const rows=['**Green Wonderland Receipt**','Date/Time: '+d,'Employee: '+(s.employee_name||'Unknown'),'','**Ordered**'];
+ if(items.length)for(const x of items)rows.push('• '+x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'')+' — '+money(x.total));
+ else rows.push('• Itemized products unavailable for this older sale');
+ rows.push('────────────────────────','• Price: '+money(s.total));
+ if(s.store_share!=null)rows.push('• Store (10% of sale): '+money(s.store_share));
+ if(s.employee_share!=null)rows.push('• Employee Keeps: '+money(s.employee_share));
+ rows.push('• Fulfillment: '+(s.fulfillment||'pickup'));
+ return rows.join('\n');
 }
-function showSaleReceipt(s){
- const dlg=document.createElement('dialog');dlg.className='gw-choice-dialog gw-receipt-dialog';
- const title=document.createElement('h3');title.textContent='GREEN WONDERLAND';
+async function showSaleReceipt(s){
+ const dlg=document.createElement('dialog');dlg.className='gw-choice-dialog gw-receipt-dialog gw-paper-receipt';
+ const heading=document.createElement('h3');heading.textContent='GREEN WONDERLAND';
  const subtitle=document.createElement('p');subtitle.textContent='SALES RECEIPT';
- const details=document.createElement('div');details.className='gw-receipt-details';
- const fields=[['Employee',s.employee_name||'Unknown employee'],['Date',s.created_at?new Date(s.created_at).toLocaleString():'Unknown'],['Items',Number(s.item_count||0)],['Fulfillment',s.fulfillment||'Not specified'],['Total',money(s.total)]];
- for(const [name,value] of fields){const row=document.createElement('div');const label=document.createElement('span');label.textContent=name;const val=document.createElement('strong');val.textContent=String(value);row.append(label,val);details.append(row);}
- const note=document.createElement('p');note.className='gw-receipt-note';note.textContent='Product-level details are not available for this recorded sale.';
+ const date=document.createElement('p');date.className='gw-paper-date';date.textContent='Date/Time: '+(s.created_at?new Date(s.created_at).toLocaleString():'Unknown');
+ const employee=document.createElement('p');employee.className='gw-paper-employee';employee.textContent='Employee: '+(s.employee_name||'Unknown');
+ const section=document.createElement('strong');section.className='gw-paper-section';section.textContent='Ordered';
+ const itemsHost=document.createElement('div');itemsHost.className='gw-paper-items';
+ const note=document.createElement('p');note.className='gw-receipt-note';
+ const totalsHost=document.createElement('div');totalsHost.className='gw-paper-totals';
  const actions=document.createElement('div');actions.className='gw-receipt-actions';
  const copy=document.createElement('button');copy.type='button';copy.className='primary';copy.textContent='Copy for Discord';
  copy.onclick=async()=>{try{await navigator.clipboard.writeText(receiptText(s));copy.textContent='✓ Copied!';}catch(e){const area=document.createElement('textarea');area.value=receiptText(s);area.readOnly=true;dlg.append(area);area.focus();area.select();copy.textContent='Select and copy receipt text';}};
  const close=document.createElement('button');close.type='button';close.className='outline';close.textContent='Close';close.onclick=()=>dlg.close();
- actions.append(copy,close);dlg.append(title,subtitle,details,note,actions);
- dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
+ actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,actions);
+ const draw=()=>{itemsHost.replaceChildren();totalsHost.replaceChildren();const items=saleLines(s);note.textContent=items.length?'':'Itemized products were not saved for this older sale.';for(const x of items){const row=document.createElement('div');row.className='gw-paper-item';const name=document.createElement('span');name.textContent=x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'');const price=document.createElement('strong');price.textContent=money(x.total);row.append(name,price);itemsHost.append(row);}for(const [label,value] of [['Price',money(s.total)],...(s.store_share!=null?[['Store (10% of sale)',money(s.store_share)]]:[]),...(s.employee_share!=null?[['Employee Keeps',money(s.employee_share)]]:[]),['Fulfillment',s.fulfillment||'pickup']]){const row=document.createElement('div');row.className='gw-paper-total';const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;row.append(name,amount);totalsHost.append(row);}};
+ draw();dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
+ if(s.id&&db){try{const token=sessionStorage.getItem('gw-employee-token')||'';const {data,error}=await db.rpc('gw_sale_receipt_items',{p_token:token,p_sale:s.id});if(!error&&Array.isArray(data)){s.line_items=data;s.store_share=Number(s.total||0)*.1;s.employee_share=Number(s.total||0)*.9;draw();}}catch(e){console.warn('Receipt items unavailable:',e);}}
 }
 function renderHistory(){
  if(tab!=='history')return;
@@ -68,7 +74,7 @@ async function loadSharedHistory(){
  }catch(e){historyError='Unable to load shared sales history: '+e.message+'. Sign in with an employee PIN that has Sales History access or an administrator account.';}
  finally{historyLoading=false;renderHistory();}
 }
-$('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(b){category=b.dataset.cat;render();}});$('products').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(b){const p=products.find(p=>String(p.id)===b.dataset.add);if(p)chooseProduct(p);}});$('cart').addEventListener('click',e=>{const b=e.target.closest('[data-qty]');if(b){cart[b.dataset.qty]=Math.max(0,(cart[b.dataset.qty]||0)+Number(b.dataset.step));if(!cart[b.dataset.qty])delete cart[b.dataset.qty];renderCart();renderIngredients();}});$('search').addEventListener('input',render);$('discount').addEventListener('input',renderCart);$('zone').addEventListener('change',renderCart);document.querySelectorAll('[name=fulfillment]').forEach(r=>r.addEventListener('change',renderCart));$('clear').onclick=()=>{if(confirm('Clear the current order?')){cart={};$('discount').value=0;renderCart();renderIngredients();}};$('checkout').onclick=async()=>{const l=lines();if(!l.length)return;const t=totals();if(!confirm(`Complete checkout for ${money(t.total)}?`))return;const count=l.reduce((n,x)=>n+x.qty,0),fulfillment=document.querySelector('[name=fulfillment]:checked').value;const button=$('checkout');button.disabled=true;try{if(typeof window.gwRecordSale!=='function')throw Error('Employee system is still loading.');await window.gwRecordSale({total:t.total,count,fulfillment});history.unshift({date:new Date().toISOString(),total:t.total,count,fulfillment});historyLoaded=false;history=history.slice(0,100);cart={};$('discount').value=0;render();}catch(e){alert('Checkout not recorded: '+e.message);}finally{button.disabled=false;}};$('clearHistory').onclick=()=>{if(confirm('Clear this browser’s order history?')){history=[];renderHistory();saveLocal();}};
+$('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(b){category=b.dataset.cat;render();}});$('products').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(b){const p=products.find(p=>String(p.id)===b.dataset.add);if(p)chooseProduct(p);}});$('cart').addEventListener('click',e=>{const b=e.target.closest('[data-qty]');if(b){cart[b.dataset.qty]=Math.max(0,(cart[b.dataset.qty]||0)+Number(b.dataset.step));if(!cart[b.dataset.qty])delete cart[b.dataset.qty];renderCart();renderIngredients();}});$('search').addEventListener('input',render);$('discount').addEventListener('input',renderCart);$('zone').addEventListener('change',renderCart);document.querySelectorAll('[name=fulfillment]').forEach(r=>r.addEventListener('change',renderCart));$('clear').onclick=()=>{if(confirm('Clear the current order?')){cart={};$('discount').value=0;renderCart();renderIngredients();}};$('checkout').onclick=async()=>{const l=lines();if(!l.length)return;const t=totals();if(!confirm(`Complete checkout for ${money(t.total)}?`))return;const count=l.reduce((n,x)=>n+x.qty,0),fulfillment=document.querySelector('[name=fulfillment]:checked').value;const button=$('checkout');button.disabled=true;try{if(typeof window.gwRecordSale!=='function')throw Error('Employee system is still loading.');await window.gwRecordSale({total:t.total,count,fulfillment,items:l.map(({p,qty,choice})=>({name:p.name,qty,choice,unit_price:Number(p.price),total:Number(p.price)*qty}))});history.unshift({date:new Date().toISOString(),total:t.total,count,fulfillment});historyLoaded=false;history=history.slice(0,100);cart={};$('discount').value=0;render();}catch(e){alert('Checkout not recorded: '+e.message);}finally{button.disabled=false;}};$('clearHistory').onclick=()=>{if(confirm('Clear this browser’s order history?')){history=[];renderHistory();saveLocal();}};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));for(const name of ['cart','ingredients','history'])$(name==='cart'?'cartView':name+'View').hidden=name!==tab;if(tab==='history')loadSharedHistory();});$('copyIngredients').onclick=async()=>{await navigator.clipboard.writeText(ingredientSummary().map(x=>`${x.name}: ${x.qty} ${x.unit}`).join('\n'));alert('Ingredients copied.');};$('exportIngredients').onclick=()=>{const rows=[['Ingredient','Quantity','Unit'],...ingredientSummary().map(x=>[x.name,x.qty,x.unit])];const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='green-wonderland-ingredients.csv';a.click();URL.revokeObjectURL(a.href);};$('themeBtn').onclick=()=>{document.body.classList.toggle('light');$('themeBtn').textContent=document.body.classList.contains('light')?'☾ Lights Off':'☀ Lights On';};
 const dialog=$('adminDialog'),msg=s=>$('adminMessage').textContent=s;
 $('adminBtn').onclick=async()=>{dialog.showModal();if(db){const {data}=await db.auth.getSession();session=data.session;await updateAuthUI();}else msg('Configure Supabase in config.js and run schema.sql first.');};$('closeAdmin').onclick=()=>dialog.close();$('login').onclick=async()=>{if(!db)return msg('Supabase not configured.');msg('Signing in...');const {data,error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)return msg(error.message);session=data.session;await updateAuthUI();};$('logout').onclick=async()=>{await db.auth.signOut();session=null;await updateAuthUI();};
