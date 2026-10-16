@@ -479,6 +479,7 @@ async function showBackupCenter(){
   await loadGrantedFeatures();
   for(const p of restricted)navButton(p).hidden=!canFeature(featureForPage[p])&&!(p==='loyalty'&&canFeature('loyalty_adjust'));
   for(const p of ['history','leaderboard','reports','adjustments','productanalytics','loyalty'])navButton(p).hidden=!canFeature(featureForPage[p])&&!(p==='loyalty'&&canFeature('loyalty_adjust'));
+  navButton('sales').hidden=!canFeature('sales_earnings')&&!canFeature('loyalty_view')&&!canFeature('loyalty_adjust');
   navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
   permissionsNav.hidden=!bossAllowed;
   securityLink.hidden=!bossAllowed;
