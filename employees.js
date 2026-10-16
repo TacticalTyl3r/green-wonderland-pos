@@ -234,6 +234,7 @@ function renderMdt(){
   const duty=staffRows.filter(e=>e.clocked_in);mdtContent.append(make('h3','Currently Working'),make('p',duty.length?duty.map(e=>e.name).join(' · '):'No employees currently clocked in.'));
   if(canFeature('sales_earnings')&&salesRows.length){const top=[...salesRows].sort((a,b)=>Number(b.weekly_sales||0)-Number(a.weekly_sales||0)).slice(0,3);mdtContent.append(make('h3','Top Performers This Week'));for(const [i,e] of top.entries())mdtContent.append(make('p',(i+1)+'. '+e.employee_name+' · '+cash(e.weekly_sales)));}
   if(canFeature('recognition_view')||canFeature('recognition_manage')){const awards=make('div');mdtContent.append(make('h3','Recent Recognition'),awards);showRecognition(awards,null,{call,token:()=>token||'',canFeature,make});}
+  if(canFeature('announcements')||canFeature('announcements_manage')){const notices=make('section',undefined,'gw-dashboard-notifications');mdtContent.append(notices);showNotifications(notices);}
 
  }else{
   const head=make('div',undefined,'gw-mdt-head');head.append(make('h3',mdtPage==='employees'?'Employee Roster':'Employee Hours'));
@@ -363,12 +364,12 @@ if(siteNav&&siteHost){
   if(!token||!me)return;
   try{const rows=await call('gw_mdt_my_permissions',{p_token:token});for(const item of rows||[])if(item.allowed)grantedFeatures.add(item.feature);}catch(e){console.warn('Unable to load MDT role permissions',e);}
  }
-async function showNotifications(){
- mdtContent.replaceChildren();
+async function showNotifications(host=mdtContent){
+ host.replaceChildren();
  const heading=make('div',undefined,'gw-mdt-head');heading.append(make('h2','Notifications'),make('p','Company announcements and important updates.'));
- mdtContent.append(heading);
+ host.append(heading);
  const toolbar=make('div',undefined,'gw-mdt-actions'),list=make('div',undefined,'gw-mdt-roster'),status=make('p','');
- mdtContent.append(toolbar,status,list);
+ host.append(toolbar,status,list);
  if(canFeature('announcements_manage')){
   const add=make('button','+ New Announcement','primary');toolbar.append(add);
   add.onclick=()=>{
@@ -378,7 +379,7 @@ async function showNotifications(){
    form.append(title,body,submit,cancel);toolbar.after(form);title.focus();
    form.onsubmit=async event=>{event.preventDefault();submit.disabled=true;status.textContent='Posting announcement…';try{
     await call('gw_mdt_announcement_create',{p_token:token||'',p_title:title.value.trim(),p_body:body.value.trim()});
-    await showNotifications();
+    await showNotifications(host);
    }catch(e){status.textContent='Could not post announcement: '+e.message;submit.disabled=false;}};
   };
  }
@@ -422,9 +423,6 @@ async function showBackupCenter(){
   const caption=document.createElement('span');caption.className='gw-site-label';caption.textContent=label;b.append(symbol,caption);
   b.onclick=()=>showSite(page);extraNav.set(page,b);
  }
- const dashboardSubmenu=document.createElement('div');dashboardSubmenu.className='gw-site-submenu';dashboardSubmenu.hidden=true;
- dashboardSubmenu.append(extraNav.get('notifications'));
- siteNav.querySelector('[data-site-page="overview"]')?.after(dashboardSubmenu);
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
  const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.className='gw-admin-subitem gw-admin-catalog';catalogLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">▦</span><span class="gw-site-label">Products, Images & Settings</span>';
  const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.className='gw-admin-subitem gw-admin-branding';brandingLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">✦</span><span class="gw-site-label">Branding & Images</span>';
@@ -444,13 +442,13 @@ async function showBackupCenter(){
   navButton('time').hidden=!bossAllowed&&!grantedFeatures.has('time_management');
   permissionsNav.hidden=!bossAllowed;
    auditLink.hidden=!canFeature('activity_history');
-   extraNav.get('notifications').hidden=!(canFeature('announcements')||canFeature('announcements_manage'));
+
    extraNav.get('backups').hidden=!bossAllowed;
   navButton('admin').hidden=!(bossAllowed||grantedFeatures.has('admin_catalog')||grantedFeatures.has('admin_branding')||grantedFeatures.has('activity_history')||grantedFeatures.has('announcements'));
   catalogLink.hidden=!bossAllowed;
   brandingLink.hidden=!bossAllowed;
   if(!bossAllowed)adminSubmenu.hidden=true;
-  if(!canFeature('announcements')&&!canFeature('announcements_manage'))dashboardSubmenu.hidden=true;
+
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
   if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin Account':'Admin Login';adminBtn.hidden=false;adminBtn.title=bossAllowed?'Manage your administrator account and product settings':'Sign in with your administrator email and password';}
@@ -464,20 +462,16 @@ async function showBackupCenter(){
   if(page==='backups'&&!bossAllowed)return;
   if(page==='notifications'&&!canFeature('announcements')&&!canFeature('announcements_manage'))return;
   if(restricted.includes(page)&&!canFeature(featureForPage[page])&&!(page==='announcements'&&canFeature('announcements_manage'))&&!(page==='notes'&&canFeature('employee_notes_manage')&&canFeature('employees')))return;
-  if(page==='overview'){dashboardSubmenu.hidden=!dashboardSubmenu.hidden;}
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
   if(!['permissions','audit','notifications','backups'].includes(page))adminSubmenu.hidden=true;
   salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics'].includes(page));
-  if(page==='notifications')dashboardSubmenu.hidden=false;
-  else if(page!=='overview')dashboardSubmenu.hidden=true;
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
   if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
    if(page==='audit'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showActivitySearch(mdtContent,{call,token:()=>token||'',make});return;}
-  if(page==='notifications'){dashboardSubmenu.hidden=false;await showNotifications();return;}
   if(page==='backups'){adminSubmenu.hidden=false;await showBackupCenter();return;}
   if(page==='analytics'){await showAnalytics(mdtContent,{call,token:()=>token||'',cash,make});return;}
   if(businessPages.some(([name])=>name===page)){shell.hidden=true;siteHost.hidden=false;await renderBusinessPage(page,{host:mdtContent,call,token:()=>token||'',canFeature,cash,make});return;}
