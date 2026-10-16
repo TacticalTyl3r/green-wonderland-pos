@@ -24,6 +24,58 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
  exportCsv.onclick=()=>download('green-wonderland-loyalty-'+new Date().toISOString().slice(0,10)+'.csv',
   [['CID','Customer','Available Points','Lifetime Earned','Purchases','Total Spent','Member Since'],
    ...members.map(m=>[m.member_code,m.display_name,m.points,m.lifetime_earned,m.orders,m.total_spent,m.created_at])]);
+ const settingsPanel=make('section',undefined,'gw-loyalty-settings gw-feature-card');
+ settingsPanel.append(make('h3','Reward Rules & Catalog'));
+ const settingsStatus=make('p','Loading reward settings…','gw-mdt-message');settingsPanel.append(settingsStatus);
+ host.insertBefore(settingsPanel,layout);
+ const setup=async()=>{
+  try{
+   const [settings,rewards]=await Promise.all([rpc('gw_loyalty_settings'),rpc('gw_loyalty_rewards_list')]);
+   settingsPanel.replaceChildren(make('h3','Reward Rules & Catalog'));
+   const rule=Array.isArray(settings)?settings[0]:settings;
+   const summary=make('p',rule?.enabled?'Earning is enabled':'Earning is disabled');
+   settingsPanel.append(summary);
+   const form=make('form',undefined,'gw-mdt-form');
+   const rate=document.createElement('input');rate.type='number';rate.min='1';rate.step='0.01';rate.value=String(rule?.earn_per_amount??100);
+   const value=document.createElement('input');value.type='number';value.min='0.01';value.step='0.01';value.value=String(rule?.point_value??1);
+   const enabled=document.createElement('input');enabled.type='checkbox';enabled.checked=rule?.enabled!==false;
+   const rateLabel=make('label','Spend required to earn 1 point');rateLabel.append(rate);
+   const valueLabel=make('label','Dollar value of 1 point');valueLabel.append(value);
+   const enabledLabel=make('label','Enable loyalty earning');enabledLabel.append(enabled);
+   const save=make('button','Save Reward Rules','primary');save.type='submit';
+   const message=make('p','','gw-mdt-message');form.append(rateLabel,valueLabel,enabledLabel,save,message);
+   form.onsubmit=async event=>{event.preventDefault();save.disabled=true;try{
+    await rpc('gw_loyalty_save_settings',{p_earn_per_amount:Number(rate.value),p_point_value:Number(value.value),p_enabled:enabled.checked});
+    message.textContent='Settings saved. Checkout integration is not yet enabled; current checkout rules remain unchanged.';
+   }catch(e){message.textContent=e.message;}finally{save.disabled=false;}};
+   settingsPanel.append(form,make('h3','Available Rewards'));
+   const list=make('div',undefined,'gw-mdt-roster');settingsPanel.append(list);
+   const edit=reward=>{
+    const editor=make('form',undefined,'gw-mdt-form');
+    const name=document.createElement('input');name.placeholder='Reward name';name.required=true;name.maxLength=100;name.value=reward?.title||'';
+    const description=document.createElement('textarea');description.placeholder='Reward description';description.maxLength=1000;description.value=reward?.description||'';
+    const cost=document.createElement('input');cost.type='number';cost.placeholder='Points cost';cost.min='1';cost.max='100000';cost.required=true;cost.value=String(reward?.points_cost||'');
+    const active=document.createElement('input');active.type='checkbox';active.checked=reward?.active!==false;
+    const label=make('label','Active');label.append(active);
+    const submit=make('button',reward?'Update Reward':'Create Reward','primary');submit.type='submit';
+    const feedback=make('p','','gw-mdt-message');editor.append(name,description,cost,label,submit,feedback);
+    editor.onsubmit=async event=>{event.preventDefault();submit.disabled=true;try{
+     await rpc('gw_loyalty_reward_save',{p_id:reward?.id||null,p_title:name.value,p_description:description.value,p_points_cost:Number(cost.value),p_active:active.checked});
+     await setup();
+    }catch(e){feedback.textContent=e.message;submit.disabled=false;}};
+    settingsPanel.append(editor);name.focus();
+   };
+   for(const reward of rewards||[]){
+    const row=make('div',undefined,'gw-mdt-employee'),info=make('div');
+    info.append(make('strong',reward.title+' · '+reward.points_cost+' pts'),make('p',(reward.description||'No description')+' · '+(reward.active?'Active':'Inactive')));
+    const button=make('button','Edit','outline');button.onclick=()=>edit(reward);row.append(info,button);list.append(row);
+   }
+   if(!rewards?.length)list.append(make('p','No rewards created yet.'));
+   const add=make('button','+ Create Reward','outline');add.onclick=()=>edit(null);settingsPanel.append(add);
+   settingsPanel.append(make('p','Reward catalog entries are management records only until checkout redemption is integrated.','gw-mdt-message'));
+  }catch(e){settingsStatus.textContent='Reward configuration unavailable until the new SQL migration is installed: '+e.message;}
+ };
+ await setup();
  const showDetails=async member=>{
   selectedId=member.id;profile.replaceChildren();
   for(const el of directory.querySelectorAll('[data-loyalty-member]'))el.classList.toggle('selected',el.dataset.loyaltyMember===String(member.id));
