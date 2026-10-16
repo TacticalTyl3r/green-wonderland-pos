@@ -30,7 +30,7 @@ create table if not exists public.gw_pos_offers(
 );
 create table if not exists public.gw_loyalty_members(
  id uuid primary key default gen_random_uuid(),
- member_code text unique not null check(length(trim(member_code)) between 3 and 40),
+ member_code text unique not null check(length(trim(member_code)) between 1 and 40),
  display_name text not null check(length(trim(display_name)) between 2 and 100),
  points integer not null default 0, -- negative balance represents points reclaimed after refunds
  lifetime_earned integer not null default 0 check(lifetime_earned>=0),
@@ -130,7 +130,229 @@ returns uuid language plpgsql security definer set search_path=public,pg_temp as
 declare v_member uuid;
 begin
  if public.gw_employee_for_token(p_token) is null then raise exception 'Sign in with employee PIN';end if;
- if trim(coalesce(p_code,'')) !~ '^[a-zA-Z0-9_-]{3,40}$'
+ if trim(coalesce(p_code,'')) !~ '^[a-zA-Z0-9_-]{1,40}
+ or length(trim(coalesce(p_name,''))) not between 2 and 100
+ then raise exception 'Enter a 1-40 character Customer CID and a name';end if;
+ insert into public.gw_loyalty_members(member_code,display_name)
+ values(trim(p_code),trim(p_name)) returning id into v_member;
+ return v_member;
+end$$;
+
+create or replace function public.gw_pos_checkout_v4(p_token text,p_employee uuid,
+ p_items jsonb,p_fulfillment text,p_zone text,p_manual_percent numeric,
+ p_member uuid,p_redeem integer,p_expected_total numeric)
+returns table(sale_id uuid,total numeric,offer_discount numeric,manual_discount numeric,
+ reward_discount numeric,points_earned integer,points_redeemed integer)
+language plpgsql security definer set search_path=public,pg_temp as $$
+declare
+ v_employee uuid;v_sale uuid;v_item jsonb;v_product record;v_offer record;v_part jsonb;
+ v_qty integer;v_sub numeric:=0;v_off numeric:=0;v_manual numeric:=0;v_reward numeric:=0;
+ v_delivery numeric:=0;v_total numeric;v_cap numeric:=100;v_available integer;v_earned integer:=0;
+ v_redeem integer:=coalesce(p_redeem,0);v_count integer:=0;v_lines jsonb:='[]'::jsonb;
+ v_bundle_gross numeric;v_bundle_copies integer;v_required integer;v_discount numeric;v_best_bundle numeric:=0;
+begin
+ v_employee:=coalesce(public.gw_employee_for_token(p_token),p_employee);
+ if v_employee is null or not exists(select 1 from public.gw_employees where id=v_employee and active)
+ then raise exception 'Select an active employee';end if;
+ if p_fulfillment not in ('pickup','delivery') or jsonb_typeof(p_items) is distinct from 'array'
+ or jsonb_array_length(p_items) not between 1 and 100 then raise exception 'Invalid checkout';end if;
+ select max_discount into v_cap from public.app_settings where id=1;
+ v_cap:=coalesce(v_cap,100);
+ if p_manual_percent is null or p_manual_percent<0 or p_manual_percent>v_cap then raise exception 'Discount exceeds store maximum';end if;
+ for v_item in select value from jsonb_array_elements(p_items) loop
+  if (v_item->>'qty') !~ '^[0-9]{1,4}$' then raise exception 'Invalid item quantity';end if;
+  v_qty:=(v_item->>'qty')::integer;
+  if v_qty<1 or v_qty>1000 then raise exception 'Invalid item quantity';end if;
+  select p.id::text as id,p.name,p.price into v_product from public.products p
+  where p.id::text=v_item->>'id' and p.active;
+  if not found then raise exception 'Product unavailable or no longer active';end if;
+  v_sub:=v_sub+v_product.price*v_qty;v_count:=v_count+v_qty;
+  v_lines:=v_lines||jsonb_build_array(jsonb_build_object('id',v_product.id,'name',v_product.name,
+  'qty',v_qty,'choice',left(coalesce(v_item->>'choice',''),120),
+  'unit_price',v_product.price,'total',v_product.price*v_qty));
+ end loop;
+ if v_count>10000 or v_sub>100000000 then raise exception 'Order exceeds limits';end if;
+ -- A product special discounts eligible units. Multiple specials use the highest active rate.
+ select coalesce(sum((line.value->>'total')::numeric*
+  coalesce((select max(o.percent_off) from public.gw_pos_offers o
+   where o.offer_type='special' and o.active and o.product_id=line.value->>'id'
+   and (o.begins_at is null or o.begins_at<=now()) and (o.ends_at is null or o.ends_at>now())),0)/100),0)
+ into v_off from jsonb_array_elements(v_lines) AS line(value);
+ -- Bundles apply to remaining merchandise value, once for each complete matching set.
+ -- Discount cannot exceed the original gross bundle value or remaining subtotal.
+ for v_offer in select * from public.gw_pos_offers o where o.offer_type='bundle' and o.active
+ and (o.begins_at is null or o.begins_at<=now()) and (o.ends_at is null or o.ends_at>now())
+ order by id loop
+  v_bundle_copies:=2147483647;v_bundle_gross:=0;
+  for v_part in select value from jsonb_array_elements(v_offer.items) loop
+   v_required:=(v_part->>'qty')::integer;
+   select least(v_bundle_copies,coalesce(sum((line.value->>'qty')::integer),0)/v_required),
+    v_bundle_gross+coalesce(max((line.value->>'unit_price')::numeric),0)*v_required
+   into v_bundle_copies,v_bundle_gross
+   from jsonb_array_elements(v_lines) AS line(value) where line.value->>'id'=v_part->>'id';
+  end loop;
+  if v_bundle_copies>0 and v_bundle_copies<2147483647 then
+   v_discount:=greatest(0,v_bundle_gross-v_offer.bundle_price)*v_bundle_copies;
+   v_best_bundle:=greatest(v_best_bundle,v_discount);
+  end if;
+ end loop;
+ -- Apply the strongest savings path rather than stacking overlapping bundle and special offers.
+ v_off:=least(v_sub,round(greatest(v_off,v_best_bundle),2));
+ v_manual:=round((v_sub-v_off)*p_manual_percent/100,2);
+ if p_fulfillment='delivery' then
+  select fee into v_delivery from public.delivery_zones where id::text=p_zone;
+  if not found then raise exception 'Select a valid delivery zone';end if;
+ end if;
+ v_total:=greatest(0,round(v_sub-v_off-v_manual+v_delivery,2));
+ if p_member is not null then
+  if public.gw_employee_for_token(p_token) is null then raise exception 'Employee PIN required for loyalty';end if;
+  select points into v_available from public.gw_loyalty_members where id=p_member for update;
+  if not found then raise exception 'Loyalty member not found';end if;
+  if v_redeem<0 or v_redeem>greatest(0,v_available) or v_redeem>floor(v_total) then raise exception 'Invalid points redemption';end if;
+  v_reward:=v_redeem;v_total:=v_total-v_reward;
+  v_earned:=floor(greatest(v_sub-v_off-v_manual-v_reward,0)/100);
+ elsif v_redeem<>0 then raise exception 'Choose a member to redeem points';end if;
+ if p_expected_total is null or abs(round(p_expected_total,2)-v_total)>0.01 then
+  raise exception 'Checkout total changed. Refresh the POS and confirm the updated price.';
+ end if;
+ v_sale:=public.gw_record_sale(p_token,v_employee,v_total,v_count,p_fulfillment);
+ insert into public.gw_sale_receipt_details(sale_id,items) values(v_sale::text,v_lines);
+ insert into public.gw_pos_sale_meta(sale_id,member_id,base_subtotal,offer_discount,manual_discount,
+ reward_discount,delivery_fee,points_earned,points_redeemed)
+ values(v_sale,p_member,v_sub,v_off,v_manual,v_reward,v_delivery,v_earned,v_redeem);
+ if p_member is not null then
+  update public.gw_loyalty_members set points=points-v_redeem+v_earned,
+   lifetime_earned=lifetime_earned+v_earned where id=p_member;
+  if v_redeem>0 then insert into public.gw_loyalty_ledger(member_id,sale_id,points_delta,note,performed_by)
+   values(p_member,v_sale,-v_redeem,'Redeemed at checkout',v_employee);end if;
+  if v_earned>0 then insert into public.gw_loyalty_ledger(member_id,sale_id,points_delta,note,performed_by)
+   values(p_member,v_sale,v_earned,'Earned at checkout',v_employee);end if;
+ end if;
+ return query select v_sale,v_total,v_off,v_manual,v_reward,v_earned,v_redeem;
+end$$;
+
+create or replace function public.gw_pos_product_analytics(p_token text)
+returns table(product_name text,units bigint,revenue numeric)
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if not public.gw_mdt_can(p_token,'sales_earnings') then raise exception 'Access denied';end if;
+ return query select (x.item->>'name')::text,
+  sum((x.item->>'qty')::bigint)::bigint,
+  round(sum(coalesce((x.item->>'total')::numeric,0)),2)
+ from public.gw_sale_receipt_details d
+ cross join lateral jsonb_array_elements(d.items) as x(item)
+ group by 1 order by 2 desc limit 100;
+end$$;
+
+create or replace function public.gw_pos_sale_details(p_token text,p_sale text)
+returns table(member_name text,base_subtotal numeric,offer_discount numeric,manual_discount numeric,
+ reward_discount numeric,delivery_fee numeric,points_earned integer,points_redeemed integer)
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if not public.gw_mdt_can(p_token,'sales_history') then raise exception 'Access denied';end if;
+ return query select m.display_name::text,s.base_subtotal,s.offer_discount,s.manual_discount,
+ s.reward_discount,s.delivery_fee,s.points_earned,s.points_redeemed
+ from public.gw_pos_sale_meta s left join public.gw_loyalty_members m on m.id=s.member_id
+ where s.sale_id::text=p_sale;
+end$$;
+
+revoke all on function public.gw_pos_active_offers() from public,anon,authenticated;
+revoke all on function public.gw_pos_manage_offers(text,bigint,text,text,text,numeric,jsonb,numeric,timestamptz,timestamptz,boolean) from public,anon,authenticated;
+revoke all on function public.gw_pos_all_offers(text) from public,anon,authenticated;
+revoke all on function public.gw_loyalty_find(text,text) from public,anon,authenticated;
+revoke all on function public.gw_loyalty_register(text,text,text) from public,anon,authenticated;
+revoke all on function public.gw_pos_checkout_v4(text,uuid,jsonb,text,text,numeric,uuid,integer,numeric) from public,anon,authenticated;
+revoke all on function public.gw_pos_product_analytics(text) from public,anon,authenticated;
+revoke all on function public.gw_pos_sale_details(text,text) from public,anon,authenticated;
+grant execute on function public.gw_pos_active_offers() to anon,authenticated;
+grant execute on function public.gw_pos_manage_offers(text,bigint,text,text,text,numeric,jsonb,numeric,timestamptz,timestamptz,boolean) to anon,authenticated;
+grant execute on function public.gw_pos_all_offers(text) to anon,authenticated;
+grant execute on function public.gw_loyalty_find(text,text) to anon,authenticated;
+grant execute on function public.gw_loyalty_register(text,text,text) to anon,authenticated;
+grant execute on function public.gw_pos_checkout_v4(text,uuid,jsonb,text,text,numeric,uuid,integer,numeric) to anon,authenticated;
+grant execute on function public.gw_pos_product_analytics(text) to anon,authenticated;
+grant execute on function public.gw_pos_sale_details(text,text) to anon,authenticated;
+
+-- Search itemized sales, including their adjustment status, using permission-checked RPC.
+create or replace function public.gw_pos_search_sales(p_token text,p_query text default '')
+returns table(sale_id text,employee_name text,total numeric,created_at timestamptz,item_count integer,
+ fulfillment text,product_names text,adjustment_amount numeric)
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if not public.gw_mdt_can(p_token,'sales_history') then raise exception 'Access denied';end if;
+ return query
+ select s.id::text,e.name::text,s.total,s.created_at,s.item_count,s.fulfillment::text,
+ coalesce((select string_agg(distinct (x.item->>'name')||coalesce(' ('||nullif(x.item->>'choice','')||')',''),', ')
+ from public.gw_sale_receipt_details d
+ cross join lateral jsonb_array_elements(d.items) x(item)
+ where d.sale_id=s.id::text),'')::text,
+ coalesce((select sum(a.amount) from public.gw_mdt_sale_adjustments a where a.sale_id=s.id::text),0)::numeric
+ from public.gw_sales s join public.gw_employees e on e.id=s.employee_id
+ where coalesce(trim(p_query),'')=''
+ or s.id::text ilike '%'||trim(p_query)||'%'
+ or e.name ilike '%'||trim(p_query)||'%'
+ or exists(select 1 from public.gw_pos_sale_meta sm join public.gw_loyalty_members lm on lm.id=sm.member_id where sm.sale_id=s.id and (lm.display_name ilike '%'||trim(p_query)||'%' or lm.member_code ilike '%'||trim(p_query)||'%'))
+ or exists(select 1 from public.gw_sale_receipt_details d
+ cross join lateral jsonb_array_elements(d.items) x(item)
+ where d.sale_id=s.id::text and ((x.item->>'name') ilike '%'||trim(p_query)||'%'
+ or (x.item->>'choice') ilike '%'||trim(p_query)||'%'))
+ order by s.created_at desc limit 200;
+end$$;
+revoke all on function public.gw_pos_search_sales(text,text) from public,anon,authenticated;
+grant execute on function public.gw_pos_search_sales(text,text) to anon,authenticated;
+
+-- Override Phase 2 adjustment function to reclaim earned points after refunds/voids.
+-- Signed balances represent point debt; future earned points automatically offset it.
+create or replace function public.gw_mdt_adjust_sale(
+ p_token text,p_sale text,p_type text,p_amount numeric,p_reason text
+) returns void language plpgsql security definer set search_path=public,pg_temp as $$
+declare
+ v_total numeric;v_used numeric;v_actor text;v_member uuid;
+ v_earned integer;v_reversed integer;v_target integer;v_delta integer;
+ v_spent integer;v_restored integer;v_restore_target integer;v_restore_delta integer;
+begin
+ if not public.gw_mdt_can(p_token,'sales_adjust') then raise exception 'Access denied';end if;
+ select pm.employee_name into v_actor from public.gw_pin_me(p_token) pm limit 1;
+ if v_actor is null or trim(v_actor)='' then raise exception 'Sign in with your employee PIN before processing a refund or void';end if;
+ if p_type not in ('refund','void') then raise exception 'Invalid adjustment type';end if;
+ if length(trim(coalesce(p_reason,''))) not between 5 and 1000 then raise exception 'Reason must be 5-1000 characters';end if;
+ select s.total into v_total from public.gw_sales s where s.id::text=p_sale for update;
+ if not found then raise exception 'Sale not found';end if;
+ select coalesce(sum(a.amount),0) into v_used from public.gw_mdt_sale_adjustments a where a.sale_id=p_sale;
+ if v_total<=v_used then raise exception 'Sale already fully adjusted';end if;
+ if p_amount is null or p_amount<=0 or round(p_amount,2)<>p_amount or p_amount>v_total-v_used then
+  raise exception 'Invalid adjustment amount';end if;
+ if p_type='void' and p_amount<>v_total-v_used then raise exception 'Void must cover the entire remaining balance';end if;
+ insert into public.gw_mdt_sale_adjustments(sale_id,adjustment_type,amount,reason,performed_by)
+ values(p_sale,p_type,p_amount,trim(p_reason),trim(v_actor));
+ select meta.member_id,meta.points_earned,meta.points_redeemed into v_member,v_earned,v_spent from public.gw_pos_sale_meta meta
+ where meta.sale_id::text=p_sale;
+ if v_member is not null and v_earned>0 and v_total>0 then
+  select coalesce(-sum(l.points_delta),0)::integer into v_reversed
+  from public.gw_loyalty_ledger l where l.sale_id::text=p_sale and l.note='Reversed after refund or void';
+  v_target:=v_earned-floor(v_earned*greatest(0,v_total-v_used-p_amount)/v_total);
+  v_delta:=greatest(0,v_target-v_reversed);
+  if v_delta>0 then
+   update public.gw_loyalty_members set points=points-v_delta where id=v_member;
+   insert into public.gw_loyalty_ledger(member_id,sale_id,points_delta,note,performed_by)
+   values(v_member,p_sale::uuid,-v_delta,'Reversed after refund or void',public.gw_employee_for_token(p_token));
+  end if;
+ end if;
+ if v_member is not null and v_spent>0 and v_total>0 then
+  select coalesce(sum(l.points_delta),0)::integer into v_restored
+  from public.gw_loyalty_ledger l where l.sale_id::text=p_sale and l.note='Restored after refund or void';
+  v_restore_target:=floor(v_spent*least(1,(v_used+p_amount)/v_total));
+  v_restore_delta:=greatest(0,v_restore_target-v_restored);
+  if v_restore_delta>0 then
+   update public.gw_loyalty_members set points=points+v_restore_delta where id=v_member;
+   insert into public.gw_loyalty_ledger(member_id,sale_id,points_delta,note,performed_by)
+   values(v_member,p_sale::uuid,v_restore_delta,'Restored after refund or void',public.gw_employee_for_token(p_token));
+  end if;
+ end if;
+end$$;
+revoke all on function public.gw_mdt_adjust_sale(text,text,text,numeric,text) from public,anon,authenticated;
+grant execute on function public.gw_mdt_adjust_sale(text,text,text,numeric,text) to anon,authenticated;
+
  or length(trim(coalesce(p_name,''))) not between 2 and 100
  then raise exception 'Enter a 3-40 character member code and a name';end if;
  insert into public.gw_loyalty_members(member_code,display_name)
