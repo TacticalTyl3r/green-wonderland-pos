@@ -46,7 +46,7 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
    const message=make('p','','gw-mdt-message');form.append(rateLabel,valueLabel,enabledLabel,save,message);
    form.onsubmit=async event=>{event.preventDefault();save.disabled=true;try{
     await rpc('gw_loyalty_save_settings',{p_earn_per_amount:Number(rate.value),p_point_value:Number(value.value),p_enabled:enabled.checked});
-    message.textContent='Settings saved. Checkout integration is not yet enabled; current checkout rules remain unchanged.';
+    message.textContent='Reward rules saved. The checkout uses the current earning and redemption rates.';
    }catch(e){message.textContent=e.message;}finally{save.disabled=false;}};
    if(boss===true)settingsPanel.append(form);
    settingsPanel.append(make('h3','Available Rewards'));
@@ -73,7 +73,7 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
    }
    if(!rewards?.length)list.append(make('p','No rewards created yet.'));
    if(boss===true){const add=make('button','+ Create Reward','outline');add.onclick=()=>edit(null);settingsPanel.append(add);}
-   settingsPanel.append(make('p','Reward catalog entries are management records only until checkout redemption is integrated.','gw-mdt-message'));
+   settingsPanel.append(make('p','Active rewards appear on the POS after a loyalty member is selected. Catalog redemptions deduct points separately from the purchase total.','gw-mdt-message'));
   }catch(e){settingsStatus.textContent='Reward configuration unavailable until the new SQL migration is installed: '+e.message;}
  };
  await setup();
@@ -113,6 +113,22 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
    };
    profile.append(form);
   }
+  const catalogHistory=make('div',undefined,'gw-loyalty-activity');
+  catalogHistory.append(make('h3','Catalog Reward Redemptions'));
+  const catalogEntries=make('div',undefined,'gw-loyalty-activity-list');
+  catalogHistory.append(catalogEntries);profile.append(catalogHistory);
+  try{
+   const redemptions=await rpc('gw_pos_catalog_reward_history',{p_member:member.id});
+   if(selectedId!==member.id)return;
+   if(!redemptions.length)catalogEntries.append(make('p','No catalog rewards redeemed yet.'));
+   for(const redemption of redemptions){
+    const card=make('article',undefined,'gw-loyalty-activity-card gw-loyalty-negative');
+    const top=make('div',undefined,'gw-loyalty-activity-top');
+    top.append(make('strong',redemption.reward_title),make('strong','−'+redemption.points_spent+' pts'));
+    card.append(top,make('small',new Date(redemption.created_at).toLocaleString()+' · '+(redemption.employee_name||'Unknown employee')+' · '+redemption.points_remaining+' pts remaining'));
+    catalogEntries.append(card);
+   }
+  }catch(error){catalogEntries.append(make('p','Catalog history unavailable: '+error.message));}
   const section=make('div',undefined,'gw-loyalty-activity');
   section.append(make('h3','Purchases & Rewards History'));
   const entries=make('div',undefined,'gw-loyalty-activity-list');
