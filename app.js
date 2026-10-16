@@ -61,10 +61,19 @@ function receiptLoyaltyRows(s){
  const rows=[];
  if(snapshot?.member_code)rows.push(['Customer CID',snapshot.member_code]);
  if(snapshot?.member_name||d.member_name)rows.push(['Loyalty customer',snapshot?.member_name||d.member_name]);
- if(d.reward_discount!=null)rows.push(['Points discount','−'+money(d.reward_discount)]);
  if(d.points_earned!=null||snapshot?.points_earned!=null)rows.push(['Points earned',String(d.points_earned??snapshot.points_earned)]);
  if(d.points_redeemed!=null||snapshot?.points_redeemed!=null)rows.push(['Points redeemed',String(d.points_redeemed??snapshot.points_redeemed)]);
  if(snapshot?.points_remaining!=null)rows.push(['Points balance after sale',String(snapshot.points_remaining)]);
+ return rows;
+}
+function receiptDiscountRows(s){
+ const d=s.loyalty_meta;
+ if(!d)return [];
+ const rows=[];
+ const add=(label,value)=>{const n=Number(value);if(Number.isFinite(n)&&n>0)rows.push([label,'−'+money(n)]);};
+ add('Specials & bundle savings',d.offer_discount);
+ add('Manual discount',d.manual_discount);
+ add('Loyalty points discount',d.reward_discount);
  return rows;
 }
 function receiptText(s){
@@ -77,7 +86,7 @@ function receiptText(s){
  if(s.store_share!=null)rows.push('• Store (10% of sale): '+money(s.store_share));
  if(s.employee_share!=null)rows.push('• Employee Keeps: '+money(s.employee_share));
  rows.push('• Fulfillment: '+(s.fulfillment||'pickup'));
- if(s.loyalty_meta?.offer_discount!=null)rows.push('• Offers saved: '+money(s.loyalty_meta.offer_discount));
+ for(const [label,value] of receiptDiscountRows(s))rows.push('• '+label+': '+value);
  for(const [label,value] of receiptLoyaltyRows(s))rows.push('• '+label+': '+value);
  return rows.join('\n');
 }
@@ -92,20 +101,26 @@ async function showSaleReceipt(s){
  const note=document.createElement('p');note.className='gw-receipt-note';
  const totalsHost=document.createElement('div');totalsHost.className='gw-paper-totals';
  const actions=document.createElement('div');actions.className='gw-receipt-actions';
+ const discountsHost=document.createElement('div');discountsHost.className='gw-receipt-phase4';
  const phase4Summary=document.createElement('div');phase4Summary.className='gw-receipt-phase4';
  const copy=document.createElement('button');copy.type='button';copy.className='primary';copy.textContent='Copy for Discord';
  copy.onclick=async()=>{try{await navigator.clipboard.writeText(receiptText(s));copy.textContent='✓ Copied!';}catch(e){const area=document.createElement('textarea');area.value=receiptText(s);area.readOnly=true;dlg.append(area);area.focus();area.select();copy.textContent='Select and copy receipt text';}};
  const close=document.createElement('button');close.type='button';close.className='outline';close.textContent='Close';close.onclick=()=>dlg.close();
- actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,phase4Summary,actions);
+ actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,discountsHost,phase4Summary,actions);
  const draw=()=>{itemsHost.replaceChildren();totalsHost.replaceChildren();const items=saleLines(s);note.textContent=items.length?'':'Itemized products were not saved for this older sale.';for(const x of items){const row=document.createElement('div');row.className='gw-paper-item';const name=document.createElement('span');name.textContent=x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'');const price=document.createElement('strong');price.textContent=money(x.total);row.append(name,price);itemsHost.append(row);}for(const [label,value] of [['Price',money(s.total)],...(s.store_share!=null?[['Store (10% of sale)',money(s.store_share)]]:[]),...(s.employee_share!=null?[['Employee Keeps',money(s.employee_share)]]:[]),['Fulfillment',s.fulfillment||'pickup']]){const row=document.createElement('div');row.className='gw-paper-total';const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;row.append(name,amount);totalsHost.append(row);}};
  draw();
+ const showDiscounts=()=>{
+  discountsHost.replaceChildren();const rows=receiptDiscountRows(s);
+  if(rows.length){const heading=document.createElement('strong');heading.textContent='DISCOUNTS APPLIED';discountsHost.append(heading);}
+  for(const [label,value] of rows){const row=document.createElement('div');row.className='gw-paper-total';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=value;row.append(a,b);discountsHost.append(row);}
+ };
  const showLoyalty=()=>{
   phase4Summary.replaceChildren();
   const rows=receiptLoyaltyRows(s);
   if(rows.length){const heading=document.createElement('strong');heading.textContent='LOYALTY & REWARDS';phase4Summary.append(heading);}
   for(const [label,value] of rows){const row=document.createElement('div');row.className='gw-paper-total';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=value;row.append(a,b);phase4Summary.append(row);}
  };
- showLoyalty();
+ showDiscounts();showLoyalty();
  dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
  // Receipt loyalty details are independent of itemized product lookup.
  // A failed or unavailable items RPC must never hide earned points.
@@ -115,7 +130,7 @@ async function showSaleReceipt(s){
   const id=String(saleId);
   const details=db.rpc('gw_pos_sale_details',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
-   if(Array.isArray(data)&&data.length){s.loyalty_meta=data[0];showLoyalty();}
+   if(Array.isArray(data)&&data.length){s.loyalty_meta=data[0];showDiscounts();showLoyalty();}
   }).catch(error=>console.warn('Sale loyalty details unavailable:',error.message));
   const snapshot=db.rpc('gw_pos_get_loyalty_receipt',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
