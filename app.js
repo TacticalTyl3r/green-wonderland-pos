@@ -137,10 +137,10 @@ async function showSaleReceipt(s){
  const saleId=s.id||s.sale_id;
  if(db&&saleId){
   const id=String(saleId);
-  const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}}).catch(error=>{console.warn('Saved receipt discounts unavailable:',error.message);reportReceiptError('Discounts',error);});
+  const financials=db.rpc('gw_pos_get_receipt_financials',{p_token:token,p_sale:id}).then(({data,error})=>{if(error)throw Error(error.message);if(data&&typeof data==='object'){s.receipt_financials=data;showDiscounts();draw();}else reportReceiptError('Discounts','No saved discount breakdown for sale '+id);}).catch(error=>{console.warn('Saved receipt discounts unavailable:',error.message);reportReceiptError('Discounts',error);});
   const details=db.rpc('gw_pos_sale_details',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
-   if(Array.isArray(data)&&data.length){s.loyalty_meta=data[0];showDiscounts();showLoyalty();}
+   if(Array.isArray(data)&&data.length){s.loyalty_meta=data[0];showDiscounts();showLoyalty();}else reportReceiptError('Sale details','No sale details found for '+id);
   }).catch(error=>{console.warn('Sale loyalty details unavailable:',error.message);reportReceiptError('Sale details',error);});
   const snapshot=db.rpc('gw_pos_get_loyalty_receipt',{p_token:token,p_sale:id}).then(({data,error})=>{
    if(error)throw Error(error.message);
@@ -165,6 +165,7 @@ async function showSaleReceipt(s){
    }
    if(!items)items=cachedReceiptItems(id);
    if(items?.length)diagnostics.textContent='';
+   else reportReceiptError('Items','No saved item records found for sale '+id);
    if(items?.length){s.line_items=items;try{localStorage.setItem(receiptItemsKey(id),JSON.stringify(items));}catch(e){}}
    s.store_share=Number(s.total||0)*.1;s.employee_share=Number(s.total||0)*.9;
    draw();
