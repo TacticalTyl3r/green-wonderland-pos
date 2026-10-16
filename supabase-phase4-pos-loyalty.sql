@@ -33,7 +33,7 @@ create table if not exists public.gw_loyalty_ledger(
  points_delta integer not null,
  note text not null,
  performed_by uuid references public.gw_employees(id),
- created_at timestamptz not null default now(),
+ created_at timestamptz not null default now()
  -- Individual ledger events may carry the same point value after partial refunds.
 );
 create table if not exists public.gw_pos_sale_meta(
