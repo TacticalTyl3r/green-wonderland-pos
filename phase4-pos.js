@@ -40,7 +40,7 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   const heading=document.createElement('div');heading.className='gw-phase4-heading';
   heading.innerHTML='<strong>✦ CUSTOMER REWARDS</strong><small>1 point per $100 spent · 1 point = $1 off</small>';root.append(heading);
   const field=document.createElement('div');field.className='gw-phase4-field';
-  const code=document.createElement('input');code.placeholder='Customer reward code';code.maxLength=40;code.setAttribute('aria-label','Loyalty member code');
+  const code=document.createElement('input');code.placeholder='Customer CID';code.maxLength=40;code.setAttribute('aria-label','Customer CID');
   const find=document.createElement('button');find.className='outline';find.textContent='Find Member';
   const create=document.createElement('button');create.className='outline';create.textContent='+ Enroll';
   field.append(code,find,create);root.append(field);
