@@ -259,3 +259,30 @@ grant execute on function public.gw_loyalty_register(text,text,text) to anon,aut
 grant execute on function public.gw_pos_checkout_v4(text,uuid,jsonb,text,text,numeric,uuid,integer) to anon,authenticated;
 grant execute on function public.gw_pos_product_analytics(text) to anon,authenticated;
 grant execute on function public.gw_pos_sale_details(text,text) to anon,authenticated;
+
+-- Search itemized sales, including their adjustment status, using permission-checked RPC.
+create or replace function public.gw_pos_search_sales(p_token text,p_query text default '')
+returns table(sale_id text,employee_name text,total numeric,created_at timestamptz,item_count integer,
+ fulfillment text,product_names text,adjustment_amount numeric)
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if not public.gw_mdt_can(p_token,'sales_history') then raise exception 'Access denied';end if;
+ return query
+ select s.id::text,e.name::text,s.total,s.created_at,s.item_count,s.fulfillment::text,
+ coalesce((select string_agg(distinct x.item->>'name',', ')
+ from public.gw_sale_receipt_details d
+ cross join lateral jsonb_array_elements(d.items) x(item)
+ where d.sale_id=s.id::text),'')::text,
+ coalesce((select sum(a.amount) from public.gw_mdt_sale_adjustments a where a.sale_id=s.id::text),0)::numeric
+ from public.gw_sales s join public.gw_employees e on e.id=s.employee_id
+ where coalesce(trim(p_query),'')=''
+ or s.id::text ilike '%'||trim(p_query)||'%'
+ or e.name ilike '%'||trim(p_query)||'%'
+ or exists(select 1 from public.gw_sale_receipt_details d
+ cross join lateral jsonb_array_elements(d.items) x(item)
+ where d.sale_id=s.id::text and ((x.item->>'name') ilike '%'||trim(p_query)||'%'
+ or (x.item->>'choice') ilike '%'||trim(p_query)||'%'))
+ order by s.created_at desc limit 200;
+end$$;
+revoke all on function public.gw_pos_search_sales(text,text) from public,anon,authenticated;
+grant execute on function public.gw_pos_search_sales(text,text) to anon,authenticated;
