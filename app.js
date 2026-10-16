@@ -16,7 +16,28 @@ $('categories').before(catalogSidebar);
 catalogSidebar.append($('categories'),phase4.favoritesRoot);
 phase4.render();
 function saveLocal(){localStorage.setItem('gw-cart',JSON.stringify(cart));localStorage.setItem('gw-history',JSON.stringify(history));}
-async function load(){if(!db){products=demoProducts;zones=[{id:'city',name:'City',fee:50},{id:'sandy',name:'Sandy',fee:100},{id:'paleto',name:'Paleto',fee:150}];$('status').textContent='MDT Offline · Demo Mode';render();return;}const [p,z,s]=await Promise.all([db.from('products').select('*').order('sort_order').order('name'),db.from('delivery_zones').select('*').order('sort_order'),db.from('app_settings').select('*').eq('id',1).single()]);if(p.error||z.error||s.error){$('status').textContent='MDT Offline';$('adminMessage').textContent=[p.error?.message,z.error?.message,s.error?.message].filter(Boolean).join(' / ');return;}products=p.data;zones=z.data;settings=s.data;await phase4.refreshOffers();$('status').textContent='● MDT Online';render();}
+const setMdtStatus=(state,message)=>{const node=$('status');if(!node)return;node.dataset.connection=state;node.textContent=message;};
+async function load(){
+ setMdtStatus('connecting','● MDT Connecting');
+ if(!db){products=demoProducts;zones=[{id:'city',name:'City',fee:50},{id:'sandy',name:'Sandy',fee:100},{id:'paleto',name:'Paleto',fee:150}];setMdtStatus('offline','● MDT Offline · Demo Mode');render();return;}
+ try{
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Connection timed out. Check your network and refresh.')),15000));
+  const [p,z,settingsResult]=await Promise.race([Promise.all([
+   db.from('products').select('*').order('sort_order').order('name'),
+   db.from('delivery_zones').select('*').order('sort_order'),
+   db.from('app_settings').select('*').eq('id',1).single()
+  ]),timeout]);
+  if(p.error||z.error||settingsResult.error)throw Error([p.error?.message,z.error?.message,settingsResult.error?.message].filter(Boolean).join(' / '));
+  products=p.data;zones=z.data;settings=settingsResult.data;
+  setMdtStatus('online','● MDT Online');render();
+  await phase4.refreshOffers();
+ }catch(error){
+  setMdtStatus('offline','● MDT Offline');
+  $('adminMessage').textContent='MDT connection failed: '+error.message;
+  if(!products.length){products=demoProducts;zones=[{id:'city',name:'City',fee:50},{id:'sandy',name:'Sandy',fee:100},{id:'paleto',name:'Paleto',fee:150}];render();}
+  console.error('Green Wonderland MDT connection:',error);
+ }
+}
 function productCard(p){const special=phase4.bestSpecial(p.id);return `<article class="product"><div>${p.image_url?`<img class="gw-product-photo" src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`:`<div class="gw-product-placeholder" aria-hidden="true">✦</div>`}<small>${esc(p.category)}</small>${special?`<span class="gw-special-tag">${special}% OFF</span>`:''}<div class="gw-product-name">${esc(p.name)}</div></div><div class="bottom"><span class="price">${money(p.price)}</span><button class="gw-favorite-toggle" type="button" title="Favorite" data-favorite="${esc(p.id)}">${phase4.checkFavorite(p.id)?'★':'☆'}</button><button data-add="${esc(p.id)}">+ ADD</button></div></article>`;}
 function render(){const cats=['All',...new Set(products.filter(p=>p.active).map(p=>p.category))];if(!cats.includes(category))category='All';$('categories').innerHTML=cats.map(c=>`<button class="${c===category?'active':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');const q=$('search').value.trim().toLowerCase();const filtered=products.filter(p=>p.active&&(category==='All'||p.category===category)&&p.name.toLowerCase().includes(q));if(category==='All'){const groups=[...new Set(filtered.map(p=>p.category))];$('products').classList.add('gw-products-grouped');$('products').innerHTML=groups.length?groups.map(name=>`<section class="gw-category-section"><div class="gw-category-heading"><h3>${esc(name)}</h3><span>${filtered.filter(p=>p.category===name).length} products</span></div><div class="${name.toLowerCase()==='flower'?'gw-flower-groups':'gw-category-grid'}">${(name.toLowerCase()==='flower'?['Basic','Premium'].map(tier=>{const items=filtered.filter(p=>p.category===name&&(tier==='Basic'?/basic|standard/i.test(p.name):!/basic|standard/i.test(p.name)));return items.length?`<div class="gw-flower-subgroup"><h4>${tier}</h4><div class="gw-category-grid">${items.map(productCard).join('')}</div></div>`:'';}).join(''):filtered.filter(p=>p.category===name).map(productCard).join(''))}</div></section>`).join(''):'<div class="empty">No matching products.</div>';}else{$('products').classList.remove('gw-products-grouped');$('products').innerHTML=filtered.length?filtered.map(productCard).join(''):'<div class="empty">No matching products.</div>';} $('zone').innerHTML=zones.map(z=>`<option value="${esc(z.id)}">${esc(z.name)} — ${money(z.fee)}</option>`).join('');$('discount').max=settings.max_discount??100;if(+$('discount').value>+$('discount').max)$('discount').value=$('discount').max;renderCart();renderIngredients();renderHistory();phase4.renderFavorites(chooseProduct);}
 
