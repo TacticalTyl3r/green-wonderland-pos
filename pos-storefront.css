@@ -109,3 +109,17 @@ body:not(.light){background:#050c0a;color:#eef6f0}
  .gw-site-content .shell .catalog .gw-catalog-sidebar .gw-favorite-items{flex-direction:row;flex-wrap:wrap}
  .gw-site-content .shell .catalog .gw-catalog-sidebar .gw-favorite-items button{width:auto}
 }
+
+/* Short desktop screens: let the whole page scroll to checkout.
+   Avoid clipping the catalog or placing an overlay over order controls. */
+@media (min-width:951px) and (max-height:900px){
+ .gw-site-content .shell main>.order{
+  position:static!important;
+  top:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+ }
+ .gw-site-content .shell main{
+  align-items:start;
+ }
+}
