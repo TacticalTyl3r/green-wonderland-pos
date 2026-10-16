@@ -1,4 +1,4 @@
-import {createPhase4} from './phase4-pos.js?v=dynamic-loyalty-20261016';
+import {createPhase4} from './phase4-pos.js?v=syntax-repair-20261016';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
