@@ -106,41 +106,35 @@ async function showSaleReceipt(s){
   for(const [label,value] of rows){const row=document.createElement('div');row.className='gw-paper-total';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=value;row.append(a,b);phase4Summary.append(row);}
  };
  showLoyalty();
- if(db&&(s.id||s.sale_id)){
-  try{
-   const {data:stored,error}=await db.rpc('gw_pos_get_loyalty_receipt',{
-    p_token:sessionStorage.getItem('gw-employee-token')||'',p_sale:String(s.sale_id||s.id)
-   });
-   if(error)throw Error(error.message);
-   if(Array.isArray(stored)&&stored.length){s.loyalty_receipt=stored[0];showLoyalty();}
-  }catch(error){console.warn('Saved loyalty receipt unavailable:',error.message);}
- }
  dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
- if(db){
-  note.textContent='Loading ordered products…';
-  try{
-   const token=sessionStorage.getItem('gw-employee-token')||'';
-   const args={p_token:token,p_sale:s.id==null?null:String(s.id),p_employee_name:s.employee_name||null,p_created_at:s.created_at||null,p_total:Number(s.total||0)};
-   const {data,error}=await db.rpc('gw_sale_receipt_items_lookup',args);
+ // Receipt loyalty details are independent of itemized product lookup.
+ // A failed or unavailable items RPC must never hide earned points.
+ const token=sessionStorage.getItem('gw-employee-token')||'';
+ const saleId=s.sale_id||s.id;
+ if(db&&saleId){
+  const id=String(saleId);
+  const details=db.rpc('gw_pos_sale_details',{p_token:token,p_sale:id}).then(({data,error})=>{
+   if(error)throw Error(error.message);
+   if(Array.isArray(data)&&data.length){s.loyalty_meta=data[0];showLoyalty();}
+  }).catch(error=>console.warn('Sale loyalty details unavailable:',error.message));
+  const snapshot=db.rpc('gw_pos_get_loyalty_receipt',{p_token:token,p_sale:id}).then(({data,error})=>{
+   if(error)throw Error(error.message);
+   if(Array.isArray(data)&&data.length){s.loyalty_receipt=data[0];showLoyalty();}
+  }).catch(error=>console.warn('Permanent loyalty receipt unavailable:',error.message));
+  const products=db.rpc('gw_sale_receipt_items_lookup',{
+   p_token:token,p_sale:id,p_employee_name:s.employee_name||null,
+   p_created_at:s.created_at||null,p_total:Number(s.total||0)
+  }).then(({data,error})=>{
    if(error)throw Error(error.message);
    s.line_items=Array.isArray(data)?data:[];
-   s.store_share=Number(s.total||0)*.1;
-   s.employee_share=Number(s.total||0)*.9;
+   s.store_share=Number(s.total||0)*.1;s.employee_share=Number(s.total||0)*.9;
    draw();
-   if(s.id){
-    try{
-     const {data:meta,error:metaError}=await db.rpc('gw_pos_sale_details',{p_token:token,p_sale:String(s.id)});
-     if(!metaError&&meta?.length){
-      const d=meta[0];s.loyalty_meta=d;showLoyalty();
-     }
-    }catch(err){console.warn('Receipt details unavailable:',err);}
-   }
-   if(!s.line_items.length)note.textContent='No itemized products were recorded for this sale. Sales recorded before the receipt update cannot be reconstructed.';
-  }catch(e){
-   note.textContent='Could not load product details: '+e.message;
-   console.warn('Receipt items unavailable:',e);
-  }
+   if(!s.line_items.length)note.textContent='No itemized products were recorded for this sale.';
+  }).catch(error=>{note.textContent='Could not load product details: '+error.message;console.warn('Receipt items unavailable:',error);});
+  note.textContent='Loading ordered products…';
+  await Promise.allSettled([details,snapshot,products]);
  }
+
 }
 function renderHistory(){
  if(tab!=='history')return;
