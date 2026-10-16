@@ -22,7 +22,7 @@ create table if not exists public.gw_loyalty_members(
  id uuid primary key default gen_random_uuid(),
  member_code text unique not null check(length(trim(member_code)) between 3 and 40),
  display_name text not null check(length(trim(display_name)) between 2 and 100),
- points integer not null default 0 check(points>=0),
+ points integer not null default 0, -- negative balance represents points reclaimed after refunds
  lifetime_earned integer not null default 0 check(lifetime_earned>=0),
  created_at timestamptz not null default now()
 );
@@ -34,7 +34,7 @@ create table if not exists public.gw_loyalty_ledger(
  note text not null,
  performed_by uuid references public.gw_employees(id),
  created_at timestamptz not null default now(),
- unique(sale_id,points_delta,member_id)
+ -- Individual ledger events may carry the same point value after partial refunds.
 );
 create table if not exists public.gw_pos_sale_meta(
  sale_id uuid primary key references public.gw_sales(id),
@@ -199,7 +199,7 @@ begin
   if public.gw_employee_for_token(p_token) is null then raise exception 'Employee PIN required for loyalty';end if;
   select points into v_available from public.gw_loyalty_members where id=p_member for update;
   if not found then raise exception 'Loyalty member not found';end if;
-  if v_redeem<0 or v_redeem>v_available or v_redeem>floor(v_total) then raise exception 'Invalid points redemption';end if;
+  if v_redeem<0 or v_redeem>greatest(0,v_available) or v_redeem>floor(v_total) then raise exception 'Invalid points redemption';end if;
   v_reward:=v_redeem;v_total:=v_total-v_reward;
   v_earned:=floor(greatest(v_sub-v_off-v_manual-v_reward,0)/100);
  elsif v_redeem<>0 then raise exception 'Choose a member to redeem points';end if;
@@ -291,3 +291,43 @@ begin
 end$$;
 revoke all on function public.gw_pos_search_sales(text,text) from public,anon,authenticated;
 grant execute on function public.gw_pos_search_sales(text,text) to anon,authenticated;
+
+-- Override Phase 2 adjustment function to reclaim earned points after refunds/voids.
+-- Signed balances represent point debt; future earned points automatically offset it.
+create or replace function public.gw_mdt_adjust_sale(
+ p_token text,p_sale text,p_type text,p_amount numeric,p_reason text
+) returns void language plpgsql security definer set search_path=public,pg_temp as $$
+declare
+ v_total numeric;v_used numeric;v_actor text;v_member uuid;
+ v_earned integer;v_reversed integer;v_target integer;v_delta integer;
+begin
+ if not public.gw_mdt_can(p_token,'sales_adjust') then raise exception 'Access denied';end if;
+ select pm.employee_name into v_actor from public.gw_pin_me(p_token) pm limit 1;
+ if v_actor is null or trim(v_actor)='' then raise exception 'Sign in with your employee PIN before processing a refund or void';end if;
+ if p_type not in ('refund','void') then raise exception 'Invalid adjustment type';end if;
+ if length(trim(coalesce(p_reason,''))) not between 5 and 1000 then raise exception 'Reason must be 5-1000 characters';end if;
+ select s.total into v_total from public.gw_sales s where s.id::text=p_sale for update;
+ if not found then raise exception 'Sale not found';end if;
+ select coalesce(sum(a.amount),0) into v_used from public.gw_mdt_sale_adjustments a where a.sale_id=p_sale;
+ if v_total<=v_used then raise exception 'Sale already fully adjusted';end if;
+ if p_amount is null or p_amount<=0 or round(p_amount,2)<>p_amount or p_amount>v_total-v_used then
+  raise exception 'Invalid adjustment amount';end if;
+ if p_type='void' and p_amount<>v_total-v_used then raise exception 'Void must cover the entire remaining balance';end if;
+ insert into public.gw_mdt_sale_adjustments(sale_id,adjustment_type,amount,reason,performed_by)
+ values(p_sale,p_type,p_amount,trim(p_reason),trim(v_actor));
+ select meta.member_id,meta.points_earned into v_member,v_earned from public.gw_pos_sale_meta meta
+ where meta.sale_id::text=p_sale;
+ if v_member is not null and v_earned>0 and v_total>0 then
+  select coalesce(-sum(l.points_delta),0)::integer into v_reversed
+  from public.gw_loyalty_ledger l where l.sale_id::text=p_sale and l.note='Reversed after refund or void';
+  v_target:=v_earned-floor(v_earned*greatest(0,v_total-v_used-p_amount)/v_total);
+  v_delta:=greatest(0,v_target-v_reversed);
+  if v_delta>0 then
+   update public.gw_loyalty_members set points=points-v_delta where id=v_member;
+   insert into public.gw_loyalty_ledger(member_id,sale_id,points_delta,note,performed_by)
+   values(v_member,p_sale::uuid,-v_delta,'Reversed after refund or void',public.gw_employee_for_token(p_token));
+  end if;
+ end if;
+end$$;
+revoke all on function public.gw_mdt_adjust_sale(text,text,text,numeric,text) from public,anon,authenticated;
+grant execute on function public.gw_mdt_adjust_sale(text,text,text,numeric,text) to anon,authenticated;
