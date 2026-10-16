@@ -36,6 +36,7 @@ create table if not exists public.gw_loyalty_ledger(
  created_at timestamptz not null default now()
  -- Individual ledger events may carry the same point value after partial refunds.
 );
+create unique index if not exists gw_loyalty_member_code_ci on public.gw_loyalty_members(lower(member_code));
 create table if not exists public.gw_pos_sale_meta(
  sale_id uuid primary key references public.gw_sales(id),
  member_id uuid references public.gw_loyalty_members(id),
@@ -273,7 +274,7 @@ begin
  if not public.gw_mdt_can(p_token,'sales_history') then raise exception 'Access denied';end if;
  return query
  select s.id::text,e.name::text,s.total,s.created_at,s.item_count,s.fulfillment::text,
- coalesce((select string_agg(distinct x.item->>'name',', ')
+ coalesce((select string_agg(distinct (x.item->>'name')||coalesce(' ('||nullif(x.item->>'choice','')||')',''),', ')
  from public.gw_sale_receipt_details d
  cross join lateral jsonb_array_elements(d.items) x(item)
  where d.sale_id=s.id::text),'')::text,
@@ -300,6 +301,7 @@ create or replace function public.gw_mdt_adjust_sale(
 declare
  v_total numeric;v_used numeric;v_actor text;v_member uuid;
  v_earned integer;v_reversed integer;v_target integer;v_delta integer;
+ v_spent integer;v_restored integer;v_restore_target integer;v_restore_delta integer;
 begin
  if not public.gw_mdt_can(p_token,'sales_adjust') then raise exception 'Access denied';end if;
  select pm.employee_name into v_actor from public.gw_pin_me(p_token) pm limit 1;
@@ -315,7 +317,7 @@ begin
  if p_type='void' and p_amount<>v_total-v_used then raise exception 'Void must cover the entire remaining balance';end if;
  insert into public.gw_mdt_sale_adjustments(sale_id,adjustment_type,amount,reason,performed_by)
  values(p_sale,p_type,p_amount,trim(p_reason),trim(v_actor));
- select meta.member_id,meta.points_earned into v_member,v_earned from public.gw_pos_sale_meta meta
+ select meta.member_id,meta.points_earned,meta.points_redeemed into v_member,v_earned,v_spent from public.gw_pos_sale_meta meta
  where meta.sale_id::text=p_sale;
  if v_member is not null and v_earned>0 and v_total>0 then
   select coalesce(-sum(l.points_delta),0)::integer into v_reversed
@@ -326,6 +328,17 @@ begin
    update public.gw_loyalty_members set points=points-v_delta where id=v_member;
    insert into public.gw_loyalty_ledger(member_id,sale_id,points_delta,note,performed_by)
    values(v_member,p_sale::uuid,-v_delta,'Reversed after refund or void',public.gw_employee_for_token(p_token));
+  end if;
+ end if;
+ if v_member is not null and v_spent>0 and v_total>0 then
+  select coalesce(sum(l.points_delta),0)::integer into v_restored
+  from public.gw_loyalty_ledger l where l.sale_id::text=p_sale and l.note='Restored after refund or void';
+  v_restore_target:=floor(v_spent*least(1,(v_used+p_amount)/v_total));
+  v_restore_delta:=greatest(0,v_restore_target-v_restored);
+  if v_restore_delta>0 then
+   update public.gw_loyalty_members set points=points+v_restore_delta where id=v_member;
+   insert into public.gw_loyalty_ledger(member_id,sale_id,points_delta,note,performed_by)
+   values(v_member,p_sale::uuid,v_restore_delta,'Restored after refund or void',public.gw_employee_for_token(p_token));
   end if;
  end if;
 end$$;
