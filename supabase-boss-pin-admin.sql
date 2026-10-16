@@ -97,3 +97,30 @@ begin
 end$$;
 revoke all on function public.gw_boss_set_role_permission(text,text,text,boolean) from public,anon,authenticated;
 grant execute on function public.gw_boss_set_role_permission(text,text,text,boolean) to anon,authenticated;
+
+-- Branding and product images can be managed from a Boss PIN using existing HTTPS
+-- image URLs. Actual binary uploads still require a secured storage-upload endpoint.
+create or replace function public.gw_boss_set_image_url(
+ p_token text,p_slot text,p_product text,p_url text
+) returns void language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+ if not public.gw_boss_pin_check(p_token) then raise exception 'Boss employee PIN required';end if;
+ if p_url is not null and (length(p_url)>2000 or p_url!~* '^https://') then
+  raise exception 'Image must use an HTTPS URL';
+ end if;
+ if p_slot='product' then
+  if p_product is null then raise exception 'Choose a product';end if;
+  update public.products set image_url=p_url where id::text=p_product;
+  if not found then raise exception 'Product not found';end if;
+ elsif p_slot in ('main_logo','login_logo','receipt_logo','dashboard_logo','favicon') then
+  if p_url is null then
+   delete from public.gw_branding where slot=p_slot;
+  else
+   insert into public.gw_branding(slot,image_url,active)
+   values(p_slot,p_url,true)
+   on conflict(slot) do update set image_url=excluded.image_url,active=true;
+  end if;
+ else raise exception 'Invalid image location';end if;
+end$$;
+revoke all on function public.gw_boss_set_image_url(text,text,text,text) from public,anon,authenticated;
+grant execute on function public.gw_boss_set_image_url(text,text,text,text) to anon,authenticated;
