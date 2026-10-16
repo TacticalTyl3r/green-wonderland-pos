@@ -228,7 +228,7 @@ body[data-theme] .gw-effect-choice:hover,body[data-theme] .gw-effect-choice[aria
 body[data-theme] .gw-effect-choice[aria-pressed=true]::before{content:'✓ ';color:var(--accent)}
 /* Header layers are behind content and never intercept clicks */
 body[data-theme] .gw-site-content .shell>header{position:relative;isolation:isolate;overflow:hidden}
-body[data-theme] .gw-site-content .shell>header::before,body[data-theme] .gw-site-content .shell>header::after{content:'';position:absolute;pointer-events:none;z-index:-1;inset:0;opacity:0}
+body[data-theme] .gw-site-content .shell>header::before,body[data-theme] .gw-site-content .shell>header::after{content:'';position:absolute;pointer-events:none;z-index:0;inset:0;opacity:0}
 body[data-header-effect=haze] .gw-site-content .shell>header::before,body[data-header-effect=combo] .gw-site-content .shell>header::before{opacity:.55;inset:-80%;background:radial-gradient(ellipse at 25% 45%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 55%);filter:blur(18px);animation:gw-header-drift 12s ease-in-out infinite alternate}
 body[data-header-effect=glow] .gw-site-content .shell>header::after,body[data-header-effect=combo] .gw-site-content .shell>header::after{opacity:.8;background:linear-gradient(110deg,transparent 30%,color-mix(in srgb,var(--accent) 18%,transparent) 50%,transparent 70%);background-size:230% 100%;animation:gw-header-sweep 8s linear infinite}
 body[data-header-effect=particles] .gw-site-content .shell>header::before{opacity:.45;background-image:radial-gradient(circle,var(--accent) 1px,transparent 2px);background-size:40px 35px;animation:gw-header-float 15s linear infinite}
@@ -265,3 +265,23 @@ body[data-theme] .gw-history-added .gw-history-amount{background:rgba(35,170,99,
 body[data-theme] .gw-history-removed .gw-history-amount{background:rgba(207,55,70,.12);border-color:#f26d73;color:#f26d73}
 body[data-theme] .gw-history-added .gw-history-amount *,body[data-theme] .gw-history-removed .gw-history-amount *{color:inherit}
 @media(max-width:560px){body[data-theme] .gw-history-entry{flex-wrap:wrap}body[data-theme] .gw-history-amount{min-width:0}}
+
+/* Fix: effects must sit above the opaque header background, but below controls. */
+body[data-theme] .gw-site-content .shell>header{isolation:isolate}
+body[data-theme] .gw-site-content .shell>header>.brand,
+body[data-theme] .gw-site-content .shell>header>.actions{position:relative;z-index:2}
+body[data-theme] .gw-site-content .shell>header::before,
+body[data-theme] .gw-site-content .shell>header::after{z-index:1}
+body[data-theme] .gw-effect-actions{margin-top:15px}
+body[data-theme] #gwEffectMessage{min-height:18px;color:var(--accent)}
+body[data-header-effect=pulse] .gw-site-content .shell>header::before{opacity:.55;background:radial-gradient(ellipse at 50% 50%,color-mix(in srgb,var(--accent) 25%,transparent),transparent 75%);animation:gw-header-pulse 5s ease-in-out infinite}
+body[data-header-effect=shimmer] .gw-site-content .shell>header .brand h1{background:linear-gradient(110deg,var(--text) 20%,var(--accent) 45%,var(--text) 65%);background-size:250% 100%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gw-header-sweep 6s linear infinite}
+body[data-header-effect=waves] .gw-site-content .shell>header::before{opacity:.32;background:repeating-radial-gradient(ellipse at 50% 110%,transparent 0px,transparent 22px,var(--accent) 23px,transparent 25px);animation:gw-header-breathe 7s ease-in-out infinite}
+body[data-header-effect=grid] .gw-site-content .shell>header::before{opacity:.18;background-image:linear-gradient(var(--accent) 1px,transparent 1px),linear-gradient(90deg,var(--accent) 1px,transparent 1px);background-size:32px 32px;animation:gw-header-float 14s linear infinite}
+body[data-header-effect=stars] .gw-site-content .shell>header::before{opacity:.5;background-image:radial-gradient(circle,var(--accent) 1px,transparent 2px),radial-gradient(circle,var(--accent) 1px,transparent 2px);background-size:47px 39px,81px 63px;animation:gw-header-stars 4s ease-in-out infinite}
+body[data-header-effect=breathe] .gw-site-content .shell>header .brand .mark{animation:gw-header-icon 4s ease-in-out infinite}
+body[data-header-effect=gradient] .gw-site-content .shell>header::before{opacity:.35;background:linear-gradient(115deg,transparent,color-mix(in srgb,var(--accent) 48%,transparent),transparent,color-mix(in srgb,var(--accent) 25%,transparent));background-size:250% 100%;animation:gw-header-sweep 10s linear infinite}
+@keyframes gw-header-pulse{0%,100%{transform:scale(.8);opacity:.15}50%{transform:scale(1.4);opacity:.7}}
+@keyframes gw-header-stars{0%,100%{opacity:.15}50%{opacity:.6}}
+@keyframes gw-header-icon{0%,100%{box-shadow:0 0 0 transparent;transform:scale(1)}50%{box-shadow:0 0 18px var(--accent);transform:scale(1.05)}}
+@media(prefers-reduced-motion:reduce){body[data-header-effect] .gw-site-content .shell>header .brand .mark{animation:none!important}}
