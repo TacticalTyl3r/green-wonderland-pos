@@ -497,3 +497,13 @@ body[data-theme] .gw-feature-card small{color:var(--accent)}
 body[data-theme] .gw-feature-card button{margin-top:auto}
 body[data-theme] .gw-site-submenu .gw-admin-notifications{--sub-icon-color:#55d3a0}
 body[data-theme] .gw-site-submenu .gw-admin-backups{--sub-icon-color:#64baff}
+
+/* Dashboard notifications: visible, theme-aware announcement panel */
+body[data-theme] .gw-dashboard-notifications{margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-head h2{margin:0;font-size:22px;color:var(--text)}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-head p{color:var(--muted);font-size:12px;margin:5px 0 0}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-actions{display:flex;justify-content:flex-end;margin-bottom:12px}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+body[data-theme] .gw-dashboard-notifications .gw-feature-card{margin:0;background:var(--panel)}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-form{margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
