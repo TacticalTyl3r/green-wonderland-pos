@@ -94,6 +94,12 @@ function renderSales(){
  });
  if(!ranked.length)list.append(make('p','No employees found.'));
  mdtContent.append(list);
+ if(ranked.length){
+  const leaders=make('section',undefined,'gw-leader-panel');leaders.append(make('h3','Top Employees by Sales'));
+  const max=Math.max(1,...ranked.map(x=>Number(x.weekly_sales||0)));
+  ranked.slice(0,5).forEach((e,i)=>{const item=make('div',undefined,'gw-leader-item');const caption=make('div',undefined,'gw-leader-caption');caption.append(make('span',(i+1)+'. '+e.employee_name),make('strong',cash(e.weekly_sales)));const track=make('div',undefined,'gw-leader-track'),fill=make('div',undefined,'gw-leader-fill');fill.style.width=(100*Number(e.weekly_sales||0)/max)+'%';track.append(fill);item.append(caption,track);leaders.append(item);});
+  mdtContent.append(leaders);
+ }
 }
 async function renderEmployeeSalesTrend(e,host){
  host.replaceChildren(make('p','Loading 30-day sales trend…'));
