@@ -652,3 +652,8 @@ body[data-theme] .gw-permissions-item[hidden]{display:none!important}
 body[data-theme] .gw-loyalty-activity>button{margin-top:8px}
 body[data-theme] .gw-history-intro{line-height:1.65}
 
+
+/* MDT connection status: clear yellow / red / green states. */
+#status[data-connection="connecting"]{color:#f6cb55!important;border-color:#c49b32!important;background:rgba(246,203,85,.13)!important}
+#status[data-connection="offline"]{color:#ff7777!important;border-color:#c84646!important;background:rgba(200,55,55,.13)!important}
+#status[data-connection="online"]{color:#75e6a0!important;border-color:#319c60!important;background:rgba(49,156,96,.13)!important}
