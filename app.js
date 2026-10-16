@@ -34,6 +34,7 @@ function receiptText(s){
  if(s.store_share!=null)rows.push('• Store (10% of sale): '+money(s.store_share));
  if(s.employee_share!=null)rows.push('• Employee Keeps: '+money(s.employee_share));
  rows.push('• Fulfillment: '+(s.fulfillment||'pickup'));
+ if(s.loyalty_meta){const d=s.loyalty_meta;rows.push('• Offers saved: '+money(d.offer_discount),'• Rewards redeemed: '+money(d.reward_discount),'• Loyalty points earned: '+d.points_earned);}
  return rows.join('\n');
 }
 async function showSaleReceipt(s){
@@ -47,10 +48,11 @@ async function showSaleReceipt(s){
  const note=document.createElement('p');note.className='gw-receipt-note';
  const totalsHost=document.createElement('div');totalsHost.className='gw-paper-totals';
  const actions=document.createElement('div');actions.className='gw-receipt-actions';
+ const phase4Summary=document.createElement('div');phase4Summary.className='gw-receipt-phase4';
  const copy=document.createElement('button');copy.type='button';copy.className='primary';copy.textContent='Copy for Discord';
  copy.onclick=async()=>{try{await navigator.clipboard.writeText(receiptText(s));copy.textContent='✓ Copied!';}catch(e){const area=document.createElement('textarea');area.value=receiptText(s);area.readOnly=true;dlg.append(area);area.focus();area.select();copy.textContent='Select and copy receipt text';}};
  const close=document.createElement('button');close.type='button';close.className='outline';close.textContent='Close';close.onclick=()=>dlg.close();
- actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,actions);
+ actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,totalsHost,phase4Summary,actions);
  const draw=()=>{itemsHost.replaceChildren();totalsHost.replaceChildren();const items=saleLines(s);note.textContent=items.length?'':'Itemized products were not saved for this older sale.';for(const x of items){const row=document.createElement('div');row.className='gw-paper-item';const name=document.createElement('span');name.textContent=x.qty+'x '+x.name+(x.choice?' ('+x.choice+')':'');const price=document.createElement('strong');price.textContent=money(x.total);row.append(name,price);itemsHost.append(row);}for(const [label,value] of [['Price',money(s.total)],...(s.store_share!=null?[['Store (10% of sale)',money(s.store_share)]]:[]),...(s.employee_share!=null?[['Employee Keeps',money(s.employee_share)]]:[]),['Fulfillment',s.fulfillment||'pickup']]){const row=document.createElement('div');row.className='gw-paper-total';const name=document.createElement('span');name.textContent=label;const amount=document.createElement('strong');amount.textContent=value;row.append(name,amount);totalsHost.append(row);}};
  draw();dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
  if(db){
@@ -64,6 +66,21 @@ async function showSaleReceipt(s){
    s.store_share=Number(s.total||0)*.1;
    s.employee_share=Number(s.total||0)*.9;
    draw();
+   if(s.id){
+    try{
+     const {data:meta,error:metaError}=await db.rpc('gw_pos_sale_details',{p_token:token,p_sale:String(s.id)});
+     if(!metaError&&meta?.length){
+      const d=meta[0];s.loyalty_meta=d;phase4Summary.replaceChildren();
+      for(const [label,val] of [['Original subtotal',money(d.base_subtotal)],['Deals saved','−'+money(d.offer_discount)],
+        ['Manual discount','−'+money(d.manual_discount)],['Rewards redeemed','−'+money(d.reward_discount)],
+        ['Delivery',money(d.delivery_fee)],['Loyalty member',d.member_name||'None'],
+        ['Points earned',String(d.points_earned||0)],['Points redeemed',String(d.points_redeemed||0)]]){
+       const row=document.createElement('div');row.className='gw-paper-total';
+       const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=val;row.append(a,b);phase4Summary.append(row);
+      }
+     }
+    }catch(err){console.warn('Receipt details unavailable:',err);}
+   }
    if(!s.line_items.length)note.textContent='No itemized products were recorded for this sale. Sales recorded before the receipt update cannot be reconstructed.';
   }catch(e){
    note.textContent='Could not load product details: '+e.message;
@@ -74,14 +91,15 @@ async function showSaleReceipt(s){
 function renderHistory(){
  if(tab!=='history')return;
  const host=$('history');host.replaceChildren();
+ const search=document.createElement('input');search.className='gw-history-filter';search.type='search';search.placeholder='Filter receipts by employee, ID, item or flavor';search.value=window.gwHistoryQuery||'';search.oninput=()=>{window.gwHistoryQuery=search.value;renderHistory();};host.append(search);
  if(historyLoading){host.textContent='Loading all recorded sales…';return;}
  if(historyError){host.textContent=historyError;return;}
  if(!sharedHistory.length){host.textContent='No recorded sales found.';return;}
- for(const s of sharedHistory){
+ for(const s of sharedHistory.filter(x=>!window.gwHistoryQuery||[x.employee_name,x.id,x.product_names,x.fulfillment,x.total].some(v=>String(v||'').toLowerCase().includes(window.gwHistoryQuery.toLowerCase())))) {
   const button=document.createElement('button');button.type='button';button.className='record gw-history-sale';
   const top=document.createElement('strong');top.textContent=money(s.total)+' · '+(s.employee_name||'Unknown employee');
   const info=document.createElement('small');info.textContent=(s.created_at?new Date(s.created_at).toLocaleString():'Unknown date')+' · '+Number(s.item_count||0)+' items · '+(s.fulfillment||'');
-  const hint=document.createElement('span');hint.className='gw-history-hint';hint.textContent='View receipt ›';
+  const hint=document.createElement('span');hint.className='gw-history-hint';hint.textContent=(s.adjustment_amount>0?'REFUNDED / VOIDED · ':'')+'View receipt ›';
   button.append(top,info,hint);button.onclick=()=>showSaleReceipt(s);host.append(button);
  }
 }
@@ -93,6 +111,13 @@ async function loadSharedHistory(){
   const {data,error}=await db.rpc('gw_mdt_sales_history',{p_token:token,p_from:null,p_to:null,p_employee:null});
   if(error)throw Error(error.message);
   sharedHistory=[...(data||[])].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  try{
+   const {data:enhanced,error:enhancedError}=await db.rpc('gw_pos_search_sales',{p_token:token,p_query:''});
+   if(!enhancedError&&Array.isArray(enhanced)){
+    const m=new Map(enhanced.map(x=>[String(x.sale_id),x]));
+    sharedHistory=sharedHistory.map(x=>({...x,...(m.get(String(x.id))||{})}));
+   }
+  }catch(e){console.warn('Advanced receipt search unavailable:',e);}
   historyLoaded=true;
  }catch(e){historyError='Unable to load shared sales history: '+e.message+'. Sign in with an employee PIN that has Sales History access or an administrator account.';}
  finally{historyLoading=false;renderHistory();}
