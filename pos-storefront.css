@@ -136,3 +136,20 @@ body:not(.light){background:#050c0a;color:#eef6f0}
  .gw-site-content .shell main>.order #cartView .totals .grand{padding:8px 0;margin-top:4px}
  .gw-site-content .shell main>.order #cartView .checkout{position:static!important;padding:4px 0 0;margin-top:4px}
 }
+
+/* Small upward adjustment and reserved space for checkout controls. */
+@media (min-width:951px){
+ .gw-site-content .shell main>.order{
+  top:calc(var(--gw-pos-header-bottom,130px) - 8px)!important;
+  max-height:calc(100dvh - var(--gw-pos-header-bottom,130px) - 2px)!important;
+  padding-bottom:8px!important;
+ }
+ .gw-site-content .shell main>.order #cartView .checkout{
+  position:sticky!important;
+  bottom:0;
+  z-index:3;
+  background:var(--panel,#14251c);
+  padding:8px 0 2px!important;
+  border-top:1px solid var(--line,#30473a);
+ }
+}
