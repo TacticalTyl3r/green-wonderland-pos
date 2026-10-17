@@ -248,7 +248,7 @@ function employeeForm(e){
  const pin=field(e?'New PIN (leave blank to keep existing)':'Employee PIN (4–12 digits)',document.createElement('input'));pin.type='password';pin.inputMode='numeric';pin.minLength=4;pin.maxLength=12;pin.pattern='[0-9]{4,12}';pin.required=!e;pin.disabled=!!e&&!canFeature('employee_pin_reset');pin.autocomplete='new-password';
  const active=document.createElement('input');active.type='checkbox';active.checked=e?e.active!==false:true;active.disabled=!!e&&!canFeature('employee_deactivate');active.className='gw-employee-switch-input';const activeLabel=make('label',undefined,'gw-employee-switch');activeLabel.append(make('span','Active employee'),active,make('span',undefined,'gw-employee-switch-track'));form.append(activeLabel);
  const cid=field('Employee CID',document.createElement('input'));cid.maxLength=60;cid.placeholder='Character ID';cid.value=e?.employee_cid||'';
- const hire=field('Hire Date',document.createElement('input'));hire.type='date';hire.value=e?.hire_date||'';
+ const hire=field('Hire Date',document.createElement('input'));hire.type='date';hire.value=e?.hire_date||[new Date().getFullYear(),String(new Date().getMonth()+1).padStart(2,'0'),String(new Date().getDate()).padStart(2,'0')].join('-');
  const promoted=field('Last Promoted Date',document.createElement('input'));promoted.type='date';promoted.value=e?.last_promoted_date||'';
  const bossCanEdit=me?.employee_role==='Boss';cid.disabled=hire.disabled=promoted.disabled=!bossCanEdit;
  if(e){call('gw_employee_profile_get',{p_token:token||'',p_employee:e.id}).then(rows=>{const p=rows?.[0];if(!p)return;cid.value=p.employee_cid||'';hire.value=p.hire_date||'';promoted.value=p.last_promoted_date||'';}).catch(()=>{});}
