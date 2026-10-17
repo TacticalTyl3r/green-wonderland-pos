@@ -126,6 +126,12 @@ async function showSaleReceipt(s){
  if(!saleLines(s).length){const cached=cachedReceiptItems(s.id||s.sale_id);if(cached?.length)s.line_items=cached;}
  if(!s.receipt_financials){try{s.receipt_financials=JSON.parse(localStorage.getItem('gw-receipt-financials-'+String(s.id||s.sale_id))||'null');}catch(e){}}
  const dlg=document.createElement('dialog');dlg.className='gw-choice-dialog gw-receipt-dialog gw-paper-receipt';
+ const receiptLogo=document.createElement('img');
+ receiptLogo.className='gw-branded-image gw-receipt-brand-logo';
+ receiptLogo.dataset.gwImageSlot='receipt_logo';
+ receiptLogo.alt='Green Wonderland receipt logo';
+ receiptLogo.hidden=true;
+ receiptLogo.onerror=()=>{receiptLogo.hidden=true;};
  const heading=document.createElement('h3');heading.textContent='GREEN WONDERLAND';
  const subtitle=document.createElement('p');subtitle.textContent='SALES RECEIPT';
  const date=document.createElement('p');date.className='gw-paper-date';date.textContent='Date/Time: '+(s.created_at?new Date(s.created_at).toLocaleString():'Unknown');
@@ -144,7 +150,7 @@ async function showSaleReceipt(s){
  const copy=document.createElement('button');copy.type='button';copy.className='primary';copy.textContent='Copy for Discord';
  copy.onclick=async()=>{try{await navigator.clipboard.writeText(receiptText(s));copy.textContent='✓ Copied!';}catch(e){const area=document.createElement('textarea');area.value=receiptText(s);area.readOnly=true;dlg.append(area);area.focus();area.select();copy.textContent='Select and copy receipt text';}};
  const close=document.createElement('button');close.type='button';close.className='outline';close.textContent='Close';close.onclick=()=>dlg.close();
- actions.append(copy,close);dlg.append(heading,subtitle,date,employee,section,itemsHost,note,diagnostics,totalsHost,discountsHost,finalTotalHost,phase4Summary,actions);
+ actions.append(copy,close);dlg.append(receiptLogo,heading,subtitle,date,employee,section,itemsHost,note,diagnostics,totalsHost,discountsHost,finalTotalHost,phase4Summary,actions);
  const draw=()=>{
   itemsHost.replaceChildren();totalsHost.replaceChildren();finalTotalHost.replaceChildren();
   const items=saleLines(s);note.textContent=items.length?'':'Itemized products not available for this sale.';
@@ -171,7 +177,7 @@ async function showSaleReceipt(s){
  };
  showDiscounts();showLoyalty();
 
-  dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
+  dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);window.gwRenderBrandingImages?.();dlg.showModal();
  // Boss-only permanent deletion: authorization is verified again by the RPC.
  // Never allow a missing or ambiguous sale ID to be submitted.
  const deleteToken=sessionStorage.getItem('gw-employee-token')||'';
