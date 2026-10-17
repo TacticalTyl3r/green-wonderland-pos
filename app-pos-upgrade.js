@@ -1,4 +1,5 @@
-import {createPhase4} from './phase4-pos.js?v=multi-specials-20261017';
+import {createPhase4} from './phase4-pos.js?v=pos-deals-20261017';
+import {createPosDeals} from './pos-deals.js?v=pos-deals-20261017';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -16,6 +17,25 @@ catalogSidebar.className='gw-catalog-sidebar';
 $('categories').before(catalogSidebar);
 catalogSidebar.append($('categories'),phase4.favoritesRoot);
 phase4.render();
+const appliedDeal= document.createElement('p');
+appliedDeal.className='gw-pos-applied-discount';
+appliedDeal.setAttribute('role','status');
+appliedDeal.hidden=true;
+document.querySelector('#cartView .totals')?.after(appliedDeal);
+const dealsPos=createPosDeals({
+ catalog:document.querySelector('.catalog'),
+ catalogSidebar,productHost:$('products'),searchInput:$('search'),
+ getProducts:()=>products,getOffers:()=>phase4.getOffers(),offersReady:()=>phase4.isReady(),
+ productChoices,chooseProduct,money,
+ addBundleLines:items=>{
+  for(const item of items){
+   const key=String(item.p.id)+(item.choice?'::'+encodeURIComponent(item.choice):'');
+   cart[key]=(Number(cart[key])||0)+item.qty;
+  }
+  renderCart();renderIngredients();
+ },
+ refreshOffers:async()=>{await phase4.refreshOffers();render();}
+});
 function saveLocal(){localStorage.setItem('gw-cart',JSON.stringify(cart));localStorage.setItem('gw-history',JSON.stringify(history));}
 const setMdtStatus=(state,message)=>{const node=$('status');if(!node)return;node.dataset.connection=state;node.textContent=message;};
 async function load(){
@@ -32,6 +52,7 @@ async function load(){
   products=p.data;zones=z.data;settings=settingsResult.data;
   setMdtStatus('online','● MDT Online');render();
   await phase4.refreshOffers();
+  render();dealsPos.render();
  }catch(error){
   setMdtStatus('offline','● MDT Offline');
   $('adminMessage').textContent='MDT connection failed: '+error.message;
@@ -44,7 +65,11 @@ function render(){const cats=['All',...new Set(products.filter(p=>p.active).map(
 
 function lines(){return Object.entries(cart).map(([id,qty])=>{const [productId,encoded]=id.split('::');return {id,p:products.find(p=>String(p.id)===productId),choice:encoded?decodeURIComponent(encoded):'',qty};}).filter(x=>x.p&&x.qty>0)}
 function totals(){const subtotal=lines().reduce((n,{p,qty})=>n+Number(p.price)*qty,0);const z=zones.find(z=>String(z.id)===$('zone').value);const delivery=document.querySelector('[name=fulfillment]:checked')?.value==='delivery'?Number(z?.fee||0):0;const offerDiscount=phase4.isReady()?phase4.preview().discount:0;const discount=(subtotal-offerDiscount)*Number($('discount').value)/100;const due=Math.max(0,subtotal-offerDiscount-discount+delivery);const rewards=phase4.isReady()?phase4.estimateRedemption(due):0;return{subtotal,delivery,discount,offerDiscount,rewards,total:Math.max(0,due-rewards)}}
-function renderCart(){const l=lines();$('count').textContent=`${l.reduce((n,x)=>n+x.qty,0)} ITEMS`;$('cart').innerHTML=l.length?l.map(({p,qty,id,choice})=>`<div class="cartline"><div><b>${esc(p.name)}</b>${choice?`<div class="gw-cart-choice">${esc(choice)}</div>`:''}<div class="meta">${money(p.price)} each · ${money(p.price*qty)}</div></div><div class="qty"><button data-qty="${esc(id)}" data-step="-1">−</button><b>${qty}</b><button data-qty="${esc(id)}" data-step="1">+</button></div></div>`).join(''):'<div class="empty">Your order is empty. Add products from the catalog.</div>';$('zone').hidden=document.querySelector('[name=fulfillment]:checked')?.value!=='delivery';$('discountLabel').textContent=$('discount').value+'%';const t=totals();for(const k of ['subtotal','delivery','discountAmount','total'])$(k).textContent=(k==='discountAmount'?'-':'')+money(t[k==='discountAmount'?'discount':k]);const offersOut=$('gwOfferDiscount'),loyaltyOut=$('gwRewardDiscount');if(offersOut)offersOut.textContent='-'+money(t.offerDiscount);if(loyaltyOut)loyaltyOut.textContent='-'+money(t.rewards);$('checkout').disabled=!l.length;saveLocal();}
+function renderCart(){const l=lines();$('count').textContent=`${l.reduce((n,x)=>n+x.qty,0)} ITEMS`;$('cart').innerHTML=l.length?l.map(({p,qty,id,choice})=>`<div class="cartline"><div><b>${esc(p.name)}</b>${choice?`<div class="gw-cart-choice">${esc(choice)}</div>`:''}<div class="meta">${money(p.price)} each · ${money(p.price*qty)}</div></div><div class="qty"><button data-qty="${esc(id)}" data-step="-1">−</button><b>${qty}</b><button data-qty="${esc(id)}" data-step="1">+</button></div></div>`).join(''):'<div class="empty">Your order is empty. Add products from the catalog.</div>';$('zone').hidden=document.querySelector('[name=fulfillment]:checked')?.value!=='delivery';$('discountLabel').textContent=$('discount').value+'%';const t=totals();for(const k of ['subtotal','delivery','discountAmount','total'])$(k).textContent=(k==='discountAmount'?'-':'')+money(t[k==='discountAmount'?'discount':k]);const offersOut=$('gwOfferDiscount'),loyaltyOut=$('gwRewardDiscount');if(offersOut)offersOut.textContent='-'+money(t.offerDiscount);if(loyaltyOut)loyaltyOut.textContent='-'+money(t.rewards);
+ const offer=phase4.isReady()?phase4.preview():null;
+ appliedDeal.hidden=!offer||offer.discount<=0;
+ if(!appliedDeal.hidden)appliedDeal.textContent='✓ '+money(offer.discount)+' in offer savings applied automatically'+(offer.applied?' · '+offer.applied:'');
+ $('checkout').disabled=!l.length;saveLocal();}
 function ingredientSummary(){const map=new Map();for(const {p,qty} of lines())for(const item of (Array.isArray(p.ingredients)?p.ingredients:[])){if(!item?.name)continue;const key=`${item.name}|${item.unit||''}`;const v=map.get(key)||{name:item.name,unit:item.unit||'',qty:0};v.qty+=Number(item.qty||0)*qty;map.set(key,v)}return [...map.values()];}
 function renderIngredients(){const items=ingredientSummary();$('ingredients').innerHTML=items.length?items.map(x=>`<div class="record">${esc(x.name)} — <b>${x.qty} ${esc(x.unit)}</b></div>`).join(''):'<div class="empty">No ingredient recipes assigned to selected products.</div>';}
 let sharedHistory=[],historyLoading=false,historyError='',historyLoaded=false;
