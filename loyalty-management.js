@@ -62,7 +62,12 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
     const description=document.createElement('textarea');description.placeholder='Reward description';description.maxLength=1000;description.value=reward?.description||'';
     const cost=document.createElement('input');cost.type='number';cost.placeholder='Points cost';cost.min='1';cost.max='100000';cost.required=true;cost.value=String(reward?.points_cost||'');
     const active=document.createElement('input');active.type='checkbox';active.checked=reward?.active!==false;
-    const label=make('label','Active');label.append(active);
+    const label=make('label',undefined,'gw-loyalty-switch-row');
+    const activeText=make('span',active.checked?'Reward Active: ON':'Reward Active: OFF');
+    const track=make('span',undefined,'gw-loyalty-switch-track');
+    active.className='gw-loyalty-switch-input';active.setAttribute('role','switch');active.setAttribute('aria-label','Reward active');
+    active.onchange=()=>{activeText.textContent=active.checked?'Reward Active: ON':'Reward Active: OFF';};
+    label.append(activeText,active,track);
     const submit=make('button',reward?'Update Reward':'Create Reward','primary');submit.type='submit';
     const feedback=make('p','','gw-mdt-message');editor.append(name,description,cost,label,submit,feedback);
     editor.onsubmit=async event=>{event.preventDefault();submit.disabled=true;try{
