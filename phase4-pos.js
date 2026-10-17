@@ -128,15 +128,6 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
    }
    root.append(catalog);
   }
-  const offerInfo=document.createElement('div');offerInfo.className='gw-pos-offer-list';
-  const p=preview();
-  offerInfo.innerHTML='<strong>Active deals</strong>';
-  for(const o of offers){
-   const line=document.createElement('span');line.textContent=o.title+(o.offer_type==='special'?' · '+o.percent_off+'% off':' · Bundle '+money(o.bundle_price));
-   offerInfo.append(line);
-  }
-  if(!offers.length){const empty=document.createElement('small');empty.textContent=ready?'No specials or bundles active':'Offers available after the Phase 4 SQL migration';offerInfo.append(empty);}
-  root.append(offerInfo);
  };
  const renderFavorites=choose=>{
   favoritesRoot.replaceChildren();
