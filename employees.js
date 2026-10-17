@@ -667,7 +667,11 @@ async function showBackupCenter(){
    if(bossAllowed)await appendLog('Security Activity','gw_security_events_list',a=>({title:a.event_type.replaceAll('_',' ').toUpperCase(),actor:a.actor_name||'Unknown',subject:a.target_name||'Unknown',details:a.details,date:a.created_at}));
    return;}
   if(page==='backups'){adminSubmenu.hidden=false;await showBackupCenter();return;}
-  if(page==='security'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showSecurityCenter(mdtContent,{call,token:()=>token||'',make,cash});return;}
+  if(page==='security'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showSecurityCenter(mdtContent,{call,token:()=>token||'',make,cash});
+   try{const {showSessionHealth}=await import('./security-session-insights.js?v=session-health-20261016');
+    await showSessionHealth(mdtContent,{call,token:()=>token||'',make});
+   }catch(err){console.warn('Optional session health panel unavailable',err);}
+   return;}
   if(page==='offers'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showOffersManager(mdtContent,{call,token:()=>token||'',make,cash});return;}
   if(page==='productanalytics'){mdtMessage.textContent='';await showProductAnalytics(mdtContent,{call,token:()=>token||'',make,cash});return;}
   if(page==='loyalty'){mdtMessage.textContent='';await renderLoyaltyManagement(mdtContent,{call,token:()=>token||'',canFeature,cash,make});return;}
