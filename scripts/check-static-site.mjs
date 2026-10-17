@@ -92,7 +92,7 @@ const themeFiles = [
   'styles/theme/theme-effects.css',
   'styles/theme/theme-features.css'
 ];
-const orderedStyles = [...html.matchAll(/<link\\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi)]
+const orderedStyles = [...html.matchAll(/<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi)]
   .map(match => match[1].split('?', 1)[0]);
 const firstThemeIndex = orderedStyles.indexOf(themeFiles[0]);
 if (firstThemeIndex < 0 ||
