@@ -143,8 +143,8 @@ customChoice.onclick=()=>{if(!customPalette()){root.querySelector('#gwCustomMess
 const customSection=document.createElement('section');customSection.className='gw-theme-group gw-theme-custom-group';
 const customTitle=document.createElement('h4');customTitle.textContent='✎ PERSONALIZED';
 const customDesc=document.createElement('p');customDesc.textContent='Your saved seven-color combination.';
-const customGrid=document.createElement('div');customGrid.className='gw-theme-grid';
-customGrid.append(customChoice);customSection.append(customTitle,customDesc,customGrid);themeGrid.append(customSection);
+const personalGrid=document.createElement('div');personalGrid.className='gw-theme-grid';
+personalGrid.append(customChoice);customSection.append(customTitle,customDesc,personalGrid);themeGrid.append(customSection);
 function syncCustomSwatch(){
  const p=customPalette()||themes.wonderland;
  const previewColors=['--theme-bg','--theme-panel','--theme-card','--theme-border','--theme-text','--theme-muted','--theme-accent'];
