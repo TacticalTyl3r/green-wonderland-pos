@@ -484,10 +484,12 @@ async function showBackupCenter(){
  const securityLink=document.createElement('button');securityLink.type='button';securityLink.dataset.sitePage='security';securityLink.className='gw-admin-subitem gw-admin-security';securityLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">⚿</span><span class="gw-site-label">Security Center</span>';securityLink.onclick=()=>showSite('security');
  const offersLink=document.createElement('button');offersLink.type='button';offersLink.dataset.sitePage='offers';offersLink.className='gw-admin-subitem gw-admin-offers';offersLink.innerHTML='<span class="gw-site-icon">✦</span><span class="gw-site-label">Bundles & Specials</span>';offersLink.onclick=()=>showSite('offers');
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
+ const bossHubLink=document.createElement('button');bossHubLink.type='button';bossHubLink.dataset.sitePage='bosshub';bossHubLink.className='gw-admin-subitem';bossHubLink.innerHTML='<span class="gw-site-icon">▣</span><span class="gw-site-label">Boss Control Center</span>';
+
  const catalogLink=document.createElement('button');catalogLink.type='button';catalogLink.className='gw-admin-subitem gw-admin-catalog';catalogLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">▦</span><span class="gw-site-label">Products, Images & Settings</span>';
  const brandingLink=document.createElement('button');brandingLink.type='button';brandingLink.className='gw-admin-subitem gw-admin-branding';brandingLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">✦</span><span class="gw-site-label">Branding & Images</span>';
   const auditLink=document.createElement('button');auditLink.type='button';auditLink.dataset.sitePage='audit';auditLink.classList.add('gw-admin-subitem','gw-admin-audit');auditLink.innerHTML='<span class="gw-site-icon">▤</span><span class="gw-site-label">Full Audit Log</span>';
- permissionsNav.classList.add('gw-admin-subitem','gw-admin-permissions');adminSubmenu.append(catalogLink,brandingLink,auditLink,permissionsNav,securityLink,offersLink,extraNav.get('backups'));navButtonAdminPlaceholder();
+ permissionsNav.classList.add('gw-admin-subitem','gw-admin-permissions');adminSubmenu.append(bossHubLink,catalogLink,brandingLink,auditLink,permissionsNav,securityLink,offersLink,extraNav.get('backups'));navButtonAdminPlaceholder();
  function navButtonAdminPlaceholder(){siteNav.querySelector('[data-site-page="admin"]')?.after(adminSubmenu);}
  catalogLink.onclick=()=>document.querySelector('#adminBtn')?.click();
  brandingLink.onclick=()=>window.gwOpenBrandingAdmin?.();
@@ -521,7 +523,7 @@ async function showBackupCenter(){
   if((currentPage==='permissions'||currentPage==='security'||currentPage==='backups')&&!bossAllowed)await showSite('pos');
  }
  async function showSite(page){
-  if(page==='permissions'&&!bossAllowed)return;
+  if((page==='permissions'||page==='bosshub')&&!bossAllowed)return;
    if(page==='audit'&&!canFeature('activity_history'))return;
   if(page==='backups'&&!bossAllowed)return;
   if(page==='security'&&!bossAllowed)return;
@@ -530,13 +532,40 @@ async function showBackupCenter(){
   if(restricted.includes(page)&&!canFeature(featureForPage[page])&&!(page==='loyalty'&&canFeature('loyalty_adjust'))&&!(page==='announcements'&&canFeature('announcements_manage'))&&!(page==='notes'&&canFeature('employee_notes_manage')&&canFeature('employees')))return;
   if(page==='admin'){siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');adminSubmenu.hidden=!adminSubmenu.hidden;return;}
   siteSidebar.classList.remove('collapsed');siteToggle?.setAttribute('aria-expanded','true');siteToggle?.setAttribute('aria-label','Collapse navigation');
-  if(!['permissions','audit','security','backups','offers'].includes(page))adminSubmenu.hidden=true;
+  if(!['permissions','audit','security','backups','offers','bosshub'].includes(page))adminSubmenu.hidden=true;
   salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics','adjustments','productanalytics'].includes(page));
   currentPage=page;
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
   if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
+  if(page==='bosshub'){
+   adminSubmenu.hidden=false;mdtMessage.textContent='';
+   mdtContent.replaceChildren();
+   const title=make('div',undefined,'gw-mdt-head');title.append(make('h2','Boss Control Center'),make('p','Central access to store operations, employee permissions, loyalty, refunds, reporting and system records.'));
+   const grid=make('div',undefined,'gw-feature-grid');
+   const entries=[
+    ['Employee Management','employees','Manage staff, roles and activity'],
+    ['Roles & Permissions','permissions','Customize access by role'],
+    ['Loyalty & Rewards','loyalty','Customers, earning rates and reward catalog'],
+    ['Refunds & Voids','adjustments','Review adjustments and issue authorized corrections'],
+    ['Sales History','history','Search recorded transactions and receipts'],
+    ['Sales Analytics','analytics','Revenue, trends and employee breakdowns'],
+    ['Product Analytics','productanalytics','Best-selling items and product performance'],
+    ['Bundles & Specials','offers','Manage promotional pricing'],
+    ['Audit Log','audit','Review system activity and adjustments'],
+    ['Export & Backup Center','backups','Download business records'],
+    ['Security Center','security','Security and access controls']
+   ];
+   for(const [label,pageId,description] of entries){
+    const card=make('article',undefined,'gw-feature-card');
+    card.append(make('h3',label),make('p',description));
+    const go=make('button','Open '+label,'outline');go.type='button';go.onclick=()=>showSite(pageId);
+    card.append(go);grid.append(card);
+   }
+   mdtContent.append(title,grid);return;
+  }
+
    if(page==='audit'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showActivitySearch(mdtContent,{call,token:()=>token||'',make});
    const appendLog=async(title,rpc,transform)=>{
     const heading=make('h3',title),list=make('div',undefined,'gw-audit-list');mdtContent.append(heading,list);
