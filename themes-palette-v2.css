@@ -1,0 +1,160 @@
+/* Personal Themes V2: curated Green Wonderland, bold, light and dark previews.
+   Each preview uses its own palette, while the actual site keeps the seven
+   existing theme variables. No database migration is required. */
+body[data-theme] #gwSettings .gw-themes-section{
+ margin:4px 0 20px;
+ padding:19px;
+ border:1px solid var(--line);
+ border-radius:14px;
+ background:var(--panel2);
+ color:var(--text);
+}
+body[data-theme] #gwSettings .gw-themes-intro{
+ display:flex;align-items:flex-start;justify-content:space-between;gap:13px;
+}
+body[data-theme] #gwSettings .gw-themes-intro h3{margin:0 0 7px;color:var(--text)}
+body[data-theme] #gwSettings .gw-themes-intro p,
+body[data-theme] #gwSettings .gw-theme-save-hint{
+ margin:0;
+ color:var(--muted);
+ font-size:12px;
+ line-height:1.5;
+}
+body[data-theme] #gwSettings .gw-themes-count{
+ flex:none;border:1px solid var(--line);border-radius:25px;
+ background:var(--panel);font-size:11px;color:var(--muted);
+ padding:6px 10px;
+}
+body[data-theme] #gwSettings .gw-theme-group{margin:19px 0 22px}
+body[data-theme] #gwSettings .gw-theme-group:last-child{margin-bottom:9px}
+body[data-theme] #gwSettings .gw-theme-group h4{
+ color:var(--text);font-weight:800;font-size:13px;letter-spacing:.45px;margin:0 0 5px;
+}
+body[data-theme] #gwSettings .gw-theme-group>p{color:var(--muted);font-size:12px;margin:0 0 10px;line-height:1.4}
+body[data-theme] #gwSettings .gw-theme-grid{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;
+}
+body[data-theme] #gwSettings button.gw-theme-choice{
+ display:flex;flex-direction:column;align-items:stretch;
+ min-width:0;min-height:156px;gap:9px;
+ padding:9px;
+ background:var(--panel)!important;
+ border:1px solid var(--line)!important;border-radius:12px;
+ color:var(--text)!important;position:relative;
+ text-align:left;
+ transition:border-color .15s ease,transform .15s ease;
+}
+body[data-theme] #gwSettings button.gw-theme-choice:hover{
+ border-color:var(--accent)!important;
+ transform:translateY(-2px);
+}
+body[data-theme] #gwSettings button.gw-theme-choice:focus-visible{
+ outline:3px solid var(--accent);outline-offset:2px;
+}
+body[data-theme] #gwSettings button.gw-theme-choice[aria-pressed="true"]{
+ border-color:var(--accent)!important;
+ outline:2px solid var(--accent);
+ outline-offset:-2px;
+}
+body[data-theme] #gwSettings button.gw-theme-choice[aria-pressed="true"]::after{
+ content:'✓';position:absolute;z-index:4;top:15px;right:15px;
+ display:grid;place-items:center;
+ width:21px;height:21px;border-radius:50%;
+ color:var(--theme-bg);background:var(--theme-accent);
+ font-size:12px;font-weight:900;
+ box-shadow:0 2px 8px #0005;
+}
+body[data-theme] #gwSettings .gw-theme-mini{
+ position:relative;display:flex;flex-direction:column;gap:7px;
+ width:100%;height:99px;padding:9px;border-radius:7px;
+ background:var(--theme-bg);
+ border:1px solid var(--theme-border);
+ overflow:hidden;
+}
+body[data-theme] #gwSettings .gw-theme-mini-top{
+ display:flex;align-items:center;gap:6px;min-height:22px;
+ background:var(--theme-panel);border:1px solid var(--theme-border);
+ border-radius:5px;padding:3px 6px;
+}
+body[data-theme] #gwSettings .gw-theme-mini-mark{
+ flex:none;font-size:13px;color:var(--theme-accent);
+}
+body[data-theme] #gwSettings .gw-theme-mini-word{
+ color:var(--theme-text);font-family:'Barlow Condensed',Arial,sans-serif;
+ font-size:10px;letter-spacing:.35px;font-weight:900;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+body[data-theme] #gwSettings .gw-theme-mini-dot{
+ width:7px;height:7px;flex:none;
+ border-radius:50%;background:var(--theme-accent);margin-left:auto;
+}
+body[data-theme] #gwSettings .gw-theme-mini-stats{
+ display:grid;grid-template-columns:1fr 1fr;gap:7px;min-width:0;flex:1;
+}
+body[data-theme] #gwSettings .gw-theme-mini-stat{
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;
+ min-width:0;padding:7px 8px;
+ background:var(--theme-card);border:1px solid var(--theme-border);border-radius:5px;
+}
+body[data-theme] #gwSettings .gw-theme-mini-line{
+ display:block;width:67%;height:4px;border-radius:4px;
+ background:var(--theme-muted);opacity:.65;
+}
+body[data-theme] #gwSettings .gw-theme-mini-value{
+ font-size:13px;line-height:1.1;font-weight:800;color:var(--theme-accent);
+}
+body[data-theme] #gwSettings .gw-theme-mini-action{
+ max-width:100%;align-self:stretch;text-align:center;
+ background:var(--theme-accent);border-radius:4px;
+ color:var(--theme-bg);
+ padding:3px 5px;line-height:1.2;
+ font-size:9px;font-weight:850;
+}
+body[data-theme] #gwSettings .gw-theme-card-footer{
+ display:flex;justify-content:space-between;align-items:center;gap:8px;
+ padding:0 3px;
+}
+body[data-theme] #gwSettings .gw-theme-name{
+ font-size:12px;color:var(--text);font-weight:800;white-space:normal;
+ line-height:1.2;
+}
+body[data-theme] #gwSettings .gw-theme-mode{
+ flex:none;padding:4px 7px;border-radius:12px;
+ border:1px solid var(--line);background:var(--panel2);
+ color:var(--muted);font-size:10px;font-weight:700;
+}
+body[data-theme] #gwSettings button.gw-theme-choice[aria-pressed="true"] .gw-theme-mode{
+ border-color:var(--accent);color:var(--accent);
+}
+body[data-theme] #gwSettings .gw-theme-save-hint{
+ padding-top:11px;border-top:1px solid var(--line);
+}
+@media(max-width:580px){
+ body[data-theme] #gwSettings .gw-themes-section{padding:12px}
+ body[data-theme] #gwSettings .gw-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ body[data-theme] #gwSettings button.gw-theme-choice{min-height:149px;padding:7px}
+ body[data-theme] #gwSettings .gw-theme-mini{height:93px;padding:6px}
+ body[data-theme] #gwSettings .gw-theme-mini-stats{gap:5px}
+ body[data-theme] #gwSettings .gw-theme-mini-stat{padding:5px}
+ body[data-theme] #gwSettings .gw-theme-card-footer{flex-wrap:wrap}
+}
+@media(max-width:350px){
+ body[data-theme] #gwSettings .gw-theme-grid{grid-template-columns:1fr}
+}
+/* Dark accent colors on light backgrounds need white primary button labels.
+   Theme previews use their own colors; these target real site actions only. */
+body[data-theme="mint"] .primary,
+body[data-theme="sage"] .primary,
+body[data-theme="cherry"] .primary,
+body[data-theme="mint"] .gw-site-content .shell button.primary,
+body[data-theme="sage"] .gw-site-content .shell button.primary,
+body[data-theme="cherry"] .gw-site-content .shell button.primary,
+body[data-theme="mint"] .gw-site-content .shell .product button,
+body[data-theme="sage"] .gw-site-content .shell .product button,
+body[data-theme="cherry"] .gw-site-content .shell .product button{
+ color:#fff!important;
+}
+@media(prefers-reduced-motion:reduce){
+ body[data-theme] #gwSettings button.gw-theme-choice{transition:none!important}
+ body[data-theme] #gwSettings button.gw-theme-choice:hover{transform:none!important}
+}
