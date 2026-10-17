@@ -12,11 +12,35 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  const refreshOffers=async()=>{try{try{offers=await rpc('gw_pos_active_offers_v2');}catch(e){offers=await rpc('gw_pos_active_offers');}ready=true;}catch(e){offers=[];ready=false;}onCartChanged();};
  const refreshLoyaltyConfig=async()=>{if(!token()){loyaltyConfigReady=false;return;}try{const rows=await rpc('gw_loyalty_checkout_config',{p_token:token()});const config=Array.isArray(rows)?rows[0]:rows;if(!config)throw Error('Missing loyalty configuration');loyaltyConfig=config;loyaltyConfigReady=true;}catch(e){loyaltyConfigReady=false;}render();onCartChanged();};
  const specials=id=>offers.filter(o=>o.offer_type==='special'&&(String(o.product_id)===String(id)||(Array.isArray(o.items)&&o.items.some(item=>String(item.id)===String(id)))));
+ const specialQty=(o,id)=>{
+  const match=Array.isArray(o.items)?o.items.find(item=>String(item.id)===String(id)):null;
+  if(match)return Math.max(1,Number(match.qty)||1);
+  return String(o.product_id)===String(id)?1:null;
+ };
  const bestSpecial=id=>Math.max(0,...specials(id).map(o=>Number(o.percent_off)||0));
+ const specialRequirement=id=>{
+  const eligible=specials(id).sort((a,b)=>Number(b.percent_off)-Number(a.percent_off));
+  return eligible.length?specialQty(eligible[0],id):1;
+ };
  const eligibleBundles=()=>offers.filter(o=>o.offer_type==='bundle'&&Array.isArray(o.items));
  const preview=()=>{
   const lines=getLines(),subtotal=lines.reduce((n,l)=>n+Number(l.p.price)*l.qty,0);
-  const specialDiscount=lines.reduce((n,l)=>n+Number(l.p.price)*l.qty*bestSpecial(l.p.id)/100,0);
+  const grouped=new Map();
+  for(const line of lines){
+   const id=String(line.p.id),item=grouped.get(id)||{count:0,price:Number(line.p.price)};
+   item.count+=Number(line.qty);grouped.set(id,item);
+  }
+  let specialDiscount=0;
+  for(const [id,{count,price}] of grouped){
+   let highest=0;
+   for(const offer of specials(id)){
+    const needed=specialQty(offer,id);
+    if(!needed||count<needed)continue;
+    const eligibleUnits=Math.floor(count/needed)*needed;
+    highest=Math.max(highest,eligibleUnits*price*(Number(offer.percent_off)||0)/100);
+   }
+   specialDiscount+=highest;
+  }
   let bestBundle=0,appliedBundle='';
   const bundleDetails=[];
   for(const o of eligibleBundles()){
@@ -162,5 +186,5 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   return result;
  };
  return {root,checkoutRewards,favoritesRoot,render,renderFavorites,refreshOffers,toggleFavorite,checkFavorite:id=>favorites.includes(String(id)),
-  bestSpecial,preview,getOffers:()=>offers.slice(),estimateRedemption,checkout,refreshLoyaltyConfig,isReady:()=>ready,getMember:()=>member,getRedeem:()=>redeem,clearMember:()=>setMember(null)};
+  bestSpecial,specialRequirement,preview,getOffers:()=>offers.slice(),estimateRedemption,checkout,refreshLoyaltyConfig,isReady:()=>ready,getMember:()=>member,getRedeem:()=>redeem,clearMember:()=>setMember(null)};
 }
