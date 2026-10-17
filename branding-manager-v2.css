@@ -1,0 +1,135 @@
+/* Branding Manager V2 — keep admin branding separate from personal appearance. */
+#gwSettings.gw-branding-only .gw-themes-section,
+#gwSettings.gw-branding-only .gw-custom-theme-section,
+#gwSettings.gw-branding-only .gw-header-buttons-section,
+#gwSettings.gw-branding-only .gw-header-effects-section,
+#gwSettings.gw-branding-only #gwProfileSection{
+ display:none!important;
+}
+#gwSettings.gw-branding-only #gwBrandingSection>h3{
+ display:none!important;
+}
+#gwSettings.gw-branding-only #gwBrandingSection{
+ display:block;
+}
+#gwSettings.gw-branding-only .dialogHead h2{
+ letter-spacing:.8px;
+}
+#gwSettings .gw-branding-current{
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ gap:9px;
+ padding:15px;
+ margin:15px 0;
+ border:1px solid var(--line);
+ border-radius:10px;
+ background:var(--panel2);
+ color:var(--text);
+}
+#gwSettings .gw-branding-current>strong{
+ font-size:13px;color:var(--text);
+}
+#gwSettings .gw-branding-current-img{
+ display:block;
+ width:100%;
+ max-width:270px;
+ height:115px;
+ max-height:115px;
+ border:1px solid var(--line);
+ border-radius:8px;
+ background:color-mix(in srgb,var(--bg) 85%,transparent);
+ object-fit:contain;
+ padding:10px;
+}
+#gwSettings .gw-branding-current-img[hidden]{display:none!important;}
+#gwSettings .gw-branding-image-note{
+ color:var(--muted);
+ font-size:12px;
+ margin:0;
+}
+#gwSettings.gw-branding-only #gwBrandingAdmin{
+ gap:12px;
+}
+#gwSettings.gw-branding-only #gwBrandingAdmin button{
+ border-radius:8px;
+ padding:12px 15px;
+}
+#gwSettings.gw-branding-only #gwBrandingAdmin select,
+#gwSettings.gw-branding-only #gwBrandingAdmin input[type=url],
+#gwSettings.gw-branding-only #gwBrandingAdmin input[type=file]{
+ width:100%;
+ min-width:0;
+ border-radius:7px;
+}
+
+/* Saved logos on their respective pages. */
+img.gw-branded-image[hidden]{display:none!important;}
+#gwEmployeeDialog .gw-login-brand-logo{
+ display:block;
+ flex:none;
+ width:64px;
+ height:64px;
+ max-width:64px;
+ max-height:64px;
+ margin-right:5px;
+ object-fit:contain;
+ background:transparent!important;
+ border:0!important;
+ box-shadow:none!important;
+}
+#gwEmployeeDialog .dialogHead:has(.gw-login-brand-logo:not([hidden])){
+ justify-content:flex-start;
+}
+#gwEmployeeDialog .dialogHead:has(.gw-login-brand-logo:not([hidden]))>button{
+ margin-left:auto;
+}
+#gwMdtContent .gw-dashboard-brand{
+ display:flex;
+ gap:14px;
+ align-items:center;
+ min-width:0;
+}
+#gwMdtContent .gw-dashboard-brand-copy{
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ min-width:0;
+}
+#gwMdtContent .gw-dashboard-brand-copy h2{
+ color:var(--text);
+ margin:0;
+}
+#gwMdtContent .gw-dashboard-brand-copy p{
+ color:var(--muted);
+ margin:6px 0 0;
+}
+#gwMdtContent .gw-dashboard-brand-logo{
+ display:block;
+ flex:none;
+ width:62px;
+ height:62px;
+ max-width:62px;
+ max-height:62px;
+ object-fit:contain;
+ background:transparent!important;
+ border:0!important;
+ box-shadow:none!important;
+}
+body[data-theme] dialog.gw-paper-receipt .gw-receipt-brand-logo{
+ display:block;
+ margin:0 auto 11px;
+ width:auto;
+ max-width:min(170px,80%);
+ max-height:104px;
+ height:auto;
+ object-fit:contain;
+ border:0!important;
+ box-shadow:none!important;
+ background:transparent!important;
+}
+@media(max-width:600px){
+ #gwEmployeeDialog .gw-login-brand-logo{width:48px;height:48px;max-width:48px;max-height:48px}
+ #gwMdtContent .gw-dashboard-brand-logo{width:46px;height:46px;max-width:46px;max-height:46px}
+ #gwMdtContent .gw-dashboard-brand{gap:10px}
+}
