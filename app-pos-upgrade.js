@@ -102,6 +102,12 @@ function receiptText(s){
  for(const [label,value] of receiptLoyaltyRows(s))rows.push('• '+label+': '+value);
  return rows.join('\n');
 }
+// Reuse the existing receipt modal from MDT Sales History without duplicating checkout logic.
+window.addEventListener('gw-mdt-view-receipt',event=>{
+ const sale=event.detail?.sale;
+ if(!sale?.id)return;
+ showSaleReceipt(sale).catch(error=>console.error('Unable to open receipt:',error));
+});
 async function showSaleReceipt(s){
  if(!saleLines(s).length){const cached=cachedReceiptItems(s.id||s.sale_id);if(cached?.length)s.line_items=cached;}
  if(!s.receipt_financials){try{s.receipt_financials=JSON.parse(localStorage.getItem('gw-receipt-financials-'+String(s.id||s.sale_id))||'null');}catch(e){}}
