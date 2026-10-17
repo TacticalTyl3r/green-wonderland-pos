@@ -1,4 +1,4 @@
-import {createPhase4} from './phase4-pos.js?v=pos-deals-20261017';
+import {createPhase4} from './phase4-pos.js?v=pos-deals-cleanup-20261017';
 import {createPosDeals} from './pos-deals.js?v=pos-deals-20261017';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
