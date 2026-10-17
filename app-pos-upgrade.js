@@ -168,8 +168,10 @@ async function showSaleReceipt(s){
    const deleteBtn=document.createElement('button');
    deleteBtn.type='button';deleteBtn.textContent='Permanently Delete Sale';
    deleteBtn.className='outline';
-   deleteBtn.style.color='#b42318';
-   deleteBtn.style.borderColor='#b42318';
+   deleteBtn.style.setProperty('background-color','#b42318','important');
+   deleteBtn.style.setProperty('color','#ffffff','important');
+   deleteBtn.style.setProperty('border-color','#b42318','important');
+   deleteBtn.style.setProperty('font-weight','700');
    actions.insertBefore(deleteBtn,close);
    deleteBtn.onclick=async()=>{
     const reason=window.prompt('Why are you permanently deleting sale '+deleteId+'? (5-500 characters)','Test transaction');
