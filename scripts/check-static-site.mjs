@@ -105,7 +105,8 @@ if (orderedStyles.includes('themes-global.css')) {
 if (themeFiles.every(file => existsSync(resolve(projectRoot, file)))) {
   const original = Buffer.concat(themeFiles.map(file => readFileSync(resolve(projectRoot, file))));
   const blobHash = createHash('sha1')
-    .update('blob ' + original.length + '\\0')
+    .update('blob ' + original.length)
+    .update(Buffer.from([0]))
     .update(original)
     .digest('hex');
   if (blobHash !== 'cdb271771d6e3f12ccc8c52572a41bbcce7f0e36') {
