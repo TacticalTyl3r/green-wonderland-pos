@@ -48,7 +48,10 @@ export async function showOffersManager(host,{call,token,make,cash}){
   return ['Active','active'];
  };
  const includedNames=o=>{
-  if(o.offer_type==='special')return byId.get(String(o.product_id))?.name||'Catalog product';
+  if(o.offer_type==='special'){
+   const ids=(Array.isArray(o.items)&&o.items.length?o.items:[{id:o.product_id}]).map(x=>x.id);
+   return ids.map(id=>byId.get(String(id))?.name||'Catalog product').join(' · ');
+  }
   const parts=(Array.isArray(o.items)?o.items:[]).map(x=>(Number(x.qty)||1)+'× '+(byId.get(String(x.id))?.name||'Catalog item'));
   const custom=(Array.isArray(o.custom_items)?o.custom_items:[]).map(x=>(Number(x.qty)||1)+'× '+String(x.name||'Custom item'));
   return [...parts,...custom].join(' · ')||'No items';
@@ -144,13 +147,34 @@ export async function showOffersManager(host,{call,token,make,cash}){
   type.add(new Option('Product Bundle','bundle'));type.add(new Option('Product Special','special'));
   type.value=existing?.offer_type||'bundle';
   const special=make('section',undefined,'gw-offer-type-fields');
-  const product=document.createElement('select');
-  for(const p of products)product.add(new Option(p.name+' · '+cash(p.price),String(p.id)));
-  if(existing?.product_id)product.value=String(existing.product_id);
+  const specialParts=make('div',undefined,'gw-offer-item-rows');
+  let specialRows=[];
+  const addSpecialProduct=(id)=>{
+   const wrap=make('div',undefined,'gw-offer-item-row gw-offer-special-item-row');
+   const selector=document.createElement('select');selector.setAttribute('aria-label','Discounted product');
+   for(const p of products)selector.add(new Option(p.name+' · '+cash(p.price),String(p.id)));
+   if(id!=null)selector.value=String(id);
+   const remove=tinyButton('Remove','outline',()=>{
+    if(specialRows.length<=1)return;
+    specialRows=specialRows.filter(r=>r.wrap!==wrap);wrap.remove();
+   },'Remove discounted product');
+   wrap.append(selector,remove);specialParts.append(wrap);
+   specialRows.push({wrap,selector});
+  };
+  const selectedSpecials=existing?.offer_type==='special'&&Array.isArray(existing.items)&&existing.items.length
+   ?existing.items.map(item=>item.id):[existing?.offer_type==='special'?existing.product_id:null];
+  for(const id of selectedSpecials)addSpecialProduct(id);
+  const addSpecial=tinyButton('+ Add Product','outline',()=>{
+   if(specialRows.length>=15)return;
+   const used=new Set(specialRows.map(r=>r.selector.value));
+   const next=products.find(p=>!used.has(String(p.id)));
+   if(!next){return;}
+   addSpecialProduct(next.id);
+  },'Add another discounted product');
   const percent=document.createElement('input');
   percent.type='number';percent.min='0.01';percent.max='100';percent.step='0.01';
   percent.value=String(existing?.percent_off??10);
-  special.append(field('Discounted Product',product),
+  special.append(field('Discounted Products',specialParts,'Add up to 15 products. Each selected product receives the same percentage discount.'),addSpecial,
    field('Percent Off',percent,'A percentage from 0.01 to 100.'));
   const bundle=make('section',undefined,'gw-offer-type-fields');
   const bundlePrice=document.createElement('input');bundlePrice.type='number';
@@ -230,16 +254,20 @@ export async function showOffersManager(host,{call,token,make,cash}){
       throw Error('Enter a valid bundle price.');
     }else{
      const rate=Number(percent.value);
-     if(!product.value||!Number.isFinite(rate)||rate<=0||rate>100)throw Error('Select a product and a valid discount percentage.');
+     const ids=specialRows.map(row=>row.selector.value);
+     if(!ids.length||ids.length>15||ids.some(id=>!id))throw Error('Choose 1 to 15 products.');
+     if(new Set(ids).size!==ids.length)throw Error('Each product can only be added once.');
+     if(!Number.isFinite(rate)||rate<=0||rate>100)throw Error('Enter a valid discount percentage.');
+     lines=ids.map(id=>({id,qty:1}));
     }
     if(start.value&&end.value&&new Date(end.value)<=new Date(start.value))
      throw Error('The ending date must be after the starting date.');
     save.disabled=true;save.textContent='Saving…';message.textContent='';
     const args={
      p_id:existing?.id??null,p_title:name,p_type:type.value,
-     p_product:type.value==='special'?product.value:null,
+     p_product:type.value==='special'?lines[0].id:null,
      p_percent:type.value==='special'?Number(percent.value):null,
-     p_items:type.value==='bundle'?lines:[],
+     p_items:lines,
      p_custom_items:type.value==='bundle'?extras:[],
      p_price:type.value==='bundle'?Number(bundlePrice.value):null,
      p_start:start.value?new Date(start.value).toISOString():null,
