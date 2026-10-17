@@ -10,17 +10,19 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const db=createClient(SUPABASE_URL,SUPABASE_ANON_KEY), key='gw-employee-token';
 let token=sessionStorage.getItem(key)||'',me=null,employees=[];
 const dlg=document.createElement('dialog');dlg.id='gwEmployeeDialog';
-dlg.innerHTML=`<div class="dialogHead"><h2>EMPLOYEE TIME CLOCK</h2><button id="gwEmpClose" class="outline">✕</button></div><div id="gwEmpView"></div><p id="gwEmpMsg" role="status"></p>`;
+dlg.innerHTML=`<div class="dialogHead"><h2>EMPLOYEE LOGIN</h2><button id="gwEmpClose" class="outline">✕</button></div><div id="gwEmpView"></div><p id="gwEmpMsg" role="status"></p>`;
 document.body.append(dlg);
 const view=dlg.querySelector('#gwEmpView'),msg=s=>dlg.querySelector('#gwEmpMsg').textContent=s;
 const clockStatus=document.querySelector('#gwClockStatus');
 const quickClock=document.querySelector('#gwQuickClock');
+const loginButton=document.querySelector('#gwLoginBtn');
 let quickClockBusy=false;
-async function quickClockAction(){if(quickClockBusy)return;if(!token||!me){button.click();return;}quickClockBusy=true;quickClock.disabled=true;try{await call('gw_clock',{p_token:token,p_clock_in:!me.clocked_in});await refresh();}catch(e){alert('Time clock: '+e.message);}finally{quickClockBusy=false;quickClock.disabled=false;}}
+async function quickClockAction(){if(quickClockBusy)return;if(!token||!me){alert('Please use Login and enter your employee PIN before clocking in or out.');return;}quickClockBusy=true;quickClock.disabled=true;try{await call('gw_clock',{p_token:token,p_clock_in:!me.clocked_in});await refresh();}catch(e){alert('Time clock: '+e.message);}finally{quickClockBusy=false;quickClock.disabled=false;}}
 quickClock?.addEventListener('click',quickClockAction);
+loginButton?.addEventListener('click',async()=>{dlg.showModal();await refresh();});
 const weeklyHours=document.querySelector('#gwWeeklyHours');
 async function refreshWeeklyHours(){if(!weeklyHours)return;if(!token||!me){weeklyHours.textContent='This Week: —';return;}try{const hours=await call('gw_my_weekly_hours',{p_token:token});weeklyHours.textContent='This Week: '+Number(hours||0).toFixed(2)+' hrs';}catch(e){weeklyHours.textContent='This Week: unavailable';}}
-function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);clockStatus.classList.toggle('off-duty',!me?.clocked_in);}if(quickClock){quickClock.textContent=me?.clocked_in?'Clock Out':'Clock In';quickClock.classList.toggle('on-duty',!!me?.clocked_in);quickClock.classList.toggle('off-duty',!me?.clocked_in);}}
+function updateClockStatus(){if(clockStatus){clockStatus.textContent=me?(me.clocked_in?'● Clocked In · ':'○ Clocked Out · ')+me.employee_name:'○ Not Clocked In';clockStatus.classList.toggle('on-duty',!!me?.clocked_in);clockStatus.classList.toggle('off-duty',!me?.clocked_in);}if(quickClock){quickClock.textContent=me?.clocked_in?'Clock Out':'Clock In';quickClock.classList.toggle('on-duty',!!me?.clocked_in);quickClock.classList.toggle('off-duty',!me?.clocked_in);}if(loginButton){loginButton.textContent=me?'Account: '+me.employee_name:'Login';loginButton.title=me?'Manage employee login or sign out':'Sign in using your employee PIN';}}
 dlg.querySelector('#gwEmpClose').onclick=()=>dlg.close();
 const button=document.createElement('button');button.id='gwEmployeeAccess';button.className='outline';button.textContent='◷ Employee';button.onclick=async()=>{dlg.showModal();await refresh();};document.querySelector('header .actions')?.append(button);
 const select=document.createElement('select');select.id='gwSaleEmployee';select.setAttribute('aria-label','Employee credited for this sale');
@@ -49,10 +51,8 @@ async function refresh(){
  }else{
  const title=document.createElement('h3');title.textContent=`${me.employee_name} • ${me.employee_role}`;
  const status=document.createElement('p');status.textContent=me.clocked_in?'● Currently clocked in':'○ Currently clocked out';
- const clock=document.createElement('button');clock.className='primary';clock.textContent=me.clocked_in?'Clock out':'Clock in';
- clock.onclick=async()=>{clock.disabled=true;try{const result=await call('gw_clock',{p_token:token,p_clock_in:!me.clocked_in});await refresh();msg(result);}catch(e){msg(e.message);clock.disabled=false;}};
  const logout=document.createElement('button');logout.textContent='Sign out';logout.onclick=async()=>{try{await call('gw_pin_logout',{p_token:token});}finally{token='';me=null;sessionStorage.removeItem(key);window.dispatchEvent(new Event('gw-employee-session-changed'));updateClockStatus();await refresh();}};
- view.append(title,status,clock,logout);
+ view.append(title,status,logout);
  }
  updateAttribution();window.gwRefreshRoleNavigation?.();
  }catch(e){msg(e.message);}
