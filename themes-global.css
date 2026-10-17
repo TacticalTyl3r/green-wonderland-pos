@@ -714,3 +714,11 @@ body[data-theme] .gw-history-intro{line-height:1.65}
 .gw-checkout-rewards-actions{display:flex;gap:6px;align-items:center}
 .gw-checkout-rewards-actions input,.gw-checkout-rewards-actions select{min-width:0;flex:1;height:33px;padding:5px}
 .gw-checkout-rewards-actions button{flex:none;min-height:33px;padding:5px 9px;font-size:11px}
+
+/* Sales history controls — responsive and independent of sticky checkout sizing. */
+.gw-history-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));align-items:end;gap:10px;margin:12px 0 14px}
+.gw-history-filter-field{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;min-width:0}
+.gw-history-filter-field input,.gw-history-filter-field select{width:100%;min-width:0;max-width:100%;box-sizing:border-box;padding:9px;border-radius:7px}
+.gw-history-filters>button{min-height:38px}
+.gw-history-result-count{font-size:13px;opacity:.82;margin:6px 0 10px}
+@media(max-width:550px){.gw-history-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.gw-history-filter-field:first-child{grid-column:1/-1}.gw-history-filters>button{grid-column:1/-1}}
