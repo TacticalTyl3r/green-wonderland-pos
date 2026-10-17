@@ -144,3 +144,113 @@ body[data-header-motion-reduced="true"] #gwSettings .gw-effect-live-preview::aft
  #gwSettings .gw-effect-preview *,#gwSettings .gw-effect-preview::before,#gwSettings .gw-effect-preview::after,
  #gwSettings .gw-effect-live-preview *,#gwSettings .gw-effect-live-preview::before,#gwSettings .gw-effect-live-preview::after{animation:none!important;transition:none!important}
 }
+
+/* Header branding: remove the inherited rotated logo frame.
+   The original image and its aspect ratio remain intact. */
+body[data-theme] .gw-site-content .gw-global-header .brand .mark{
+ transform:none!important;
+ border:0!important;
+ background:transparent!important;
+ box-shadow:none!important;
+ border-radius:0!important;
+ padding:0!important;
+ outline:0!important;
+ overflow:visible!important;
+}
+body[data-theme] .gw-site-content .gw-global-header .brand .mark img.gw-logo{
+ display:block;
+ width:100%;
+ height:100%;
+ max-width:100%;
+ max-height:100%;
+ object-fit:contain;
+ background:transparent!important;
+ border:0!important;
+ box-shadow:none!important;
+ transform:none!important;
+}
+
+/* Only the header button backgrounds change transparency; button text and
+   borders remain opaque for accessibility and click-target visibility. */
+body[data-theme] .gw-site-content .gw-global-header .actions button{
+ background:color-mix(in srgb,var(--panel2) var(--gw-header-button-fill,100%),transparent)!important;
+}
+body[data-theme] .gw-site-content .gw-global-header .actions button:hover:not(:disabled){
+ background:color-mix(in srgb,var(--gw-accent-soft) var(--gw-header-button-fill,100%),transparent)!important;
+}
+body[data-theme] .gw-site-content .gw-global-header .actions #gwQuickClock.off-duty{
+ background:color-mix(in srgb,#16452a var(--gw-header-button-fill,100%),transparent)!important;
+}
+body[data-theme] .gw-site-content .gw-global-header .actions #gwQuickClock.on-duty{
+ background:color-mix(in srgb,#512225 var(--gw-header-button-fill,100%),transparent)!important;
+}
+
+/* Appearance slider lives beside header animations and respects all themes. */
+#gwSettings .gw-header-buttons-section{
+ margin:20px 0;
+ padding:18px;
+ border:1px solid var(--line);
+ border-radius:14px;
+ background:var(--panel2);
+ color:var(--text);
+}
+#gwSettings .gw-header-buttons-section h3{
+ margin:0 0 8px;
+ color:var(--text);
+}
+#gwSettings .gw-header-buttons-section p{
+ color:var(--muted);
+ font-size:13px;
+}
+#gwSettings .gw-header-opacity-head{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:14px;
+ margin:17px 0 9px;
+}
+#gwSettings .gw-header-opacity-head label{
+ margin:0;
+ font-size:13px;
+ color:var(--text);
+ font-weight:700;
+}
+#gwSettings #gwButtonOpacityValue{
+ font-size:14px;
+ color:var(--accent);
+ font-variant-numeric:tabular-nums;
+}
+#gwSettings input#gwButtonOpacity{
+ display:block;
+ width:100%;
+ margin:10px 0 15px;
+ padding:0;
+ cursor:pointer;
+ accent-color:var(--accent);
+ background:transparent!important;
+ border:0!important;
+}
+#gwSettings .gw-header-opacity-preview{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:9px;
+ padding:20px 13px;
+ background:radial-gradient(circle at 23% 55%,color-mix(in srgb,var(--accent) 42%,transparent),transparent 45%),repeating-linear-gradient(115deg,color-mix(in srgb,var(--accent) 14%,transparent) 0 9px,transparent 9px 25px),var(--panel);
+ border:1px solid var(--line);
+ border-radius:9px;
+}
+#gwSettings .gw-header-opacity-example{
+ display:inline-block;
+ border:1px solid var(--line);
+ border-radius:6px;
+ color:var(--text);
+ font-size:12px;
+ font-weight:750;
+ padding:9px 12px;
+ background:color-mix(in srgb,var(--panel2) var(--gw-header-button-fill,100%),transparent);
+}
+#gwSettings #gwButtonOpacityMessage{
+ min-height:17px;
+ margin-top:10px;
+}
