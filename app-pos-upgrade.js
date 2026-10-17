@@ -158,6 +158,40 @@ async function showSaleReceipt(s){
  showDiscounts();showLoyalty();
 
   dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();
+ // Boss-only permanent deletion: authorization is verified again by the RPC.
+ // Never allow a missing or ambiguous sale ID to be submitted.
+ const deleteToken=sessionStorage.getItem('gw-employee-token')||'';
+ const deleteId=String(s.id||s.sale_id||'');
+ if(db&&deleteToken&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deleteId)){
+  const {data:bossAccess,error:bossError}=await db.rpc('gw_boss_pin_check',{p_token:deleteToken});
+  if(!bossError&&bossAccess===true&&dlg.open){
+   const deleteBtn=document.createElement('button');
+   deleteBtn.type='button';deleteBtn.textContent='Permanently Delete Sale';
+   deleteBtn.className='outline';
+   deleteBtn.style.color='#b42318';
+   deleteBtn.style.borderColor='#b42318';
+   actions.insertBefore(deleteBtn,close);
+   deleteBtn.onclick=async()=>{
+    const reason=window.prompt('Why are you permanently deleting sale '+deleteId+'? (5-500 characters)','Test transaction');
+    if(reason===null)return;
+    if(reason.trim().length<5||reason.trim().length>500){window.alert('Deletion reason must be 5-500 characters.');return;}
+    const typed=window.prompt('PERMANENT DELETION: This removes sale records and attempts to reverse loyalty effects. Type DELETE to confirm.','');
+    if(typed!=='DELETE')return;
+    if(!window.confirm('Final confirmation: permanently delete sale '+deleteId+' for '+money(s.total)+'? This cannot be undone.'))return;
+    deleteBtn.disabled=true;deleteBtn.textContent='Deleting sale…';
+    try{
+     const {error}=await db.rpc('gw_boss_delete_sale',{p_token:deleteToken,p_sale:deleteId,p_reason:reason.trim()});
+     if(error)throw new Error(error.message);
+     dlg.close();
+     window.alert('Sale permanently deleted. Sales History will refresh.');
+     window.location.reload();
+    }catch(error){
+     window.alert('Sale was not deleted: '+error.message);
+     deleteBtn.disabled=false;deleteBtn.textContent='Permanently Delete Sale';
+    }
+   };
+  }
+ }
  // Receipt loyalty details are independent of itemized product lookup.
  // A failed or unavailable items RPC must never hide earned points.
  const token=sessionStorage.getItem('gw-employee-token')||'';
