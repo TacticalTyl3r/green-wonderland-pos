@@ -207,8 +207,12 @@ export function createPosDeals({
   card.append(meta,el('h3','',titleFor(o)));
   const list=el('div','gw-pos-deal-inclusions');
   for(const x of selected)list.append(el('span','',x.qty+'× '+x.p.name));
+  for(const extra of extrasFor(o)){
+   list.append(el('span','gw-pos-deal-extra',(Number(extra.qty)||1)+'× '+String(extra.name||'Custom extra')+' (included extra)'));
+  }
   card.append(list);
-  const note=el('small','gw-pos-deal-special-note','Buy the listed quantity of an eligible product to receive the percentage discount on complete groups.');
+  const note=el('small','gw-pos-deal-special-note',
+   'Buy the listed catalog quantity for the discount. Custom extras are fulfillment reminders, not automatically added to the paid cart or percentage discount.');
   card.append(note);
   const chooser=el('div','gw-pos-deal-special-choice');
   const select=el('select');select.setAttribute('aria-label','Select discounted product for '+titleFor(o));
@@ -230,7 +234,8 @@ export function createPosDeals({
   const q=search.value.trim().toLowerCase();
   const matching=offers.filter(o=>{
    const parts=validParts(o).map(x=>productName(x)).join(' ');
-   return (titleFor(o)+' '+parts).toLowerCase().includes(q);
+   const extras=extrasFor(o).map(x=>String(x.name||'')).join(' ');
+   return (titleFor(o)+' '+parts+' '+extras).toLowerCase().includes(q);
   });
   status.textContent=offers.length+' active offer'+(offers.length===1?'':'s')+' · Discounts are calculated in Current Order. Ring up different bundles separately; only the highest savings path applies per checkout.';
   if(!matching.length){
