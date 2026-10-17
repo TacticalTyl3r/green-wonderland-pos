@@ -51,7 +51,7 @@ export async function showSaleAdjustments(host,{call,token,canFeature,cash,make}
     list.append(card);
    }
    if(!sales.length)list.append(make('p','No matching sales.'));
-   const changes=await rpc('gw_mdt_sale_adjustments_list');
+   const changes=await rpc('gw_mdt_sale_adjustments_details');
    const loyaltyByAdjustment=new Map();
    let loyaltyStatus='';
    try{const ledger=await rpc('gw_mdt_adjustment_loyalty_audit');for(const a of ledger||[])loyaltyByAdjustment.set(String(a.adjustment_id),a);}catch(err){loyaltyStatus='Loyalty audit requires the new database update.';}
