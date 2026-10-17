@@ -668,7 +668,7 @@ async function showBackupCenter(){
    return;}
   if(page==='backups'){adminSubmenu.hidden=false;await showBackupCenter();return;}
   if(page==='security'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showSecurityCenter(mdtContent,{call,token:()=>token||'',make,cash});
-   try{const {showSessionHealth}=await import('./security-session-insights.js?v=security-monitoring-20261016');
+   try{const {showSessionHealth}=await import('./security-session-insights.js?v=unified-security-20261016');
     await showSessionHealth(mdtContent,{call,token:()=>token||'',make});
    }catch(err){console.warn('Optional session health panel unavailable',err);}
    return;}
