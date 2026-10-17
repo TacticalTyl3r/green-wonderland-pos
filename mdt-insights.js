@@ -32,7 +32,13 @@ export async function showAnalytics(host,{call,token,cash,make}){
     chart.append(discountButton,discountHost);
     discountButton.onclick=async()=>{
      discountButton.disabled=true;discountHost.replaceChildren(make('p','Reading stored receipt totals…'));
-     const ids=(sales||[]).map(x=>x.id||x.sale_id).filter(Boolean).slice(0,100);
+     try{
+     let detailed=[];
+     try{detailed=await call('gw_pos_search_sales',{p_token:token(),p_query:''})||[];}catch(e){}
+     const ids=(detailed.length?detailed:sales||[]).filter(x=>{
+      const date=Date.parse(x.created_at||'');
+      return !Number.isFinite(date)||(date>=start.getTime()&&date<=end.getTime());
+     }).map(x=>x.sale_id||x.id).filter(Boolean).slice(0,100);
      const totals={manual_discount:0,offer_discount:0,reward_discount:0};let found=0;
      for(let i=0;i<ids.length;i+=8){
       const results=await Promise.all(ids.slice(i,i+8).map(async id=>{
@@ -46,7 +52,8 @@ export async function showAnalytics(host,{call,token,cash,make}){
       const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',name),make('strong',cash(v)));values.append(card);
      }
      discountHost.append(values,make('p',found+' of '+ids.length+' recent receipts contained saved breakdowns; sample limited to 100 transactions.'));
-     discountButton.disabled=false;
+     }catch(error){discountHost.replaceChildren(make('p','Discount reporting unavailable: '+error.message));}
+     finally{discountButton.disabled=false;}
     };
    }catch(error){breakdown.append(make('p','Employee totals unavailable: '+error.message));}
    const byDay=new Map(rows.map(r=>[r.day.slice(0,10),{sales:Number(r.sales||0),orders:Number(r.orders||0)}]));
