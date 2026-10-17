@@ -28,7 +28,33 @@ const keys=['--bg','--panel','--panel2','--line','--text','--muted','--accent'];
 const storeKey='gw-theme-v1';
 const customKey='gw-custom-theme-v1';
 const effectKey='gw-header-effect-v1';
-const effects=[['none','None'],['haze','Floating Haze'],['glow','Moving Glow'],['particles','Floating Particles'],['aurora','Aurora Gradient'],['neon','Neon Sign'],['scan','Digital Scan'],['spotlight','Spotlight Sweep'],['border','Light Trail'],['botanical','Botanical Ambient'],['combo','Haze + Glow'],['pulse','Soft Pulse'],['shimmer','Logo Shimmer'],['waves','Ambient Waves'],['grid','Digital Grid'],['stars','Twinkling Stars'],['breathe','Breathing Accent'],['gradient','Gradient Flow'],['aurora-stars','Aurora + Stars'],['neon-scan','Neon + Scan'],['haze-particles','Haze + Particles'],['glow-trail','Glow + Trail'],['cosmic','Cosmic Drift']];
+const effectGroups=[
+ {title:'Static',description:'A clean header with no movement.',options:[['none','None','No animation']]},
+ {title:'🌿 Cannabis-Inspired',description:'Smoke, cannabis leaves, and bold Green Wonderland character.',options:[
+  ['kush-smoke','Kush Smoke','Smooth clouds of drifting smoke'],
+  ['neon-leaf','Neon Cannabis Leaf','A glowing leaf with a bright pulse'],
+  ['floating-leaves','Floating Cannabis Leaves','Cannabis leaves drifting upward'],
+  ['four-twenty','420 After Dark','A flickering green neon 420 sign'],
+  ['psychedelic','Psychedelic High','Colorful, swirling psychedelic light'],
+  ['cannabis-spotlight','Cannabis Spotlight','Moving spotlight with a leaf silhouette']
+ ]},
+ {title:'⚡ High-Energy',description:'Bright lighting and lively modern effects.',options:[
+  ['electric-lime','Electric Lime','Electric green energy streaks'],
+  ['rainbow-prism','Rainbow Prism','Full-spectrum rotating color'],
+  ['laser-show','Laser Show','Sweeping nightclub-style laser beams'],
+  ['holographic','Holographic Shift','Shifting iridescent light'],
+  ['spark-burst','Spark Burst','Bright drifting sparks'],
+  ['cyber-glitch','Cyber Glitch','Glitching digital scan lines']
+ ]},
+ {title:'🎉 Holiday & Seasonal',description:'Seasonal options you can switch on whenever you like.',options:[
+  ['holiday-halloween','Halloween Haunt','Orange-purple glow, pumpkins and bats'],
+  ['holiday-snow','Winter Snowfall','Falling snowflakes and icy blue light'],
+  ['holiday-lights','Festive Lights','Twinkling multicolor holiday lights'],
+  ['holiday-hearts','Valentine Hearts','Floating pink and red hearts']
+ ]}
+];
+const effects=effectGroups.flatMap(group=>group.options);
+const motionKey='gw-header-reduced-motion-v1';
 const validHex=v=>/^#[0-9a-f]{6}$/i.test(v);
 function customPalette(){try{const p=JSON.parse(localStorage.getItem(customKey)||'null');return Array.isArray(p)&&p.length===7&&p.every(validHex)?p:null;}catch{return null;}}
 function applyHeaderEffect(name){const selected=effects.some(e=>e[0]===name)?name:'none';document.body.dataset.headerEffect=selected;}
@@ -39,7 +65,7 @@ function image(url,alt,css){const el=document.createElement('img');el.src=url;el
 function renderFavicon(){const url=branding.favicon_url;let link=document.querySelector('link[data-gw-favicon]');if(!link){link=document.createElement('link');link.rel='icon';link.setAttribute('data-gw-favicon','');document.head.append(link);}if(url){link.type=url.toLowerCase().split('?')[0].endsWith('.png')?'image/png':url.toLowerCase().split('?')[0].endsWith('.webp')?'image/webp':'image/jpeg';link.href=url+(url.includes('?')?'&':'?')+'gwicon='+Date.now();}else{link.type='image/svg+xml';link.href='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#10271b"/><text x="32" y="46" font-size="44" text-anchor="middle" fill="#4cdb8c">✦</text></svg>');}}
 function renderLogo(){const el=document.querySelector('.mark');if(!el)return;el.replaceChildren();if(branding.main_logo_url)el.append(image(branding.main_logo_url,'Green Wonderland logo','gw-logo'));else el.textContent='✦';}
 async function loadBranding(){const {data,error}=await db.from('gw_branding').select('slot,image_url').eq('active',true);if(!error){branding=Object.fromEntries((data||[]).map(r=>[r.slot+'_url',r.image_url]));renderLogo();renderFavicon();}}
-const root=document.createElement('dialog');root.id='gwSettings';root.innerHTML=`<div class="dialogHead"><h2>SETTINGS & APPEARANCE</h2><button class="outline" id="gwClose">✕</button></div><h3>Personal theme</h3><div class="gw-theme-grid" id="gwThemes"></div><p>Your theme is saved on this browser.</p><section class="gw-custom-theme-section"><h3>Build Your Own Theme</h3><p>Customize all seven colors and save your own personal theme. Changes only affect this browser.</p><div class="gw-custom-color-grid" id="gwCustomColors"></div><div class="gw-custom-actions"><button type="button" id="gwCustomPreview" class="outline">Preview Theme</button><button type="button" id="gwCustomSave" class="primary">Save My Theme</button><button type="button" id="gwCustomReset" class="outline">Reset Colors</button></div><p id="gwCustomMessage" role="status"></p></section><section class="gw-header-effects-section"><h3>Header Animation</h3><p>Choose an effect, preview it on the header, then save. Animation colors automatically follow your selected theme.</p><div class="gw-effects-grid" id="gwHeaderEffects"></div><div class="gw-custom-actions gw-effect-actions"><button type="button" class="primary" id="gwEffectSave">Save Header Animation</button><button type="button" class="outline" id="gwEffectCancel">Revert Preview</button></div><p id="gwEffectMessage" role="status"></p></section><section id="gwProfileSection"><h3>My Profile Picture</h3><p>Sign in using your employee PIN, then paste a public HTTPS image URL to display your photo on the Employee Roster.</p><div class="gw-profile-settings"><img id="gwProfilePreview" alt="Your profile picture preview" hidden><input id="gwProfileUrl" type="url" placeholder="https://example.com/my-photo.jpg"><button id="gwProfileSave" class="primary" type="button">Save Profile Picture</button></div><p id="gwProfileMessage" role="status"></p></section><div id="gwBrandingSection" hidden><h3>Branding & Images</h3><p>Only authorized administrators can upload images. Branding updates apply to all visitors.</p><div id="gwBrandingAdmin"></div></div><p id="gwSettingsMessage" role="status"></p>`;
+const root=document.createElement('dialog');root.id='gwSettings';root.innerHTML=`<div class="dialogHead"><h2>SETTINGS & APPEARANCE</h2><button class="outline" id="gwClose">✕</button></div><h3>Personal theme</h3><div class="gw-theme-grid" id="gwThemes"></div><p>Your theme is saved on this browser.</p><section class="gw-custom-theme-section"><h3>Build Your Own Theme</h3><p>Customize all seven colors and save your own personal theme. Changes only affect this browser.</p><div class="gw-custom-color-grid" id="gwCustomColors"></div><div class="gw-custom-actions"><button type="button" id="gwCustomPreview" class="outline">Preview Theme</button><button type="button" id="gwCustomSave" class="primary">Save My Theme</button><button type="button" id="gwCustomReset" class="outline">Reset Colors</button></div><p id="gwCustomMessage" role="status"></p></section><section class="gw-header-effects-section"><div class="gw-effect-intro"><div><h3>Header Animations</h3><p>Pick an effect to preview it in the sample header and on the site. Save to keep it on this browser.</p></div><span class="gw-effect-total">17 choices</span></div><div class="gw-effect-live-preview" id="gwEffectLivePreview" data-preview-effect="none"><span class="gw-effect-live-logo">✦</span><span class="gw-effect-live-text"><strong>GREEN WONDERLAND</strong><small id="gwEffectPreviewName">No animation</small></span><span class="gw-effect-live-tag">POS / MDT</span></div><div class="gw-effect-saved" id="gwEffectSaved">Saved: None</div><div id="gwHeaderEffects" class="gw-effects-catalog"></div><label class="gw-effect-reduce-motion"><input type="checkbox" id="gwEffectReducedMotion"><span><strong>Reduce motion</strong><small>Show the design without continuous movement on this device.</small></span></label><div class="gw-custom-actions gw-effect-actions"><button type="button" class="primary" id="gwEffectSave">Save Header Animation</button><button type="button" class="outline" id="gwEffectCancel">Revert Preview</button></div><p id="gwEffectMessage" role="status"></p></section><section id="gwProfileSection"><h3>My Profile Picture</h3><p>Sign in using your employee PIN, then paste a public HTTPS image URL to display your photo on the Employee Roster.</p><div class="gw-profile-settings"><img id="gwProfilePreview" alt="Your profile picture preview" hidden><input id="gwProfileUrl" type="url" placeholder="https://example.com/my-photo.jpg"><button id="gwProfileSave" class="primary" type="button">Save Profile Picture</button></div><p id="gwProfileMessage" role="status"></p></section><div id="gwBrandingSection" hidden><h3>Branding & Images</h3><p>Only authorized administrators can upload images. Branding updates apply to all visitors.</p><div id="gwBrandingAdmin"></div></div><p id="gwSettingsMessage" role="status"></p>`;
 document.body.append(root);
 const themeGrid=root.querySelector('#gwThemes');
 for(const [name,palette] of Object.entries(themes)){const b=document.createElement('button');b.type='button';b.className='gw-theme-choice';b.innerHTML=`<span class="gw-swatch" style="background:${palette[0]};border-color:${palette[6]}"><i style="background:${palette[6]}"></i></span><span>${labels[name]}</span>`;b.onclick=()=>{applyTheme(name);refreshSelection();};themeGrid.append(b);}
@@ -56,14 +82,56 @@ root.querySelector('#gwCustomPreview').onclick=()=>{keys.forEach((key,i)=>docume
 root.querySelector('#gwCustomSave').onclick=()=>{localStorage.setItem(customKey,JSON.stringify(readColors()));applyTheme('custom');syncCustomSwatch();refreshSelection();root.querySelector('#gwCustomMessage').textContent='Custom theme saved to this browser.';};
 root.querySelector('#gwCustomReset').onclick=()=>{syncColors(themes.wonderland);root.querySelector('#gwCustomMessage').textContent='Colors reset to Wonderland defaults. Save to apply.';};
 const effectGrid=root.querySelector('#gwHeaderEffects');
-for(const [name,label] of effects){const b=document.createElement('button');b.type='button';b.className='gw-effect-choice';b.dataset.effect=name;const preview=document.createElement('span');preview.className='gw-effect-preview';preview.dataset.previewEffect=name;const visual=document.createElement('span');visual.className='gw-effect-preview-visual';const word=document.createElement('span');word.className='gw-effect-preview-word';word.textContent='GW';preview.append(visual,word);const caption=document.createElement('span');caption.className='gw-effect-caption';caption.textContent=label;b.append(preview,caption);b.onclick=()=>{applyHeaderEffect(name);refreshEffects();effectMessage.textContent='Previewing '+label+'. Click Save Header Animation to keep it.';};effectGrid.append(b);}
-function refreshEffects(){effectGrid.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.effect===document.body.dataset.headerEffect));}
 const effectMessage=root.querySelector('#gwEffectMessage');
-function savedEffect(){return localStorage.getItem(effectKey)||'none';}
-root.querySelector('#gwEffectSave').onclick=()=>{localStorage.setItem(effectKey,document.body.dataset.headerEffect||'none');effectMessage.textContent='Header animation saved on this browser.';refreshEffects();};
-root.querySelector('#gwEffectCancel').onclick=()=>{applyHeaderEffect(savedEffect());refreshEffects();effectMessage.textContent='Preview reverted to your saved animation.';};
-root.addEventListener('close',()=>{if(document.body.dataset.headerEffect!==savedEffect()){applyHeaderEffect(savedEffect());refreshEffects();}});
-applyHeaderEffect(savedEffect());refreshEffects();syncCustomSwatch();
+const effectLive=root.querySelector('#gwEffectLivePreview');
+const effectReduced=root.querySelector('#gwEffectReducedMotion');
+const effectSaved=root.querySelector('#gwEffectSaved');
+function savedEffect(){const effect=localStorage.getItem(effectKey)||'none';return effects.some(([id])=>id===effect)?effect:'none';}
+function savedReducedMotion(){return localStorage.getItem(motionKey)==='true';}
+function applyReducedMotion(value){document.body.dataset.headerMotionReduced=value?'true':'false';effectReduced.checked=Boolean(value);}
+function effectLabel(id){return effects.find(([effect])=>effect===id)?.[1]||'None';}
+for(const group of effectGroups){
+ const section=document.createElement('section');section.className='gw-effect-group';
+ const heading=document.createElement('h4');heading.textContent=group.title;
+ const description=document.createElement('p');description.textContent=group.description;
+ const grid=document.createElement('div');grid.className='gw-effects-grid';
+ for(const [id,label,detail] of group.options){
+  const button=document.createElement('button');button.type='button';button.className='gw-effect-choice';button.dataset.effect=id;
+  button.setAttribute('aria-label','Preview '+label);
+  const preview=document.createElement('span');preview.className='gw-effect-preview';preview.dataset.previewEffect=id;
+  const word=document.createElement('span');word.className='gw-effect-preview-word';word.textContent='GW';
+  preview.append(word);
+  const caption=document.createElement('span');caption.className='gw-effect-caption';caption.textContent=label;
+  const sub=document.createElement('span');sub.className='gw-effect-desc';sub.textContent=detail;
+  button.append(preview,caption,sub);
+  button.addEventListener('click',()=>{applyHeaderEffect(id);refreshEffects();effectMessage.textContent='Previewing '+label+'. Save to keep it.';});
+  grid.append(button);
+ }
+ section.append(heading,description,grid);effectGrid.append(section);
+}
+function refreshEffects(){
+ const current=document.body.dataset.headerEffect||'none';
+ effectGrid.querySelectorAll('.gw-effect-choice').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.effect===current)));
+ effectLive.dataset.previewEffect=current;
+ root.querySelector('#gwEffectPreviewName').textContent=effectLabel(current);
+ effectSaved.textContent='Saved: '+effectLabel(savedEffect())+(savedReducedMotion()?' · Reduced motion':'');
+}
+effectReduced.addEventListener('change',()=>{applyReducedMotion(effectReduced.checked);effectMessage.textContent='Motion preference previewing. Save to keep it.';});
+root.querySelector('#gwEffectSave').onclick=()=>{
+ localStorage.setItem(effectKey,document.body.dataset.headerEffect||'none');
+ localStorage.setItem(motionKey,effectReduced.checked?'true':'false');
+ refreshEffects();effectMessage.textContent='Header animation and motion preference saved on this browser.';
+};
+root.querySelector('#gwEffectCancel').onclick=()=>{
+ applyHeaderEffect(savedEffect());applyReducedMotion(savedReducedMotion());refreshEffects();
+ effectMessage.textContent='Preview reverted to your saved appearance.';
+};
+root.addEventListener('close',()=>{
+ if(document.body.dataset.headerEffect!==savedEffect()||effectReduced.checked!==savedReducedMotion()){
+  applyHeaderEffect(savedEffect());applyReducedMotion(savedReducedMotion());refreshEffects();
+ }
+});
+applyHeaderEffect(savedEffect());applyReducedMotion(savedReducedMotion());refreshEffects();syncCustomSwatch();
 function refreshSelection(){themeGrid.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-pressed',(i<Object.keys(themes).length?Object.keys(themes)[i]:'custom')===localStorage.getItem(storeKey)));}
 applyTheme(localStorage.getItem(storeKey)||'wonderland');refreshSelection();
 const trigger=document.createElement('button');trigger.className='outline';trigger.textContent='⚙ Settings';trigger.onclick=async()=>{root.querySelector('#gwBrandingSection').hidden=true;root.showModal();await refreshProfile();};
