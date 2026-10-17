@@ -1,7 +1,7 @@
 // Boss-managed offers and item-based sales insights for Green Wonderland.
 // Offers Manager V2: product-style searchable table + modal create/edit workflow.
-// Custom bundle entries are descriptive inclusions; automatic checkout discount
-// math still matches catalog items, preserving authoritative prices and receipts.
+// Custom offer entries are descriptive extras, never independently priced products.
+// Checkout discount math remains tied to catalog items and authoritative prices.
 export async function showOffersManager(host,{call,token,make,cash}){
  host.replaceChildren();
  const rpc=(name,args={})=>call(name,{p_token:token(),...args});
@@ -50,7 +50,9 @@ export async function showOffersManager(host,{call,token,make,cash}){
  const includedNames=o=>{
   if(o.offer_type==='special'){
    const items=Array.isArray(o.items)&&o.items.length?o.items:[{id:o.product_id,qty:1}];
-   return items.map(item=>(Number(item.qty)||1)+'× '+(byId.get(String(item.id))?.name||'Catalog product')).join(' · ');
+   const extras=Array.isArray(o.custom_items)?o.custom_items:[];
+   return [...items.map(item=>(Number(item.qty)||1)+'× '+(byId.get(String(item.id))?.name||'Catalog product')),
+    ...extras.map(item=>(Number(item.qty)||1)+'× '+String(item.name||'Custom extra')+' (extra)')].join(' · ');
   }
   const parts=(Array.isArray(o.items)?o.items:[]).map(x=>(Number(x.qty)||1)+'× '+(byId.get(String(x.id))?.name||'Catalog item'));
   const custom=(Array.isArray(o.custom_items)?o.custom_items:[]).map(x=>(Number(x.qty)||1)+'× '+String(x.name||'Custom item'));
@@ -151,37 +153,55 @@ export async function showOffersManager(host,{call,token,make,cash}){
   let specialRows=[];
   const addSpecialProduct=(value={})=>{
    const wrap=make('div',undefined,'gw-offer-item-row gw-offer-special-item-row');
-   const selector=document.createElement('select');selector.setAttribute('aria-label','Discounted product');
+   const selector=document.createElement('select');selector.setAttribute('aria-label','Discounted product or custom extra');
    for(const p of products)selector.add(new Option(p.name+' · '+cash(p.price),String(p.id)));
-   if(value.id!=null)selector.value=String(value.id);
+   selector.add(new Option('✎ Custom Item — enter your own','__custom__'));
+   const input=document.createElement('input');input.type='text';input.maxLength=120;
+   input.placeholder='Type your custom item name';input.setAttribute('aria-label','Custom item name');
+   if(value.custom||value.name!=null){selector.value='__custom__';input.value=String(value.name||'');}
+   else if(value.id!=null)selector.value=String(value.id);
    const quantity=document.createElement('input');
    quantity.type='number';quantity.min='1';quantity.max='50';quantity.step='1';
    quantity.value=String(value.qty??1);
-   quantity.setAttribute('aria-label','Required quantity for '+(byId.get(String(value.id))?.name||'discounted product'));
+   quantity.setAttribute('aria-label','Product or extra quantity');
    const qtyField=make('label',undefined,'gw-offer-special-quantity');
    qtyField.append(make('span','Qty'),quantity);
+   const toggle=()=>{
+    input.hidden=selector.value!=='__custom__';
+    input.required=!input.hidden;
+    wrap.classList.toggle('is-custom',!input.hidden);
+   };
+   selector.onchange=toggle;toggle();
    const remove=tinyButton('Remove','outline',()=>{
     if(specialRows.length<=1)return;
     specialRows=specialRows.filter(r=>r.wrap!==wrap);wrap.remove();
-   },'Remove discounted product');
-   wrap.append(selector,qtyField,remove);specialParts.append(wrap);
-   specialRows.push({wrap,selector,quantity});
+   },'Remove discounted product or custom extra');
+   wrap.append(selector,input,qtyField,remove);specialParts.append(wrap);
+   specialRows.push({wrap,selector,input,quantity});
   };
   const selectedSpecials=existing?.offer_type==='special'&&Array.isArray(existing.items)&&existing.items.length
    ?existing.items:[{id:existing?.offer_type==='special'?existing.product_id:null,qty:1}];
-  for(const id of selectedSpecials)addSpecialProduct(id);
+  const selectedExtras=existing?.offer_type==='special'&&Array.isArray(existing.custom_items)?existing.custom_items:[];
+  for(const item of selectedSpecials)addSpecialProduct(item);
+  for(const item of selectedExtras)addSpecialProduct({...item,custom:true});
   const addSpecial=tinyButton('+ Add Product','outline',()=>{
-   if(specialRows.length>=15)return;
-   const used=new Set(specialRows.map(r=>r.selector.value));
+   const used=new Set(specialRows.filter(r=>r.selector.value!=='__custom__').map(r=>r.selector.value));
    const next=products.find(p=>!used.has(String(p.id)));
-   if(!next){return;}
+   if(!next||used.size>=15)return;
    addSpecialProduct({id:next.id,qty:1});
   },'Add another discounted product');
+  const addCustomSpecial=tinyButton('+ Add Custom Item','outline',()=>{
+   if(specialRows.filter(r=>r.selector.value==='__custom__').length>=15)return;
+   addSpecialProduct({custom:true,qty:1});
+  },'Add a descriptive custom extra');
+  const specialActions=make('div',undefined,'gw-offer-add-actions');
+  specialActions.append(addSpecial,addCustomSpecial);
   const percent=document.createElement('input');
   percent.type='number';percent.min='0.01';percent.max='100';percent.step='0.01';
   percent.value=String(existing?.percent_off??10);
-  special.append(field('Discounted Products',specialParts,'Choose a quantity from 1 to 50 for each product. The discount applies to complete groups of that quantity.'),addSpecial,
-   field('Percent Off',percent,'A percentage from 0.01 to 100.'));
+  const specialCustomNote=make('small','Custom items are descriptive extras, such as a free snack or gift bag. They are shown with the offer but are not catalog products, have no separate checkout charge and do not receive the percentage discount. Include at least one catalog product.','gw-offer-custom-note');
+  special.append(field('Discounted Products',specialParts,'Select catalog products or Custom Item. Set a quantity from 1 to 50 for each entry.'),specialActions,specialCustomNote,
+   field('Percent Off',percent,'A percentage from 0.01 to 100; catalog discounts apply to complete quantity groups.'));
   const bundle=make('section',undefined,'gw-offer-type-fields');
   const bundlePrice=document.createElement('input');bundlePrice.type='number';
   bundlePrice.min='0';bundlePrice.step='0.01';bundlePrice.placeholder='e.g. 1100';
@@ -260,11 +280,22 @@ export async function showOffersManager(host,{call,token,make,cash}){
       throw Error('Enter a valid bundle price.');
     }else{
      const rate=Number(percent.value);
-     lines=specialRows.map(row=>({id:row.selector.value,qty:Number(row.quantity.value)}));
-     if(!lines.length||lines.length>15||lines.some(item=>!item.id))throw Error('Choose 1 to 15 products.');
-     if(new Set(lines.map(item=>item.id)).size!==lines.length)throw Error('Each product can only be added once. Use Quantity to add multiple units.');
-     if(lines.some(item=>!Number.isInteger(item.qty)||item.qty<1||item.qty>50))
-      throw Error('Each discounted product must have a whole-number quantity from 1 to 50.');
+     for(const row of specialRows){
+      const qty=Number(row.quantity.value);
+      if(!Number.isInteger(qty)||qty<1||qty>50)
+       throw Error('Every discounted product and custom item needs a quantity from 1 to 50.');
+      if(row.selector.value==='__custom__'){
+       const customName=row.input.value.trim();
+       if(!customName||customName.length>120)throw Error('Enter a custom item name (1 to 120 characters).');
+       extras.push({name:customName,qty});
+      }else{
+       if(!row.selector.value)throw Error('Select a catalog product or Custom Item.');
+       lines.push({id:row.selector.value,qty});
+      }
+     }
+     if(!lines.length)throw Error('Add at least one catalog product. Custom extras are descriptive only.');
+     if(lines.length>15||extras.length>15)throw Error('Product Specials allow up to 15 catalog products and 15 custom extras.');
+     if(new Set(lines.map(item=>item.id)).size!==lines.length)throw Error('Each catalog product can only appear once. Use Quantity for multiple units.');
      if(!Number.isFinite(rate)||rate<=0||rate>100)throw Error('Enter a valid discount percentage.');
     }
     if(start.value&&end.value&&new Date(end.value)<=new Date(start.value))
@@ -275,7 +306,7 @@ export async function showOffersManager(host,{call,token,make,cash}){
      p_product:type.value==='special'?lines[0].id:null,
      p_percent:type.value==='special'?Number(percent.value):null,
      p_items:lines,
-     p_custom_items:type.value==='bundle'?extras:[],
+     p_custom_items:extras,
      p_price:type.value==='bundle'?Number(bundlePrice.value):null,
      p_start:start.value?new Date(start.value).toISOString():null,
      p_end:end.value?new Date(end.value).toISOString():null,
