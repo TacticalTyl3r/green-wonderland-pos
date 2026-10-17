@@ -97,7 +97,7 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
   profile.append(cards);
   if(canEdit()){
    const form=make('form',undefined,'gw-loyalty-adjust-form');
-   form.append(make('h4','Adjust Reward Points'),make('p','Every manual adjustment records the signed-in employee, date, amount and required reason.'));
+   form.append(make('h4','Adjust Reward Points'),make('p','Every manual adjustment records the signed-in employee, date, amount and required reason. Manual deductions cannot exceed the customer's available points.'));
    const amount=document.createElement('input');amount.type='number';amount.step='1';amount.min='-10000';amount.max='10000';
    amount.placeholder='Points to add or remove (e.g. 10 or -5)';amount.required=true;
    const reason=document.createElement('textarea');reason.rows=2;reason.maxLength=500;reason.minLength=5;reason.required=true;
@@ -118,6 +118,42 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
    };
    profile.append(form);
   }
+  // Unified operational timeline includes catalog redemptions (stored outside the points ledger),
+  // manual changes, earned/redeemed checkout points, and refund reconciliation.
+  const timelineSection=make('section',undefined,'gw-loyalty-activity');
+  timelineSection.append(make('h3','Complete Points & Redemption Timeline'));
+  const timelineStatus=make('p','Loading point activity…','gw-mdt-message');
+  const timelineStats=make('div',undefined,'gw-mdt-stats');
+  const timelineRows=make('div',undefined,'gw-loyalty-activity-list');
+  const timelineExport=make('button','Export Points Timeline CSV','outline');
+  timelineExport.type='button';timelineExport.disabled=true;
+  timelineSection.append(timelineStatus,timelineStats,timelineExport,timelineRows);profile.append(timelineSection);
+  try{
+   const events=await rpc('gw_loyalty_management_timeline',{p_member:member.id});
+   if(selectedId!==member.id)return;
+   const history=Array.isArray(events)?events:[];
+   const redemptions=history.filter(e=>e.event_type==='catalog_redemption');
+   const manual=history.filter(e=>e.event_type==='manual_adjustment');
+   const refunds=history.filter(e=>e.event_type==='refund_reconciliation');
+   for(const [label,value] of [['Catalog Redemptions',String(redemptions.length)],['Catalog Points Redeemed',String(redemptions.reduce((n,e)=>n+Math.abs(Number(e.points_change||0)),0))],['Manual Adjustments',String(manual.length)],['Refund Point Events',String(refunds.length)]]){
+    const box=make('div',undefined,'gw-mdt-stat');box.append(make('small',label),make('strong',value));timelineStats.append(box);
+   }
+   timelineStatus.textContent=history.length+' recent points events (up to 500). Catalog redemptions appear here alongside ledger activity.';
+   timelineExport.disabled=!history.length;
+   timelineExport.onclick=()=>download('gw-points-timeline-'+String(member.member_code).replace(/[^a-z0-9_-]/gi,'_')+'.csv',
+    [['Date','Type','Description','Points Change','Employee','Reference'],
+     ...history.map(e=>[e.event_date,e.event_type,e.description,e.points_change,e.performed_by,e.reference||''])]);
+   for(const event of history){
+    const delta=Number(event.points_change||0),row=make('article',undefined,'gw-loyalty-activity-card '+(delta<0?'gw-loyalty-negative':'gw-loyalty-positive'));
+    const title=make('div',undefined,'gw-loyalty-activity-top');
+    const labels={manual_adjustment:'Manual Adjustment',catalog_redemption:'Catalog Reward Redeemed',refund_reconciliation:'Refund / Void Reconciliation',points_spent:'Points Spent',points_earned:'Points Earned'};
+    title.append(make('strong',labels[event.event_type]||'Points Activity'),make('strong',(delta>0?'+':'')+delta+' pts'));
+    row.append(title,make('p',event.description||'No description recorded'),
+     make('small',new Date(event.event_date).toLocaleString()+' · '+(event.performed_by||'System')+(event.reference?' · Ref: '+event.reference:'')));
+    timelineRows.append(row);
+   }
+   if(!history.length)timelineRows.append(make('p','No point activity recorded for this customer.'));
+  }catch(error){timelineStatus.textContent='Points timeline will be available after the new SQL update: '+error.message;}
   const catalogHistory=make('div',undefined,'gw-loyalty-activity');
   catalogHistory.append(make('h3','Catalog Reward Redemptions'));
   const catalogEntries=make('div',undefined,'gw-loyalty-activity-list');
