@@ -11,16 +11,31 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
  const exportCsv=(filename,headers,rows)=>{const escape=v=>'"'+String(v??'').replaceAll('"','""')+'"';const csv=[headers,...rows].map(row=>row.map(escape).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);};
  try{
   if(page==='history'){
-   const filter=make('div',undefined,'gw-mdt-actions'),from=document.createElement('input'),to=document.createElement('input'),search=document.createElement('input');
+   const filter=make('div',undefined,'gw-mdt-actions'),from=document.createElement('input'),to=document.createElement('input'),search=document.createElement('input'),employee=document.createElement('select'),minAmount=document.createElement('input'),maxAmount=document.createElement('input');
    from.type='date';to.type='date';search.type='search';search.placeholder='Search employee, amount, fulfillment, date or sale ID';
-   filter.append(from,to,search);host.insertBefore(filter,status);
+   employee.add(new Option('All employees',''));minAmount.type='number';minAmount.min='0';minAmount.step='.01';minAmount.placeholder='Min total';maxAmount.type='number';maxAmount.min='0';maxAmount.step='.01';maxAmount.placeholder='Max total';
+   filter.append(from,to,employee,minAmount,maxAmount,search);host.insertBefore(filter,status);
    const list=box(),download=make('button','Export Filtered CSV','outline');filter.append(download);
    const reload=async()=>{status.textContent='Loading sales…';try{
     const rows=await rpc('gw_mdt_sales_history',{p_from:from.value?new Date(from.value+'T00:00:00').toISOString():null,p_to:to.value?new Date(new Date(to.value+'T00:00:00').getTime()+86400000).toISOString():null,p_employee:null});
-    const sorted=[...rows].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    let detailed=[];
+    try{detailed=await rpc('gw_pos_search_sales',{p_query:''})||[];}catch(e){}
+    const getId=x=>x.id||x.sale_id||x.transaction_id||null;
+    const indexed=new Map(detailed.filter(x=>getId(x)).map(x=>[String(getId(x)),x]));
+    const sorted=[...rows].map(x=>{
+     const id=getId(x);
+     if(id){const detail=indexed.get(String(id));return {...x,...(detail||{}),id:String(id)};}
+     const matches=detailed.filter(d=>getId(d)&&Math.abs(Number(d.total)-Number(x.total))<0.011
+      &&Math.abs(Date.parse(d.created_at)-Date.parse(x.created_at))<=3000
+      &&(!x.employee_name||!d.employee_name||String(x.employee_name).toLowerCase()===String(d.employee_name).toLowerCase()));
+     return matches.length===1?{...x,...matches[0],id:String(getId(matches[0]))}:x;
+    }).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    const currentEmployee=employee.value;employee.replaceChildren(new Option('All employees',''));
+    for(const name of [...new Set(sorted.map(x=>x.employee_name).filter(Boolean))].sort())employee.add(new Option(name,name));
+    employee.value=currentEmployee;
     const itemBySale=new Map();let itemNotice='';
     try{
-     const ids=sorted.map(s=>String(s.id)).filter(Boolean).slice(0,200);
+     const ids=sorted.map(s=>s.id).filter(Boolean).map(String).slice(0,200);
      if(ids.length){
       const details=await rpc('gw_mdt_sales_items_batch',{p_sales:ids});
       for(const detail of details||[])itemBySale.set(String(detail.sale_id),Array.isArray(detail.items)?detail.items:[]);
@@ -31,7 +46,10 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
      return items.map(i=>Number(i.qty||0)+'× '+(i.name||'Unknown item')+(i.choice?' ('+i.choice+')':'')).join(' · ');
     };
     const filtered=()=>sorted.filter(s=>
-     (String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')+' '+String(s.id||'')+
+     (!employee.value||s.employee_name===employee.value)
+     &&(minAmount.value===''||Number(s.total)>=Number(minAmount.value))
+     &&(maxAmount.value===''||Number(s.total)<=Number(maxAmount.value))
+     &&(String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')+' '+String(s.id||'')+
       ' '+dateText(s.created_at)+' '+itemText(s)).toLowerCase().includes(search.value.toLowerCase()));
     search.placeholder='Search employee, product, flavor, amount, or sale ID';
     download.onclick=()=>exportCsv('green-wonderland-sales-history.csv',
@@ -63,7 +81,7 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
      status.textContent=count+' recorded sales · '+cash(total)+' total · Newest first'+itemNotice;
      if(!count)line(list,'No matching sales','Try changing your filters.');
     };
-    search.oninput=draw;draw();
+    search.oninput=draw;employee.onchange=draw;minAmount.oninput=draw;maxAmount.oninput=draw;draw();
    }catch(e){status.textContent=e.message;}};
    from.onchange=reload;to.onchange=reload;await reload();
   }else if(page==='announcements'){
