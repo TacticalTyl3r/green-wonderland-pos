@@ -132,6 +132,26 @@ async function renderEmployeeSalesTrend(e,host){
 
  }catch(err){host.replaceChildren(make('p','Sales trend unavailable: '+err.message));}
 }
+async function renderEmploymentHistory(host,employeeId=null){
+ host.replaceChildren(make('p','Loading employee history…'));
+ try{
+  const rows=await call('gw_employee_history',{p_token:token||'',p_employee:employeeId});
+  host.replaceChildren();
+  if(!rows?.length){host.append(make('p','No recorded changes yet. History starts with changes made after this upgrade.'));return;}
+  for(const h of rows){
+   const card=make('div',undefined,'gw-mdt-employee'),info=make('div');
+   const type=h.event_type==='separation'?'Let go / Deactivated':h.event_type==='rehire'?'Reactivated':h.event_type==='promotion'?'Promoted':'Role changed';
+   info.append(make('strong',h.employee_name+' · '+type),make('p',[
+    h.employee_cid?'CID: '+h.employee_cid:null,
+    h.old_role&&h.new_role?h.old_role+' → '+h.new_role:null,
+    new Date(h.occurred_at).toLocaleString(),
+    h.actor_name?'By '+h.actor_name:null
+   ].filter(Boolean).join(' · ')));
+   if(h.reason)info.append(make('p','Reason: '+h.reason));
+   card.append(info);host.append(card);
+  }
+ }catch(err){host.replaceChildren(make('p','History unavailable: '+err.message));}
+}
 function employeeProfile(e){
  mdtContent.replaceChildren();
  const back=make('button','← Back to Employees','outline');back.onclick=()=>renderMdt();
@@ -142,6 +162,7 @@ function employeeProfile(e){
   const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));cards.append(card);
  }
  for(const [label,value] of [['Employee CID',e.employee_cid||'—'],['Hire Date',e.hire_date||'—'],['Last Promoted',e.last_promoted_date||'—']]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));cards.append(card);}mdtContent.append(back,header,cards);call('gw_employee_profile_get',{p_token:token||'',p_employee:e.id}).then(rows=>{const p=rows?.[0];if(!p)return;for(const [label,value] of [['Employee CID',p.employee_cid],['Hire Date',p.hire_date],['Last Promoted',p.last_promoted_date]]){const card=[...cards.children].find(x=>x.querySelector('small')?.textContent===label);if(card)card.querySelector('strong').textContent=value||'—';}}).catch(()=>{});
+ if(me?.employee_role==='Boss'){const history=make('div');mdtContent.append(make('h3','Employment & Promotion History'),history);renderEmploymentHistory(history,e.id);}
  if(canFeature('employees')){const weeklyCard=[...cards.children].find(card=>card.querySelector('small')?.textContent==='Hours This Week');call('gw_mdt_employee_weekly_hours',{p_token:token||'',p_employee:e.id}).then(hours=>{if(weeklyCard)weeklyCard.querySelector('strong').textContent=Number(hours||0).toFixed(2)+' hrs';}).catch(()=>{if(weeklyCard)weeklyCard.querySelector('strong').textContent='Unavailable';});}
  if(canFeature('sales_earnings')){const trend=make('div');mdtContent.append(make('h3','Sales Performance · Last 30 Days'),trend);renderEmployeeSalesTrend(e,trend);}
  if(canFeature('recognition_view')||canFeature('recognition_manage')){const recognitionHost=make('div');mdtContent.append(make('h3','Employee Recognition'),recognitionHost);showRecognition(recognitionHost,e,{call,token:()=>token||'',canFeature,make});}
@@ -182,8 +203,10 @@ function employeeForm(e){
  const promoted=field('Last Promoted Date',document.createElement('input'));promoted.type='date';promoted.value=e?.last_promoted_date||'';
  const bossCanEdit=me?.employee_role==='Boss';cid.disabled=hire.disabled=promoted.disabled=!bossCanEdit;
  if(e){call('gw_employee_profile_get',{p_token:token||'',p_employee:e.id}).then(rows=>{const p=rows?.[0];if(!p)return;cid.value=p.employee_cid||'';hire.value=p.hire_date||'';promoted.value=p.last_promoted_date||'';}).catch(()=>{});}
+ const reason=field('Separation / status change reason',document.createElement('textarea'));reason.rows=2;reason.maxLength=1000;reason.placeholder='Required when marking an active employee inactive';reason.required=!!e&&e.active!==false&&!active.checked;reason.parentElement.hidden=!e||active.checked===true;
+ active.addEventListener('change',()=>{reason.parentElement.hidden=!e||active.checked===true;reason.required=!!e&&e.active!==false&&!active.checked;});
  const actions=make('div',undefined,'gw-mdt-actions');const save=make('button','Save Employee','primary');save.type='submit';const cancel=make('button','Cancel','outline');cancel.type='button';cancel.onclick=()=>renderMdt();actions.append(save,cancel);form.append(actions);
- form.onsubmit=async ev=>{ev.preventDefault();save.disabled=true;mdtMessage.textContent='Saving employee…';try{const savedId=await call('gw_mdt_manage_employee',{p_token:token||'',p_id:e?.id||null,p_name:name.value.trim(),p_role:role.value,p_pin:pin.value||null,p_active:active.checked});if(bossCanEdit){try{await call('gw_employee_profile_save',{p_token:token||'',p_employee:e?.id||savedId,p_employee_name:name.value.trim(),p_cid:cid.value.trim()||null,p_hire_date:hire.value||null,p_last_promoted_date:promoted.value||null});}catch(metaError){mdtMessage.textContent='Employee saved, but profile details were not saved: '+metaError.message;await roster();await loadStaff();renderMdt();return;}}await roster();await loadStaff();mdtMessage.textContent='Employee saved.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
+ form.onsubmit=async ev=>{ev.preventDefault();save.disabled=true;mdtMessage.textContent='Saving employee…';try{const isPromotion=!!e&&['Salesman','Senior Salesman','Manager','Boss'].indexOf(role.value)>['Salesman','Senior Salesman','Manager','Boss'].indexOf(e.role);const savedId=await call('gw_employee_manage_with_history',{p_token:token||'',p_id:e?.id||null,p_name:name.value.trim(),p_role:role.value,p_pin:pin.value||null,p_active:active.checked,p_reason:reason.value.trim()||null});if(isPromotion)promoted.value=new Date().toLocaleDateString('en-CA');if(bossCanEdit){try{await call('gw_employee_profile_save',{p_token:token||'',p_employee:e?.id||savedId,p_employee_name:name.value.trim(),p_cid:cid.value.trim()||null,p_hire_date:hire.value||null,p_last_promoted_date:promoted.value||null});}catch(metaError){mdtMessage.textContent='Employee saved, but profile details were not saved: '+metaError.message;await roster();await loadStaff();renderMdt();return;}}await roster();await loadStaff();mdtMessage.textContent='Employee saved.';renderMdt();}catch(err){mdtMessage.textContent=err.message;}finally{save.disabled=false;}};
  mdtContent.replaceChildren(form);name.focus();
 }
 async function adjustTime(e){
@@ -329,6 +352,7 @@ function renderMdt(){
  }else{
   const head=make('div',undefined,'gw-mdt-head');head.append(make('h3',mdtPage==='employees'?'Employee Roster':'Employee Hours'));
   if(mdtPage==='employees'&&canFeature('employee_add')){const add=make('button','+ Add Employee','primary');add.onclick=()=>employeeForm();head.append(add);}mdtContent.append(head);
+  if(mdtPage==='employees'&&me?.employee_role==='Boss'){const historyButton=make('button','Former Employees & Employment History','outline');historyButton.onclick=()=>{mdtContent.replaceChildren();const back=make('button','← Employee Roster','outline');back.onclick=()=>renderMdt();const title=make('h2','Employment History');const host=make('div');mdtContent.append(back,title,host);renderEmploymentHistory(host);};mdtContent.append(historyButton);}
   if(mdtPage==='employees'){const search=document.createElement('input');search.type='search';search.placeholder='Search employees by name or position';search.value=employeeSearch;search.oninput=()=>{employeeSearch=search.value;renderMdt();const field=mdtContent.querySelector('input[type=search]');field?.focus();field?.setSelectionRange(employeeSearch.length,employeeSearch.length);};mdtContent.append(search);}
   const table=make('div',undefined,mdtPage==='employees'?'gw-mdt-roster gw-roster-groups':'gw-mdt-roster');
   const ranks=['Boss','Manager','Senior Salesman','Salesman'];const grouped={};
