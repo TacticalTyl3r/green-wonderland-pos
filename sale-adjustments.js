@@ -33,10 +33,11 @@ export async function showSaleAdjustments(host,{call,token,canFeature,cash,make}
       const amount=document.createElement('input');amount.type='number';amount.min='0.01';amount.step='0.01';amount.max=String(sale.remaining);
       amount.value=Number(sale.remaining).toFixed(2);amount.required=true;
       const reason=document.createElement('textarea');reason.placeholder='Required reason for the adjustment (5+ characters)';reason.required=true;reason.minLength=5;reason.maxLength=1000;
+      const loyaltyNote=make('p','Loyalty adjustments are calculated automatically when you confirm. Earned points may be reversed and redeemed points restored.');
       const save=make('button','Confirm Adjustment','primary'),cancel=make('button','Cancel','outline');
       cancel.type='button';cancel.onclick=()=>form.remove();
       type.onchange=()=>{if(type.value==='void'){amount.value=Number(sale.remaining).toFixed(2);amount.readOnly=true;}else amount.readOnly=false;};
-      form.append(type,amount,reason,save,cancel);
+      form.append(type,amount,reason,loyaltyNote,save,cancel);
       form.onsubmit=async e=>{e.preventDefault();if(!confirm('Record this '+type.value+' for '+cash(Number(amount.value))+'? The adjustment will be permanent.'))return;
        if(!reason.value.trim()||reason.value.trim().length<5){status.textContent='A reason with at least 5 characters is required.';return;}
        if(!Number.isFinite(Number(amount.value))||Number(amount.value)<=0||Number(amount.value)>Number(sale.remaining)){status.textContent='Adjustment must be positive and cannot exceed the remaining sale balance.';return;}
@@ -51,6 +52,10 @@ export async function showSaleAdjustments(host,{call,token,canFeature,cash,make}
    }
    if(!sales.length)list.append(make('p','No matching sales.'));
    const changes=await rpc('gw_mdt_sale_adjustments_list');
+   const loyaltyByAdjustment=new Map();
+   let loyaltyStatus='';
+   try{const ledger=await rpc('gw_mdt_adjustment_loyalty_audit');for(const a of ledger||[])loyaltyByAdjustment.set(String(a.adjustment_id),a);}catch(err){loyaltyStatus='Loyalty audit requires the new database update.';}
+   if(loyaltyStatus)journal.append(make('p',loyaltyStatus));
    journal.classList.add('gw-adjustment-history');
    auditSearch.oninput=()=>{for(const card of journal.children){const terms=(card.dataset.search||'');card.hidden=!terms.includes(auditSearch.value.trim().toLowerCase());}};
    for(const a of changes){
@@ -62,6 +67,7 @@ export async function showSaleAdjustments(host,{call,token,canFeature,cash,make}
     const action=make('span',isVoid?'✕  VOIDED SALE':'↩  REFUND ISSUED','gw-adjustment-tag');
     const amount=make('strong',(isVoid?'−':'+')+cash(a.amount),'gw-adjustment-amount');
     top.append(action,amount);
+    const loyalty=loyaltyByAdjustment.get(String(a.id||a.adjustment_id));
     const reasonBox=make('div',undefined,'gw-adjustment-reason');
     reasonBox.append(make('span','REASON','gw-adjustment-field-label'),make('p',a.reason||'No reason provided'));
     const fields=make('div',undefined,'gw-adjustment-fields');
@@ -73,6 +79,7 @@ export async function showSaleAdjustments(host,{call,token,canFeature,cash,make}
     field('PERFORMED BY',a.performed_by||'Unknown','gw-adjustment-actor');
     field('DATE & TIME',new Date(a.created_at).toLocaleString());
     field('SALE ID',a.sale_id||'Unknown','gw-adjustment-sale-id');
+    if(loyalty){field('CUSTOMER CID',loyalty.member_code||'Unknown');field('POINTS REVERSED',String(loyalty.earned_reversed));field('REDEEMED POINTS RESTORED',String(loyalty.redeemed_restored));}
     row.append(top,reasonBox,fields);row.hidden=!row.dataset.search.includes(auditSearch.value.trim().toLowerCase());journal.append(row);
    }
    if(!changes.length)journal.append(make('p','No adjustments recorded yet.'));
