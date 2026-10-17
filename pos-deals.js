@@ -82,7 +82,7 @@ export function createPosDeals({
   const body=el('div','gw-pos-deal-modal-body');
   const pricing=el('p','gw-pos-deal-modal-price');
   pricing.textContent='Bundle price: '+money(Number(o.bundle_price))+' · Regular catalog value: '+money(grossFor(parts));
-  const help=el('p','gw-pos-deal-modal-help','Choose the flavor or strain for each included item, then add the complete bundle to the order.');
+  const help=el('p','gw-pos-deal-modal-help','Choose the flavor or strain for each included item, then add the complete bundle. Different bundle offers should be checked out separately to preserve each advertised bundle price.');
   body.append(pricing,help);
   const selection=[];
   for(const part of parts){
@@ -192,7 +192,7 @@ export function createPosDeals({
    const parts=validParts(o).map(x=>productName(x)).join(' ');
    return (titleFor(o)+' '+parts).toLowerCase().includes(q);
   });
-  status.textContent=offers.length+' active offer'+(offers.length===1?'':'s')+' · Discounts are calculated automatically in Current Order.';
+  status.textContent=offers.length+' active offer'+(offers.length===1?'':'s')+' · Discounts are calculated in Current Order. Ring up different bundles separately; only the highest savings path applies per checkout.';
   if(!matching.length){
    groups.append(el('p','gw-pos-deals-empty',offers.length?'No deals match your search.':'No active offers yet. A manager can create them in Bundles & Specials.'));
    return;
