@@ -61,7 +61,7 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
      &&(minAmount.value===''||Number(s.total)>=Number(minAmount.value))
      &&(maxAmount.value===''||Number(s.total)<=Number(maxAmount.value))
      &&(String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')+' '+String(s.id||'')+
-      ' '+dateText(s.created_at)+' '+itemText(s)).toLowerCase().includes(search.value.toLowerCase()));
+      ' '+dateText(s.created_at)+' '+itemText(s)+' '+customerName(s)+' '+customerCid(s)).toLowerCase().includes(search.value.toLowerCase()));
     search.placeholder='Search customer, CID, employee, product, flavor, or sale ID';
     download.onclick=()=>exportCsv('green-wonderland-sales-history.csv',
      ['Employee','Customer','Customer CID','Amount','Item Count','Purchased Items','Fulfillment','Date','Sale ID'],
