@@ -722,3 +722,13 @@ body[data-theme] .gw-history-intro{line-height:1.65}
 .gw-history-filters>button{min-height:38px}
 .gw-history-result-count{font-size:13px;opacity:.82;margin:6px 0 10px}
 @media(max-width:550px){.gw-history-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.gw-history-filter-field:first-child{grid-column:1/-1}.gw-history-filters>button{grid-column:1/-1}}
+
+/* Employee active-status sliding switch */
+.gw-employee-switch{display:flex!important;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;cursor:pointer}
+.gw-employee-switch-input{position:absolute;opacity:0;width:1px;height:1px}
+.gw-employee-switch-track{position:relative;display:inline-block;flex:none;width:48px;height:27px;border-radius:99px;background:#707783;transition:background .18s}
+.gw-employee-switch-track:before{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:white;transition:transform .18s;box-shadow:0 1px 3px #0004}
+.gw-employee-switch-input:checked+.gw-employee-switch-track{background:#26895c}
+.gw-employee-switch-input:checked+.gw-employee-switch-track:before{transform:translateX(21px)}
+.gw-employee-switch-input:focus-visible+.gw-employee-switch-track{outline:3px solid #79b7ff;outline-offset:3px}
+.gw-employee-switch-input:disabled+.gw-employee-switch-track{opacity:.45}
