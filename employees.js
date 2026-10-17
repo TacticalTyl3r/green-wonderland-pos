@@ -1,5 +1,5 @@
 import {createSalesChart} from './sales-chart.js?v=2';
-import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=analytics-upgrade-20261016';
+import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=full-range-analytics-20261016';
 import {renderBusinessPage} from './business-mdt.js?v=customer-cid-lookup-20261016';
 import {showSaleAdjustments} from './sale-adjustments.js?v=loyalty-adjustments-20261016';
 import {showOffersManager,showProductAnalytics} from './phase4-management.js?v=1';
