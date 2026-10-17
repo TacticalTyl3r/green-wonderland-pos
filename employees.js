@@ -2,7 +2,7 @@ import {createSalesChart} from './sales-chart.js?v=2';
 import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.js?v=emergency-rollback-20261016';
 import {renderBusinessPage} from './business-mdt.js?v=mdt-receipt-button-20261016';
 import {showSaleAdjustments} from './sale-adjustments.js?v=loyalty-adjustments-20261016';
-import {showOffersManager,showProductAnalytics} from './phase4-management.js?v=special-quantities-20261017';
+import {showOffersManager,showProductAnalytics} from './phase4-management.js?v=custom-special-extras-20261017';
 import {renderLoyaltyManagement} from './loyalty-management.js?v=isolated-history-20261016';
 import {showSecurityCenter,renderEmployeeAchievements,getDashboardSettings,dashboardSettingsEditor,isDashboardWidgetVisible} from './phase3-tools.js?v=1';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
