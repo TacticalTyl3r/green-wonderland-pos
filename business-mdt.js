@@ -97,6 +97,20 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
       if(loyalty.points_earned!=null||loyalty.points_redeemed!=null)extra.append(make('p','Loyalty: +'+Number(loyalty.points_earned||0)+' earned / '+Number(loyalty.points_redeemed||0)+' redeemed'));
       expand.onclick=()=>{extra.hidden=!extra.hidden;expand.textContent=extra.hidden?'View Transaction Details':'Hide Transaction Details';};
       actions.append(expand);
+      if(s.id){
+       const receipt=make('button','View Receipt','primary');receipt.type='button';
+       receipt.onclick=()=>{
+        const c=customerFor(s),items=itemBySale.get(String(s.id))||[];
+        const sale={...s,id:String(s.id),line_items:items,
+         loyalty_meta:{...(s.loyalty_meta||{}),points_earned:c.points_earned??s.points_earned,
+          points_redeemed:c.points_redeemed??s.points_redeemed},
+         loyalty_receipt:customerCid(s)?{sale_id:String(s.id),member_code:String(customerCid(s)),
+          member_name:customerName(s),points_earned:c.points_earned??s.points_earned,
+          points_redeemed:c.points_redeemed??s.points_redeemed}:undefined};
+        window.dispatchEvent(new CustomEvent('gw-mdt-view-receipt',{detail:{sale}}));
+       };
+       actions.append(receipt);
+      }
       card.append(heading,number,customer,saleId,details,actions,extra);list.append(card);
      }
      status.textContent=count+' recorded sales · '+cash(total)+' total · Newest first'+itemNotice+customerNotice;
