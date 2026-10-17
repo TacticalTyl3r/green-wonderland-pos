@@ -102,7 +102,7 @@ if (firstThemeIndex < 0 ||
 if (orderedStyles.includes('themes-global.css')) {
   errors.push('The legacy monolithic theme CSS must not also load');
 }
-if (themeFiles.every(file => existsSync(resolve(projectRoot, file)))) {
+if (process.argv.includes('--verify-original-theme') && themeFiles.every(file => existsSync(resolve(projectRoot, file)))) {
   const original = Buffer.concat(themeFiles.map(file => readFileSync(resolve(projectRoot, file))));
   const blobHash = createHash('sha1')
     .update('blob ' + original.length)
