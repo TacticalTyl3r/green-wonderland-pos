@@ -293,7 +293,7 @@ async function refreshAdmin(){
  const input=document.createElement('input');input.type='url';input.placeholder='https://example.com/image.png';
  input.setAttribute('aria-label','Direct HTTPS image URL');
  const hint=document.createElement('p');
- hint.textContent='Upload a PNG, JPG or WebP (up to 3 MB), or paste an HTTPS image URL. Uploads use Boss PIN verification and short-lived Supabase Storage permissions; no Edge Function required.';
+ hint.textContent='Upload PNG, JPG or WebP (up to 3 MB), or paste an HTTPS URL. Secure uploads verify your Boss PIN on the server. If boss-image-upload has not been deployed, the older browser method requires Supabase Anonymous Sign-Ins.';
  const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';
  file.setAttribute('aria-label','Choose an image to upload');file.className='gw-admin-image-file';
  const upload=document.createElement('button');upload.className='primary';upload.textContent='Upload Image';
@@ -305,29 +305,68 @@ async function refreshAdmin(){
    return message('Select a PNG, JPG or WebP image under 3 MB.');
   upload.disabled=true;message('Uploading securely…');
   try{
-   // Anonymous Supabase Auth supplies an RLS identity, not employee authorization.
-   // The short-lived Storage grant is issued only after server-side Boss PIN verification.
-   let {data:authData,error:authError}=await db.auth.getSession();
-   if(authError)throw authError;
-   if(!authData.session){
-    const signed=await db.auth.signInAnonymously();
-    if(signed.error)throw Error('Enable Anonymous Sign-Ins in Supabase Authentication: '+signed.error.message);
+   let url='';
+   // Preferred method: Boss PIN is checked by the Edge Function, then it
+   // uploads with server-only credentials. No email or Anonymous Auth required.
+   const payload=new FormData();
+   payload.append('file',picked,picked.name);
+   payload.append('slot',slot.value);
+   if(slot.value==='product')payload.append('product',String(product.value));
+   const edge=await db.functions.invoke('boss-image-upload',{
+    body:payload,headers:{'x-gw-employee-token':token}
+   });
+   if(!edge.error){
+    if(!edge.data?.ok||!/^https:\/\//i.test(String(edge.data.url||'')))
+     throw Error('Secure upload service returned an invalid response.');
+    url=edge.data.url;
+   }else{
+    let status=Number(edge.error.context?.status||0);
+    let detail=String(edge.error.message||'Upload request failed');
+    try{
+     const response=edge.error.context;
+     if(response&&typeof response.clone==='function'){
+      const body=await response.clone().json();
+      if(body?.error)detail=String(body.error);
+      else if(body?.message)detail=String(body.message);
+     }
+    }catch{}
+    // Older installations can still use the Boss-granted browser Storage
+    // route if the Edge Function has not been deployed. Other Edge errors,
+    // especially permission failures, must not silently downgrade access.
+    if(status===404){
+     message('Secure upload function not deployed. Trying existing browser upload…');
+     const session=await db.auth.getSession();
+     if(session.error)throw session.error;
+     if(!session.data.session){
+      const signed=await db.auth.signInAnonymously();
+      if(signed.error)throw Error('Secure upload function is not deployed, and Anonymous Sign-Ins are disabled. Deploy boss-image-upload (recommended), or enable Anonymous Sign-Ins in Supabase Authentication.');
+     }
+     const grant=await db.rpc('gw_authorize_image_upload',{p_token:token});
+     if(grant.error||grant.data!==true)
+      throw Error(grant.error?.message||'Boss browser-upload grant unavailable. Use the secure boss-image-upload Edge Function.');
+     const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[picked.type];
+     const path='boss/'+crypto.randomUUID()+'.'+ext;
+     const result=await db.storage.from('gw-images').upload(path,picked,{contentType:picked.type,upsert:false,cacheControl:'3600'});
+     if(result.error)throw result.error;
+     const {data:publicImage}=db.storage.from('gw-images').getPublicUrl(path);
+     url=publicImage.publicUrl;
+     const saved=await db.rpc('gw_boss_set_image_url',{p_token:token,p_slot:slot.value,
+      p_product:slot.value==='product'?String(product.value):null,p_url:url});
+     if(saved.error)throw Error('Uploaded, but could not assign image: '+saved.error.message);
+    }else if(status===401&&/jwt|authorization|token/i.test(detail)){
+     throw Error('The upload function requires JWT verification. Deploy boss-image-upload with JWT verification disabled; the function checks your Boss PIN session securely.');
+    }else if(status===403){
+     throw Error('Boss PIN permission denied: '+detail);
+    }else{
+     throw Error('Secure image upload failed: '+detail+(status?' (HTTP '+status+')':'')+'. Check the boss-image-upload Edge Function deployment.');
+    }
    }
-   const grant=await db.rpc('gw_authorize_image_upload',{p_token:token});
-   if(grant.error||grant.data!==true)throw Error(grant.error?.message||'Boss PIN verification failed');
-   const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[picked.type];
-   const path='boss/'+crypto.randomUUID()+'.'+ext;
-   const result=await db.storage.from('gw-images').upload(path,picked,{contentType:picked.type,upsert:false,cacheControl:'3600'});
-   if(result.error)throw result.error;
-   const {data:publicImage}=db.storage.from('gw-images').getPublicUrl(path);
-   const url=publicImage.publicUrl;
-   const saved=await db.rpc('gw_boss_set_image_url',{p_token:token,p_slot:slot.value,
-    p_product:slot.value==='product'?String(product.value):null,p_url:url});
-   if(saved.error)throw Error('Uploaded, but could not assign image: '+saved.error.message);
    await loadBranding();
    input.value=url;file.value='';
    message('Image uploaded and saved. '+(slot.value==='favicon'?'Refresh the page to update the browser tab.':''));
-  }catch(e){message('Upload failed: '+e.message+'. Confirm the Boss browser-upload SQL is installed and Anonymous Sign-Ins are enabled.');}
+  }catch(e){
+   message('Upload failed: '+e.message);
+  }
   finally{upload.disabled=false;}
  };
  const updateVisibility=()=>product.hidden=slot.value!=='product';
