@@ -645,7 +645,7 @@ async function showBackupCenter(){
    mdtContent.append(title,grid);return;
   }
 
-   if(page==='audit'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showActivitySearch(mdtContent,{call,token:()=>token||'',make});
+   if(page==='audit'){adminSubmenu.hidden=false;mdtMessage.textContent='';try{const {showEnhancedActivitySearch}=await import('./audit-enhanced.js?v=safe-audit-20261016');await showEnhancedActivitySearch(mdtContent,{call,token:()=>token||'',make});}catch(auditError){console.warn('Enhanced audit unavailable, using stable audit view',auditError);await showActivitySearch(mdtContent,{call,token:()=>token||'',make});}
    const appendLog=async(title,rpc,transform)=>{
     const heading=make('h3',title),list=make('div',undefined,'gw-audit-list');mdtContent.append(heading,list);
     try{const rows=await call(rpc,{p_token:token||''});
