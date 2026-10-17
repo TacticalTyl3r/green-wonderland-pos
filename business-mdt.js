@@ -12,7 +12,7 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
  try{
   if(page==='history'){
    const filter=make('div',undefined,'gw-mdt-actions'),from=document.createElement('input'),to=document.createElement('input'),search=document.createElement('input'),employee=document.createElement('select'),minAmount=document.createElement('input'),maxAmount=document.createElement('input');
-   from.type='date';to.type='date';search.type='search';search.placeholder='Search employee, amount, fulfillment, date or sale ID';
+   from.type='date';to.type='date';search.type='search';search.placeholder='Search customer, CID, employee, item or sale ID';
    employee.add(new Option('All employees',''));minAmount.type='number';minAmount.min='0';minAmount.step='.01';minAmount.placeholder='Min total';maxAmount.type='number';maxAmount.min='0';maxAmount.step='.01';maxAmount.placeholder='Max total';
    filter.append(from,to,employee,minAmount,maxAmount,search);host.insertBefore(filter,status);
    const list=box(),download=make('button','Export Filtered CSV','outline');filter.append(download);
@@ -33,6 +33,17 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
     const currentEmployee=employee.value;employee.replaceChildren(new Option('All employees',''));
     for(const name of [...new Set(sorted.map(x=>x.employee_name).filter(Boolean))].sort())employee.add(new Option(name,name));
     employee.value=currentEmployee;
+    const customersBySale=new Map();let customerNotice='';
+    try{
+     const saleIds=sorted.map(s=>s.id).filter(Boolean).map(String).slice(0,200);
+     if(saleIds.length){
+      const customerRows=await rpc('gw_mdt_sales_customer_batch',{p_sales:saleIds});
+      for(const c of customerRows||[])customersBySale.set(String(c.sale_id),c);
+     }
+    }catch(error){customerNotice=' · Customer CID lookup requires the latest database migration';}
+    const customerFor=s=>customersBySale.get(String(s.id))||{};
+    const customerName=s=>customerFor(s).customer_name||s.member_name||s.customer_name||'';
+    const customerCid=s=>customerFor(s).customer_cid||s.member_code||s.customer_cid||'';
     const itemBySale=new Map();let itemNotice='';
     try{
      const ids=sorted.map(s=>s.id).filter(Boolean).map(String).slice(0,200);
@@ -51,10 +62,10 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
      &&(maxAmount.value===''||Number(s.total)<=Number(maxAmount.value))
      &&(String(s.employee_name||'')+' '+String(s.fulfillment||'')+' '+String(s.total||'')+' '+String(s.id||'')+
       ' '+dateText(s.created_at)+' '+itemText(s)).toLowerCase().includes(search.value.toLowerCase()));
-    search.placeholder='Search employee, product, flavor, amount, or sale ID';
+    search.placeholder='Search customer, CID, employee, product, flavor, or sale ID';
     download.onclick=()=>exportCsv('green-wonderland-sales-history.csv',
-     ['Employee','Amount','Item Count','Purchased Items','Fulfillment','Date','Sale ID'],
-     filtered().map(s=>[s.employee_name,s.total,s.item_count,itemText(s),s.fulfillment,s.created_at,s.id]));
+     ['Employee','Customer','Customer CID','Amount','Item Count','Purchased Items','Fulfillment','Date','Sale ID'],
+     filtered().map(s=>[s.employee_name,customerName(s),customerCid(s),s.total,s.item_count,itemText(s),s.fulfillment,s.created_at,s.id]));
     const draw=()=>{
      list.replaceChildren();let total=0;let count=0;
      for(const s of filtered()){
@@ -63,6 +74,9 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
       const heading=make('div',undefined,'gw-sales-history-head');
       heading.append(make('strong',cash(s.total)+' · '+(s.employee_name||'Unknown employee')));
       const number=make('small',dateText(s.created_at)+' · '+s.item_count+' items · '+s.fulfillment);
+      const customer=make('p',customerName(s)?'Customer: '+customerName(s)+(customerCid(s)?' · CID: '+customerCid(s):''):'Customer not recorded');
+      const saleId=make('small',s.id?'Sale ID: '+s.id:'Sale ID unavailable');
+      const loyalty=customerFor(s);
       const details=make('div',undefined,'gw-sales-history-items');
       const items=itemBySale.get(String(s.id))||[];
       if(items.length){
@@ -76,9 +90,16 @@ export async function renderBusinessPage(page,{host,call,token,canFeature,cash,m
       }else{
        details.append(make('small','Itemized details unavailable for this sale.'));
       }
-      card.append(heading,number,details);list.append(card);
+      const actions=make('div',undefined,'gw-mdt-actions');
+      const expand=make('button','View Transaction Details','outline');expand.type='button';
+      const extra=make('div',undefined,'gw-sales-history-expanded');extra.hidden=true;
+      extra.append(make('p','Customer: '+(customerName(s)||'Not recorded')),make('p','Customer CID: '+(customerCid(s)||'Not recorded')),make('p','Employee: '+(s.employee_name||'Unknown')),make('p','Sale date: '+dateText(s.created_at)),make('p','Total: '+cash(s.total)),make('p','Fulfillment: '+(s.fulfillment||'Not recorded')),make('p','Sale ID: '+(s.id||'Not available')));
+      if(loyalty.points_earned!=null||loyalty.points_redeemed!=null)extra.append(make('p','Loyalty: +'+Number(loyalty.points_earned||0)+' earned / '+Number(loyalty.points_redeemed||0)+' redeemed'));
+      expand.onclick=()=>{extra.hidden=!extra.hidden;expand.textContent=extra.hidden?'View Transaction Details':'Hide Transaction Details';};
+      actions.append(expand);
+      card.append(heading,number,customer,saleId,details,actions,extra);list.append(card);
      }
-     status.textContent=count+' recorded sales · '+cash(total)+' total · Newest first'+itemNotice;
+     status.textContent=count+' recorded sales · '+cash(total)+' total · Newest first'+itemNotice+customerNotice;
      if(!count)line(list,'No matching sales','Try changing your filters.');
     };
     search.oninput=draw;employee.onchange=draw;minAmount.oninput=draw;maxAmount.oninput=draw;draw();
