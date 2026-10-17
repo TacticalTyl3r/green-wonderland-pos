@@ -168,3 +168,11 @@ body[data-theme] .gw-offer-modal-actions button{min-width:124px;padding:11px 17p
  body[data-theme] .gw-offer-item-row.is-custom>input[type=text]{grid-column:1/-1}
  body[data-theme] .gw-offer-item-row>button{grid-column:2}
 }
+
+/* Multiple discounted products in a Product Special. */
+body[data-theme] .gw-offer-special-item-row{grid-template-columns:minmax(0,1fr) 88px;align-items:center}
+body[data-theme] .gw-offer-special-item-row>select{grid-column:auto}
+body[data-theme] .gw-offer-special-item-row>button{grid-column:auto}
+body[data-theme] .gw-offer-type-fields>.outline{justify-self:start;min-height:39px;padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);cursor:pointer}
+body[data-theme] .gw-offer-type-fields>.outline:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:690px){body[data-theme] .gw-offer-special-item-row{grid-template-columns:minmax(0,1fr) 88px}body[data-theme] .gw-offer-special-item-row>select,body[data-theme] .gw-offer-special-item-row>button{grid-column:auto}}
