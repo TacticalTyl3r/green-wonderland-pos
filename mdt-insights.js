@@ -16,6 +16,39 @@ export async function showAnalytics(host,{call,token,cash,make}){
    const summary=make('div',undefined,'gw-mdt-stats');
    for(const [label,value] of [['Total Revenue',cash(total)],['Orders',String(orders)],['Average Order',cash(orders?total/orders:0)]]){const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));summary.append(card);}
    chart.append(summary);
+   const breakdown=make('div',undefined,'gw-mdt-roster');chart.append(make('h3','Employee Sales Performance'),breakdown);
+   try{
+    const sales=await call('gw_mdt_sales_history',{p_token:token(),p_from:start.toISOString(),p_to:end.toISOString(),p_employee:null});
+    const employeeTotals=new Map();
+    for(const sale of sales||[]){
+     const name=sale.employee_name||'Unknown';const v=employeeTotals.get(name)||{total:0,count:0};
+     v.total+=Number(sale.total||0);v.count++;employeeTotals.set(name,v);
+    }
+    for(const [name,v] of [...employeeTotals].sort((a,b)=>b[1].total-a[1].total).slice(0,20)){
+     const item=make('div',undefined,'gw-mdt-employee');item.append(make('strong',name),make('span',cash(v.total)+' · '+v.count+' sales'));breakdown.append(item);
+    }
+    if(!employeeTotals.size)breakdown.append(make('p','No employee sales in this date range.'));
+    const discountButton=make('button','Show Recorded Discounts','outline'),discountHost=make('div');
+    chart.append(discountButton,discountHost);
+    discountButton.onclick=async()=>{
+     discountButton.disabled=true;discountHost.replaceChildren(make('p','Reading stored receipt totals…'));
+     const ids=(sales||[]).map(x=>x.id||x.sale_id).filter(Boolean).slice(0,100);
+     const totals={manual_discount:0,offer_discount:0,reward_discount:0};let found=0;
+     for(let i=0;i<ids.length;i+=8){
+      const results=await Promise.all(ids.slice(i,i+8).map(async id=>{
+       try{return await call('gw_pos_get_receipt_financials',{p_token:token(),p_sale:String(id)});}catch(e){return null;}
+      }));
+      for(const row of results){if(!row)continue;found++;for(const k of Object.keys(totals))totals[k]+=Number(row[k]||0);}
+     }
+     discountHost.replaceChildren();
+     const values=make('div',undefined,'gw-mdt-stats');
+     for(const [name,v] of [['Discounts (recorded)',Object.values(totals).reduce((a,b)=>a+b,0)],['Manual',totals.manual_discount],['Specials & Bundles',totals.offer_discount],['Loyalty Redemptions',totals.reward_discount]]){
+      const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',name),make('strong',cash(v)));values.append(card);
+     }
+     discountHost.append(values,make('p',found+' of '+ids.length+' recent receipts contained saved breakdowns; sample limited to 100 transactions.'));
+     discountButton.disabled=false;
+    };
+   }catch(error){breakdown.append(make('p','Employee totals unavailable: '+error.message));}
    const byDay=new Map(rows.map(r=>[r.day.slice(0,10),{sales:Number(r.sales||0),orders:Number(r.orders||0)}]));
    const points=[];const first=Date.UTC(start.getUTCFullYear(),start.getUTCMonth(),start.getUTCDate());
    const last=Date.UTC(end.getUTCFullYear(),end.getUTCMonth(),end.getUTCDate());
