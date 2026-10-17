@@ -559,7 +559,7 @@ async function showBackupCenter(){
   const caption=document.createElement('span');caption.className='gw-site-label';caption.textContent=label;b.append(symbol,caption);
   b.onclick=()=>showSite(page);extraNav.set(page,b);
  }
- const securityLink=document.createElement('button');securityLink.type='button';securityLink.dataset.sitePage='security';securityLink.className='gw-admin-subitem gw-admin-security';securityLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">⚿</span><span class="gw-site-label">Security Center</span>';securityLink.onclick=()=>showSite('security');
+ const securityLink=document.createElement('button');securityLink.type='button';securityLink.dataset.sitePage='security';securityLink.className='gw-admin-subitem gw-admin-security';securityLink.innerHTML='<span class="gw-site-icon" aria-hidden="true">⚿</span><span class="gw-site-label">Security Center</span>';// Security Center uses the shared site navigation listener below (one click, one render).
  const offersLink=document.createElement('button');offersLink.type='button';offersLink.dataset.sitePage='offers';offersLink.className='gw-admin-subitem gw-admin-offers';offersLink.innerHTML='<span class="gw-site-icon">✦</span><span class="gw-site-label">Bundles & Specials</span>';offersLink.onclick=()=>showSite('offers');
  const adminSubmenu=document.createElement('div');adminSubmenu.className='gw-site-submenu';adminSubmenu.hidden=true;
  const bossHubLink=document.createElement('button');bossHubLink.type='button';bossHubLink.dataset.sitePage='bosshub';bossHubLink.className='gw-admin-subitem';bossHubLink.innerHTML='<span class="gw-site-icon">▣</span><span class="gw-site-label">Boss Control Center</span>';
@@ -668,7 +668,7 @@ async function showBackupCenter(){
    return;}
   if(page==='backups'){adminSubmenu.hidden=false;await showBackupCenter();return;}
   if(page==='security'){adminSubmenu.hidden=false;mdtMessage.textContent='';await showSecurityCenter(mdtContent,{call,token:()=>token||'',make,cash});
-   try{const {showSessionHealth}=await import('./security-session-insights.js?v=unified-security-20261016');
+   try{const {showSessionHealth}=await import('./security-session-insights.js?v=dedupe-security-20261016');
     await showSessionHealth(mdtContent,{call,token:()=>token||'',make});
    }catch(err){console.warn('Optional session health panel unavailable',err);}
    return;}
