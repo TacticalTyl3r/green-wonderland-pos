@@ -132,6 +132,55 @@ async function renderEmployeeSalesTrend(e,host){
 
  }catch(err){host.replaceChildren(make('p','Sales trend unavailable: '+err.message));}
 }
+async function formerEmployeeDirectory(){
+ mdtContent.replaceChildren();
+ const back=make('button','← Active Employee Roster','outline');back.onclick=()=>renderMdt();
+ const title=make('h2','Former Employees'),search=document.createElement('input'),list=make('div');
+ search.type='search';search.placeholder='Search former employees by name, CID, or rank';
+ mdtContent.append(back,title,search,list);
+ try{
+  const employees=await call('gw_former_employees',{p_token:token||''});
+  const draw=()=>{list.replaceChildren();const q=search.value.toLowerCase().trim();
+   const filtered=employees.filter(e=>[e.name,e.employee_cid,e.role,e.separation_reason].some(v=>String(v||'').toLowerCase().includes(q)));
+   if(!filtered.length)list.append(make('p','No former employees match your search.'));
+   for(const e of filtered){const card=make('div',undefined,'gw-mdt-employee'),info=make('div');
+    info.append(make('strong',e.name),make('p',[e.role,e.employee_cid?'CID: '+e.employee_cid:null,e.separated_at?'Left: '+new Date(e.separated_at).toLocaleDateString():null].filter(Boolean).join(' · ')));
+    if(e.separation_reason)info.append(make('p','Reason: '+e.separation_reason));
+    const open=make('button','Open Full History','outline');open.onclick=()=>formerEmployeeDetail(e);
+    card.append(info,open);list.append(card);
+   }
+  };search.oninput=draw;draw();
+ }catch(err){list.replaceChildren(make('p','Former employees unavailable: '+err.message));}
+}
+async function formerEmployeeDetail(e){
+ mdtContent.replaceChildren();
+ const back=make('button','← Former Employees','outline');back.onclick=formerEmployeeDirectory;
+ const heading=make('h2',e.name+' · Former Employee');
+ const summary=make('div',undefined,'gw-mdt-stats');
+ for(const [label,value] of [['CID',e.employee_cid||'—'],['Last Position',e.role],['Hire Date',e.hire_date||'—'],['Last Promoted',e.last_promoted_date||'—'],['Last Separation',e.separated_at?new Date(e.separated_at).toLocaleString():'—'],['Separation Reason',e.separation_reason||'Not recorded']]){
+  const card=make('div',undefined,'gw-mdt-stat');card.append(make('small',label),make('strong',value));summary.append(card);
+ }
+ const reactivate=make('button','Reactivate Employee','primary');
+ reactivate.onclick=()=>{
+  const form=make('form',undefined,'gw-mdt-form'),reason=document.createElement('textarea');
+  reason.required=true;reason.minLength=5;reason.maxLength=1000;reason.placeholder='Why is this employee being rehired?';
+  const label=make('label','Reactivation Reason');label.append(reason);
+  const confirm=make('button','Confirm Reactivation','primary');confirm.type='submit';
+  const cancel=make('button','Cancel','outline');cancel.type='button';cancel.onclick=()=>form.remove();
+  form.append(label,confirm,cancel);reactivate.after(form);reactivate.disabled=true;
+  cancel.onclick=()=>{form.remove();reactivate.disabled=false;};
+  form.onsubmit=async ev=>{ev.preventDefault();confirm.disabled=true;try{
+   await call('gw_employee_rehire',{p_token:token||'',p_employee:e.id,p_reason:reason.value.trim()});
+   await roster();await loadStaff();mdtMessage.textContent=e.name+' reactivated and returned to the active roster.';formerEmployeeDirectory();
+  }catch(err){mdtMessage.textContent=err.message;confirm.disabled=false;}};
+ };
+ const history=make('div');mdtContent.append(back,heading,summary,reactivate,make('h3','Complete Employment History'),history);
+ renderEmploymentHistory(history,e.id);
+ if(canFeature('employee_notes')||canFeature('employee_notes_manage')){
+  const notes=make('div');mdtContent.append(make('h3','Management Notes'),notes);
+  renderEmployeeNotes(e,notes);
+ }
+}
 async function renderEmploymentHistory(host,employeeId=null){
  host.replaceChildren(make('p','Loading employee history…'));
  try{
@@ -352,13 +401,13 @@ function renderMdt(){
  }else{
   const head=make('div',undefined,'gw-mdt-head');head.append(make('h3',mdtPage==='employees'?'Employee Roster':'Employee Hours'));
   if(mdtPage==='employees'&&canFeature('employee_add')){const add=make('button','+ Add Employee','primary');add.onclick=()=>employeeForm();head.append(add);}mdtContent.append(head);
-  if(mdtPage==='employees'&&me?.employee_role==='Boss'){const historyButton=make('button','Former Employees & Employment History','outline');historyButton.onclick=()=>{mdtContent.replaceChildren();const back=make('button','← Employee Roster','outline');back.onclick=()=>renderMdt();const title=make('h2','Employment History');const host=make('div');mdtContent.append(back,title,host);renderEmploymentHistory(host);};mdtContent.append(historyButton);}
+  if(mdtPage==='employees'&&me?.employee_role==='Boss'){const historyButton=make('button','Former Employees & Employment History','outline');historyButton.textContent='Former Employees';historyButton.onclick=formerEmployeeDirectory;mdtContent.append(historyButton);}
   if(mdtPage==='employees'){const search=document.createElement('input');search.type='search';search.placeholder='Search employees by name or position';search.value=employeeSearch;search.oninput=()=>{employeeSearch=search.value;renderMdt();const field=mdtContent.querySelector('input[type=search]');field?.focus();field?.setSelectionRange(employeeSearch.length,employeeSearch.length);};mdtContent.append(search);}
   const table=make('div',undefined,mdtPage==='employees'?'gw-mdt-roster gw-roster-groups':'gw-mdt-roster');
   const ranks=['Boss','Manager','Senior Salesman','Salesman'];const grouped={};
   if(mdtPage==='employees'){for(const rank of ranks){const section=make('section',undefined,'gw-roster-section');section.append(make('h3',rank));const grid=make('div',undefined,'gw-roster-grid');section.append(grid);grouped[rank]=grid;table.append(section);}}
 
-  for(const e of [...staffRows].sort((a,b)=>{const ranks=['Boss','Manager','Senior Salesman','Salesman'];return ranks.indexOf(a.role)-ranks.indexOf(b.role)||a.name.localeCompare(b.name);}).filter(e=>mdtPage!=='employees'||(e.name+' '+e.role).toLowerCase().includes(employeeSearch.toLowerCase()))){const row=make('div',undefined,mdtPage==='employees'?'gw-mdt-employee gw-roster-card':'gw-mdt-employee');const info=make('div');if(mdtPage==='employees'){const avatar=make('span',e.name.split(/\s+/).map(part=>part[0]||'').slice(0,2).join('').toUpperCase(),'gw-roster-avatar');const url=window.gwEmployeeProfileImages?.[String(e.id)];if(url){const photo=document.createElement('img');photo.src=url;photo.alt=e.name+' profile picture';photo.className='gw-roster-photo';photo.onerror=()=>{photo.remove();avatar.hidden=false;};avatar.hidden=true;info.append(photo);}info.append(avatar);}if(mdtPage==='employees'){const profile=make('button',e.name,'outline');profile.onclick=async()=>{try{if(canFeature('sales_earnings'))await loadSales();else salesRows=[];employeeProfile(e);}catch(err){mdtMessage.textContent=err.message;employeeProfile(e);}};info.append(profile);}else info.append(make('strong',e.name));info.append(make('p',e.role+' · '+(e.active===false?'Inactive':e.clocked_in?'On duty':'Off duty')+' · '+formatHours(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))+' hours'));const actions=make('div',undefined,'gw-mdt-actions');if(mdtPage==='employees'&&['employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset'].some(canFeature)){const edit=make('button','Edit / PIN','outline');edit.onclick=()=>employeeForm(e);actions.append(edit);}if(canFeature('time_add')||canFeature('time_remove')){const adjust=make('button','Adjust Time','outline');adjust.onclick=()=>adjustTime(e);actions.append(adjust);}row.append(info,actions);(mdtPage==='employees'?(grouped[e.role]||grouped['Salesman']):table).append(row);}if(mdtPage==='employees'){for(const section of [...table.children])if(!section.querySelector('.gw-roster-card'))section.remove();}if(!staffRows.length)table.append(make('p','No employees found. Add your first employee to get started.'));mdtContent.append(table);
+  for(const e of [...staffRows].sort((a,b)=>{const ranks=['Boss','Manager','Senior Salesman','Salesman'];return ranks.indexOf(a.role)-ranks.indexOf(b.role)||a.name.localeCompare(b.name);}).filter(e=>mdtPage!=='employees'||(e.active!==false&&(e.name+' '+e.role).toLowerCase().includes(employeeSearch.toLowerCase())))){const row=make('div',undefined,mdtPage==='employees'?'gw-mdt-employee gw-roster-card':'gw-mdt-employee');const info=make('div');if(mdtPage==='employees'){const avatar=make('span',e.name.split(/\s+/).map(part=>part[0]||'').slice(0,2).join('').toUpperCase(),'gw-roster-avatar');const url=window.gwEmployeeProfileImages?.[String(e.id)];if(url){const photo=document.createElement('img');photo.src=url;photo.alt=e.name+' profile picture';photo.className='gw-roster-photo';photo.onerror=()=>{photo.remove();avatar.hidden=false;};avatar.hidden=true;info.append(photo);}info.append(avatar);}if(mdtPage==='employees'){const profile=make('button',e.name,'outline');profile.onclick=async()=>{try{if(canFeature('sales_earnings'))await loadSales();else salesRows=[];employeeProfile(e);}catch(err){mdtMessage.textContent=err.message;employeeProfile(e);}};info.append(profile);}else info.append(make('strong',e.name));info.append(make('p',e.role+' · '+(e.active===false?'Inactive':e.clocked_in?'On duty':'Off duty')+' · '+formatHours(Number(e.worked_minutes||0)+Number(e.adjusted_minutes||0))+' hours'));const actions=make('div',undefined,'gw-mdt-actions');if(mdtPage==='employees'&&['employee_edit','employee_deactivate','employee_role_assign','employee_pin_reset'].some(canFeature)){const edit=make('button','Edit / PIN','outline');edit.onclick=()=>employeeForm(e);actions.append(edit);}if(canFeature('time_add')||canFeature('time_remove')){const adjust=make('button','Adjust Time','outline');adjust.onclick=()=>adjustTime(e);actions.append(adjust);}row.append(info,actions);(mdtPage==='employees'?(grouped[e.role]||grouped['Salesman']):table).append(row);}if(mdtPage==='employees'){for(const section of [...table.children])if(!section.querySelector('.gw-roster-card'))section.remove();}if(!staffRows.length)table.append(make('p','No employees found. Add your first employee to get started.'));mdtContent.append(table);
  }
 }
 async function switchPage(page){mdtPage=page;mdt.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='sales'){mdtMessage.textContent='Loading sales…';try{await loadSales();mdtMessage.textContent='';}catch(e){mdtContent.replaceChildren();mdtMessage.textContent='Sales report unavailable: '+e.message;return;}}renderMdt();}
