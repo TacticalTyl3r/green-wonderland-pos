@@ -9,7 +9,7 @@ Green Wonderland's point-of-sale and management dashboard. This is a **static Ja
 - **`phase4-pos.js`** and **`pos-deals.js`** — offer pricing, loyalty checkout support, and the Bundles & Deals POS section.
 - **`employees.js`**, **`business-mdt.js`**, **`mdt-insights.js`**, **`phase4-management.js`** — management and reporting screens.
 - **`branding.js`** — logos, favicon, image slots, and related branding controls.
-- **`styles.css`**, **`pos-storefront.css`**, **`themes-global.css`**, and other feature-specific CSS — appearance and theme overrides.
+- **`styles.css`**, **`pos-storefront.css`**, and **`styles/theme/`** — base styling, POS presentation, and ordered modular theme overrides. See [theme styles](styles/theme/README.md).
 - **`config.js`** — public Supabase client configuration. **Never put a service-role key, database password, or other secret here.**
 - **`supabase/functions/`** — Supabase Edge Function source.
 - **`supabase/sql/`** — SQL migrations, patches, and historical setup scripts. See [SQL guidance](supabase/sql/README.md).

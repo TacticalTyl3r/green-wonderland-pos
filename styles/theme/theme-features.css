@@ -1,0 +1,245 @@
+/* Additional MDT management tools follow the existing themed card system */
+body[data-theme] .gw-feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}
+body[data-theme] .gw-feature-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--text);margin:8px 0}
+body[data-theme] .gw-feature-card h3{font-size:18px;margin:0;color:var(--text)}
+body[data-theme] .gw-feature-card strong{font-size:15px;color:var(--text)}
+body[data-theme] .gw-feature-card p{margin:0;color:var(--muted);line-height:1.55;white-space:pre-wrap}
+body[data-theme] .gw-feature-card small{color:var(--accent)}
+body[data-theme] .gw-feature-card button{margin-top:auto}
+body[data-theme] .gw-site-submenu .gw-admin-notifications{--sub-icon-color:#55d3a0}
+body[data-theme] .gw-site-submenu .gw-admin-backups{--sub-icon-color:#64baff}
+
+/* Dashboard notifications: visible, theme-aware announcement panel */
+body[data-theme] .gw-dashboard-notifications{margin-top:24px;margin-bottom:28px;padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-head h2{margin:0;font-size:22px;color:var(--text)}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-head p{color:var(--muted);font-size:12px;margin:5px 0 0}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-actions{display:flex;justify-content:flex-end;margin-bottom:12px}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+body[data-theme] .gw-dashboard-notifications .gw-feature-card{margin:0;background:var(--panel)}
+body[data-theme] .gw-dashboard-notifications .gw-mdt-form{margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+
+/* Phase 2 management screens share the MDT card design and active theme */
+body[data-theme] .gw-mgmt-search{display:block;width:100%;max-width:520px;margin:16px 0 12px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:9px;padding:12px 14px}
+body[data-theme] .gw-feature-card .gw-mdt-form{width:100%;display:grid;gap:10px;padding:12px;margin-top:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+body[data-theme] .gw-feature-card .gw-mdt-form input,
+body[data-theme] .gw-feature-card .gw-mdt-form select,
+body[data-theme] .gw-feature-card .gw-mdt-form textarea{width:100%;max-width:100%;box-sizing:border-box}
+body[data-theme] .gw-feature-card .gw-mdt-form button{width:100%}
+body[data-theme] .gw-site-submenu button[data-site-page="adjustments"]{--sales-tint:#f28a91;--sales-symbol:"↩";display:flex!important;align-items:center;gap:10px;min-height:47px;padding:7px 10px!important;border-radius:10px;text-align:left}
+body[data-theme] .gw-site-submenu button[data-site-page="adjustments"]::before{content:var(--sales-symbol);display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:9px;font-size:18px;font-weight:800;color:var(--sales-tint);background:color-mix(in srgb,var(--sales-tint) 15%,var(--panel));border:1px solid color-mix(in srgb,var(--sales-tint) 35%,var(--line))}
+body[data-theme] .gw-site-submenu button[data-site-page="adjustments"]:hover{background:color-mix(in srgb,var(--sales-tint) 10%,var(--panel2))!important}
+body[data-theme] .gw-site-submenu button[data-site-page="adjustments"].active{background:color-mix(in srgb,var(--sales-tint) 18%,var(--panel2))!important;border-color:var(--sales-tint)!important}
+
+/* Refunded / voided transaction audit cards */
+body[data-theme] .gw-adjustment-history{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px;margin-top:12px}
+body[data-theme] .gw-adjustment-card{--adjust-color:#e96d75;position:relative;min-width:0;padding:19px 20px;border:1px solid color-mix(in srgb,var(--adjust-color) 35%,var(--line));border-left:4px solid var(--adjust-color);border-radius:12px;background:linear-gradient(145deg,color-mix(in srgb,var(--adjust-color) 8%,var(--panel2)),var(--panel));color:var(--text);box-shadow:0 8px 22px #0001}
+body[data-theme] .gw-adjustment-card.gw-adjustment-refund{--adjust-color:#57d398}
+body[data-theme] .gw-adjustment-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-bottom:15px;border-bottom:1px solid var(--line)}
+body[data-theme] .gw-adjustment-tag{display:inline-flex;align-items:center;border-radius:6px;padding:7px 10px;background:color-mix(in srgb,var(--adjust-color) 13%,var(--panel));color:var(--adjust-color);font-weight:800;font-size:11px;letter-spacing:.07em}
+body[data-theme] .gw-adjustment-amount{font-size:23px;color:var(--adjust-color);font-weight:900;font-variant-numeric:tabular-nums}
+body[data-theme] .gw-adjustment-reason{padding:15px 0}
+body[data-theme] .gw-adjustment-reason p{margin:7px 0 0;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);font-size:14px}
+body[data-theme] .gw-adjustment-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px;padding:14px;border-radius:9px;background:color-mix(in srgb,var(--panel) 75%,transparent);border:1px solid var(--line)}
+body[data-theme] .gw-adjustment-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+body[data-theme] .gw-adjustment-field-label{color:var(--muted);font-size:10px;letter-spacing:.12em;font-weight:800}
+body[data-theme] .gw-adjustment-field-value{color:var(--text);font-size:12px;font-weight:650;overflow-wrap:anywhere}
+body[data-theme] .gw-adjustment-actor{color:var(--adjust-color);font-weight:800;font-size:13px}
+body[data-theme] .gw-adjustment-sale-id{font-size:11px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}
+body[data-theme] .gw-adjustment-field:last-child{grid-column:1/-1}
+@media(max-width:430px){body[data-theme] .gw-adjustment-fields{grid-template-columns:1fr}body[data-theme] .gw-adjustment-field:last-child{grid-column:auto}}
+
+/* Phase 3: theme-aware security, dashboard preferences and milestone cards */
+body[data-theme] .gw-dashboard-widget{margin:22px 0 26px}
+body[data-theme] .gw-dashboard-widget.gw-dashboard-notifications{margin-top:16px;margin-bottom:30px}
+body[data-theme] .gw-dashboard-preferences{display:grid;gap:9px;width:100%}
+body[data-theme] .gw-dashboard-preference{display:flex;align-items:center;gap:12px;padding:9px 11px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+body[data-theme] .gw-dashboard-preference>span{flex:1;color:var(--text);font-size:13px;font-weight:650}
+body[data-theme] .gw-dashboard-preference>input{accent-color:var(--accent);width:17px;height:17px}
+body[data-theme] .gw-dashboard-preference>button{width:34px;min-width:34px;height:32px;padding:0}
+body[data-theme] .gw-achievement-badges{display:flex;gap:8px;flex-wrap:wrap}
+body[data-theme] .gw-achievement-badge{display:inline-flex;align-items:center;padding:7px 11px;border-radius:20px;font-weight:800;font-size:11px;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line))}
+body[data-theme] .gw-site-submenu .gw-admin-security{--sub-icon-color:#58d6ba}
+body[data-theme] .gw-security-session{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;width:100%;padding:10px 0;border-top:1px solid var(--line)}
+body[data-theme] .gw-security-session>span{flex:1;font-size:11px;line-height:1.5;color:var(--muted)}
+body[data-theme] .gw-security-session button{font-size:11px;padding:7px 10px;min-height:30px}
+body[data-theme] .gw-notice-card{transition:border-color .15s ease,background .15s ease}
+body[data-theme] .gw-notice-card.gw-notice-unread{border-left:4px solid var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+body[data-theme] .gw-notice-heading{display:flex;align-items:center;gap:12px;justify-content:space-between;width:100%;flex-wrap:wrap}
+body[data-theme] .gw-notice-heading button{font-size:11px;padding:7px 10px;min-height:30px}
+body[data-theme] .gw-notice-heading button:disabled{opacity:.55;cursor:default}
+
+/* Phase 4 · Green Wonderland POS offers / rewards */
+body[data-theme] .gw-phase4-checkout{display:grid;gap:11px;margin:14px 0;padding:16px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:13px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 8%,var(--panel2)),var(--panel))}
+body[data-theme] .gw-phase4-heading{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:8px;color:var(--accent);letter-spacing:.06em;font-size:12px}
+body[data-theme] .gw-phase4-heading small{color:var(--muted);letter-spacing:0;font-weight:500}
+body[data-theme] .gw-phase4-field{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+body[data-theme] .gw-phase4-field input{flex:1;min-width:145px;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text)}
+body[data-theme] .gw-phase4-field button{padding:9px 12px;min-height:38px}
+body[data-theme] .gw-phase4-status{color:var(--muted);font-size:12px;margin:0}
+body[data-theme] .gw-loyalty-member{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:12px;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));background:color-mix(in srgb,var(--accent) 9%,var(--panel));border-radius:9px}
+body[data-theme] .gw-loyalty-member div{display:grid;gap:4px}
+body[data-theme] .gw-loyalty-member strong{color:var(--text);font-size:14px}
+body[data-theme] .gw-loyalty-member small{color:var(--accent)}
+body[data-theme] .gw-loyalty-redeem{display:grid;gap:7px;color:var(--text);font-size:12px;font-weight:700}
+body[data-theme] .gw-loyalty-redeem input{width:100%;padding:10px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px}
+body[data-theme] .gw-pos-offer-list{display:flex;flex-wrap:wrap;gap:7px;font-size:12px}
+body[data-theme] .gw-pos-offer-list strong{width:100%;color:var(--muted)}
+body[data-theme] .gw-pos-offer-list>span{display:inline-flex;border-radius:7px;padding:5px 9px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--panel))}
+body[data-theme] .gw-pos-favorites{margin:10px 0 16px;padding:13px 14px;border-radius:11px;border:1px solid var(--line);background:var(--panel2)}
+body[data-theme] .gw-favorite-items{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+body[data-theme] .gw-favorite-items button{font-size:12px;min-height:32px;padding:6px 10px}
+body[data-theme] .gw-favorite-items small{color:var(--muted)}
+body[data-theme] .gw-favorite-toggle{min-width:34px!important;width:34px!important;padding:4px!important;font-size:21px!important;color:#e6c773!important;border-radius:7px}
+body[data-theme] .gw-special-tag{display:inline-flex;margin:7px 0;border-radius:6px;padding:4px 8px;background:color-mix(in srgb,var(--accent) 17%,var(--panel));border:1px solid var(--accent);color:var(--accent);font-weight:900;font-size:11px}
+body[data-theme] .gw-offer-form{margin:16px 0 22px;max-width:900px;padding:18px;background:var(--panel2);border:1px solid var(--line);border-radius:13px;display:grid;gap:12px}
+body[data-theme] .gw-offer-form>input,body[data-theme] .gw-offer-form>select,body[data-theme] .gw-offer-form .gw-phase4-field select,body[data-theme] .gw-offer-form .gw-phase4-field input{background:var(--panel);color:var(--text);border:1px solid var(--line);padding:11px;border-radius:8px;min-height:40px}
+body[data-theme] .gw-offer-bundle-fields{display:grid;gap:10px}
+body[data-theme] .gw-bundle-parts{display:grid;gap:8px}
+body[data-theme] .gw-bundle-parts .gw-phase4-field select{flex:1;min-width:165px}
+body[data-theme] .gw-bundle-parts .gw-phase4-field input{max-width:84px;min-width:65px}
+body[data-theme] .gw-offer-form [hidden]{display:none!important}
+body[data-theme] .gw-receipt-phase4{display:grid;gap:6px;margin-top:14px;padding-top:12px;border-top:1px dashed #555}
+body[data-theme] .gw-history-filter{width:100%;padding:12px;margin-bottom:12px;color:var(--text);border:1px solid var(--line);background:var(--panel);border-radius:9px}
+body[data-theme] .gw-site-submenu button[data-site-page="productanalytics"]::before{content:"▤";display:inline-grid;place-items:center;width:30px;height:30px;margin-right:8px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--panel));border-radius:7px}
+
+/* Itemized Sales History and Customer Loyalty Management */
+body[data-theme] .gw-sales-history-card{display:grid;gap:8px;padding:16px 18px;margin-bottom:9px;border:1px solid var(--line);border-radius:9px;background:linear-gradient(135deg,var(--panel2),var(--panel));color:var(--text)}
+body[data-theme] .gw-sales-history-head{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap}
+body[data-theme] .gw-sales-history-head strong{font-size:14px;color:var(--text);font-weight:800}
+body[data-theme] .gw-sales-history-card>small{color:var(--muted);font-size:11px}
+body[data-theme] .gw-sales-history-items{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;display:grid;gap:6px}
+body[data-theme] .gw-sales-history-items>small{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--muted)}
+body[data-theme] .gw-sales-history-item{display:flex;align-items:start;justify-content:space-between;gap:12px;padding:6px 8px;border-radius:7px;background:color-mix(in srgb,var(--accent) 4%,var(--panel))}
+body[data-theme] .gw-sales-history-item span{font-size:12px;color:var(--text);overflow-wrap:anywhere}
+body[data-theme] .gw-sales-history-item strong{color:var(--accent);font-size:12px;white-space:nowrap}
+body[data-theme] .gw-loyalty-layout{display:grid;grid-template-columns:minmax(240px,340px) minmax(0,1fr);gap:17px;margin-top:18px;align-items:start}
+body[data-theme] .gw-loyalty-directory{display:grid;gap:9px;align-content:start;max-height:850px;overflow-y:auto}
+body[data-theme] .gw-loyalty-member-card{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;width:100%;border-radius:10px;padding:14px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer}
+body[data-theme] .gw-loyalty-member-card:hover,body[data-theme] .gw-loyalty-member-card.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--panel))}
+body[data-theme] .gw-loyalty-member-card>div{display:grid;gap:5px;min-width:0}
+body[data-theme] .gw-loyalty-member-card strong{font-size:13px;overflow-wrap:anywhere}
+body[data-theme] .gw-loyalty-member-card small{font-size:11px;color:var(--muted)}
+body[data-theme] .gw-loyalty-member-points{font-weight:900;color:var(--accent);font-size:12px;white-space:nowrap}
+body[data-theme] .gw-loyalty-profile{min-width:0;padding:20px;border-radius:13px;border:1px solid var(--line);background:var(--panel2);display:grid;gap:18px}
+body[data-theme] .gw-loyalty-profile-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+body[data-theme] .gw-loyalty-profile-head>div:first-child{display:grid;gap:5px}
+body[data-theme] .gw-loyalty-profile-head small{color:var(--muted);font-size:10px;letter-spacing:.1em}
+body[data-theme] .gw-loyalty-profile-head h3{margin:0;font-size:23px;color:var(--text)}
+body[data-theme] .gw-loyalty-profile-head p{margin:0;font-size:12px;color:var(--muted)}
+body[data-theme] .gw-loyalty-points{display:grid;gap:4px;padding:12px 18px;border-radius:10px;text-align:center;background:color-mix(in srgb,var(--accent) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line))}
+body[data-theme] .gw-loyalty-points strong{font-size:25px;color:var(--accent)}
+body[data-theme] .gw-loyalty-adjust-form{display:grid;gap:9px;padding:15px;border-radius:10px;background:var(--panel);border:1px solid var(--line)}
+body[data-theme] .gw-loyalty-adjust-form h4{margin:0;color:var(--text)}
+body[data-theme] .gw-loyalty-adjust-form p{margin:0;color:var(--muted);font-size:12px}
+body[data-theme] .gw-loyalty-adjust-form input,body[data-theme] .gw-loyalty-adjust-form textarea{width:100%;padding:11px;border-radius:8px;background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+body[data-theme] .gw-loyalty-activity-list{display:grid;gap:9px;margin-top:12px}
+body[data-theme] .gw-loyalty-activity-card{padding:13px 15px;border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--panel);border-radius:9px;display:grid;gap:7px}
+body[data-theme] .gw-loyalty-activity-card.gw-loyalty-negative{border-left-color:#e5737c}
+body[data-theme] .gw-loyalty-activity-card.gw-loyalty-negative .gw-loyalty-activity-top>strong:last-child{color:#e5737c}
+body[data-theme] .gw-loyalty-activity-card.gw-loyalty-positive .gw-loyalty-activity-top>strong:last-child{color:#5dcf91}
+body[data-theme] .gw-loyalty-activity-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+body[data-theme] .gw-loyalty-activity-top strong{color:var(--text);font-size:13px}
+body[data-theme] .gw-loyalty-activity-card>small{font-size:11px;color:var(--muted)}
+body[data-theme] .gw-loyalty-activity-card>p{margin:0;color:var(--text);font-size:12px}
+@media(max-width:860px){body[data-theme] .gw-loyalty-layout{grid-template-columns:1fr}body[data-theme] .gw-loyalty-directory{max-height:350px}}
+
+/* Loyalty & Rewards sidebar icon — matches Product Analytics submenu styling */
+body[data-theme] .gw-site-submenu button[data-site-page="loyalty"]::before{content:"★";display:inline-grid;place-items:center;width:30px;height:30px;margin-right:8px;color:#79dba6;background:color-mix(in srgb,#79dba6 14%,var(--panel));border-radius:7px}
+
+
+/* Management desktop finish: consistent filters, exports and audit summaries. */
+@media (min-width: 861px) {
+  body[data-theme] .gw-loyalty-directory{max-height:680px;overflow:auto;scrollbar-gutter:stable}
+  body[data-theme] .gw-loyalty-profile .gw-loyalty-activity-list{max-height:560px;overflow-y:auto;padding-right:6px}
+}
+body[data-theme] .gw-permissions-panel>input[type="search"]{
+ display:block;width:calc(100% - 32px);margin:12px 16px 5px;max-width:520px;
+ border:1px solid var(--line);border-radius:9px;padding:11px 13px;
+ background:var(--panel2);color:var(--text)
+}
+body[data-theme] .gw-permissions-count{margin:6px 16px 12px;color:var(--muted);font-size:12px}
+body[data-theme] .gw-permissions-item[hidden]{display:none!important}
+body[data-theme] .gw-loyalty-activity>button{margin-top:8px}
+body[data-theme] .gw-history-intro{line-height:1.65}
+
+
+/* MDT connection status: clear yellow / red / green states. */
+#status[data-connection="connecting"]{color:#f6cb55!important;border-color:#c49b32!important;background:rgba(246,203,85,.13)!important}
+#status[data-connection="offline"]{color:#ff7777!important;border-color:#c84646!important;background:rgba(200,55,55,.13)!important}
+#status[data-connection="online"]{color:#75e6a0!important;border-color:#319c60!important;background:rgba(49,156,96,.13)!important}
+
+/* POS order viewport: override legacy theme sticky/static rules. */
+@media (min-width:951px){
+ body[data-theme] .gw-site-content .shell main>.order{
+  position:sticky!important;
+  top:var(--gw-pos-header-bottom,130px)!important;
+  transform:none!important;
+  align-self:start!important;
+  box-sizing:border-box;
+  height:calc(100dvh - var(--gw-pos-header-bottom,130px) - 8px)!important;
+  max-height:calc(100dvh - var(--gw-pos-header-bottom,130px) - 8px)!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  padding:12px!important;
+ }
+ body[data-theme] .gw-site-content .shell main>.order>.section-head,
+ body[data-theme] .gw-site-content .shell main>.order>.ordertabs{flex-shrink:0}
+ body[data-theme] .gw-site-content .shell main>.order>#cartView:not([hidden]){
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  scrollbar-width:thin;
+ }
+ body[data-theme] .gw-site-content .shell main>.order>#cartView>.checkout{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:2;
+  flex-shrink:0;
+  margin-top:auto!important;
+  padding:8px 0 2px!important;
+  background:var(--panel,#14251c);
+ }
+ body[data-theme] .gw-site-content .shell main>.order>#ingredientsView:not([hidden]),
+ body[data-theme] .gw-site-content .shell main>.order>#historyView:not([hidden]){
+  min-height:0;overflow-y:auto!important;flex:1 1 auto;
+ }
+}
+
+/* Loyalty earning switch and compact checkout redemption controls. */
+.gw-loyalty-switch-row{display:flex!important;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+.gw-loyalty-switch-input{position:absolute;opacity:0;width:1px;height:1px}
+.gw-loyalty-switch-track{position:relative;display:inline-block;flex:none;width:48px;height:26px;border-radius:99px;background:#58655e;border:1px solid var(--line,#506354);transition:background .15s}
+.gw-loyalty-switch-track:before{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s}
+.gw-loyalty-switch-input:checked+.gw-loyalty-switch-track{background:#268b55}
+.gw-loyalty-switch-input:checked+.gw-loyalty-switch-track:before{transform:translateX(22px)}
+.gw-loyalty-switch-input:focus-visible+.gw-loyalty-switch-track{outline:2px solid var(--accent,#78d49d);outline-offset:3px}
+.gw-checkout-rewards{display:flex;flex-direction:column;gap:5px;margin:7px 0;padding:8px;border:1px solid var(--line,#30473a);border-radius:8px;background:var(--panel2,#12261a)}
+.gw-checkout-rewards>strong{font-size:13px}
+.gw-checkout-rewards>small{font-size:11px;line-height:1.3}
+.gw-checkout-rewards-actions{display:flex;gap:6px;align-items:center}
+.gw-checkout-rewards-actions input,.gw-checkout-rewards-actions select{min-width:0;flex:1;height:33px;padding:5px}
+.gw-checkout-rewards-actions button{flex:none;min-height:33px;padding:5px 9px;font-size:11px}
+
+/* Sales history controls — responsive and independent of sticky checkout sizing. */
+.gw-history-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));align-items:end;gap:10px;margin:12px 0 14px}
+.gw-history-filter-field{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;min-width:0}
+.gw-history-filter-field input,.gw-history-filter-field select{width:100%;min-width:0;max-width:100%;box-sizing:border-box;padding:9px;border-radius:7px}
+.gw-history-filters>button{min-height:38px}
+.gw-history-result-count{font-size:13px;opacity:.82;margin:6px 0 10px}
+@media(max-width:550px){.gw-history-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.gw-history-filter-field:first-child{grid-column:1/-1}.gw-history-filters>button{grid-column:1/-1}}
+
+/* Employee active-status sliding switch */
+.gw-employee-switch{display:flex!important;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;cursor:pointer}
+.gw-employee-switch-input{position:absolute;opacity:0;width:1px;height:1px}
+.gw-employee-switch-track{position:relative;display:inline-block;flex:none;width:48px;height:27px;border-radius:99px;background:#707783;transition:background .18s}
+.gw-employee-switch-track:before{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:white;transition:transform .18s;box-shadow:0 1px 3px #0004}
+.gw-employee-switch-input:checked+.gw-employee-switch-track{background:#26895c}
+.gw-employee-switch-input:checked+.gw-employee-switch-track:before{transform:translateX(21px)}
+.gw-employee-switch-input:focus-visible+.gw-employee-switch-track{outline:3px solid #79b7ff;outline-offset:3px}
+.gw-employee-switch-input:disabled+.gw-employee-switch-track{opacity:.45}

@@ -1,0 +1,215 @@
+/* Complete personal theme coverage: POS, Store MDT, side navigation, modals,
+   charts, category buttons, and settings. Loaded after all legacy styles. */
+:root{--gw-accent-soft:color-mix(in srgb,var(--accent) 18%,var(--panel));--gw-accent-strong:color-mix(in srgb,var(--accent) 65%,var(--panel));--gw-panel-deep:color-mix(in srgb,var(--panel) 65%,var(--bg));--gw-border-soft:color-mix(in srgb,var(--line) 75%,var(--panel))}
+body[data-theme]{background:var(--bg)!important;color:var(--text)!important}
+body[data-theme] .gw-site-sidebar,body[data-theme] .gw-mdt-sidebar{background:var(--gw-panel-deep)!important;border-color:var(--line)!important;color:var(--text)!important}
+body[data-theme] .gw-site-brand,body[data-theme] .gw-site-toggle,body[data-theme] .gw-mdt-toggle{color:var(--accent)!important}
+body[data-theme] #gwSiteNav button,body[data-theme] #gwMdt .gw-mdt-tabs button,body[data-theme] .gw-site-submenu button{color:var(--text)!important;background:transparent!important;border-color:transparent!important}
+body[data-theme] #gwSiteNav button:hover,body[data-theme] #gwMdt .gw-mdt-tabs button:hover{background:var(--gw-accent-soft)!important}
+body[data-theme] #gwSiteNav button.active,body[data-theme] #gwMdt .gw-mdt-tabs button.active{background:var(--gw-accent-soft)!important;border-color:var(--accent)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell>header,body[data-theme] .gw-global-header{background:var(--panel)!important;border-color:var(--line)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell .brand h1,body[data-theme] .gw-site-content .shell .brand h1 em,body[data-theme] .gw-site-content .shell .brand p{color:var(--text)!important}
+body[data-theme] .gw-site-content .shell .brand .mark{background:var(--panel2)!important;border-color:var(--line)!important;color:var(--accent)!important}
+body[data-theme] .gw-site-content .shell .panel,body[data-theme] .gw-mdt-main,body[data-theme] #gwMdt,body[data-theme] #gwSettings,body[data-theme] dialog{background:var(--panel)!important;color:var(--text)!important;border-color:var(--line)!important}
+body[data-theme] .gw-site-content .shell .product,body[data-theme] .gw-mdt-stat,body[data-theme] .gw-mdt-employee,body[data-theme] .gw-mdt-roster>div,body[data-theme] .gw-site-content .shell .cartline,body[data-theme] .adminbar{background:var(--panel2)!important;color:var(--text)!important;border-color:var(--line)!important}
+body[data-theme] .gw-site-content .shell .product .gw-product-placeholder,body[data-theme] .gw-site-content .shell .product .gw-product-photo{background:var(--gw-panel-deep)!important;color:var(--accent)!important}
+body[data-theme] .gw-site-content .shell #categories button,body[data-theme] .gw-site-content .shell .ordertabs button,body[data-theme] .gw-site-content .shell .qty button{background:var(--panel2)!important;color:var(--text)!important;border-color:var(--line)!important}
+body[data-theme] .gw-site-content .shell #categories button.active,body[data-theme] .gw-site-content .shell .ordertabs button.active{background:var(--gw-accent-soft)!important;border-color:var(--accent)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell button.primary,body[data-theme] .gw-site-content .shell .product button,body[data-theme] .primary{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--bg)!important}
+body[data-theme] .gw-site-content .shell button.primary:hover,body[data-theme] .gw-site-content .shell .product button:hover,body[data-theme] .primary:hover{background:var(--gw-accent-strong)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell button:not(.primary):not([data-add]),body[data-theme] #gwMdt button:not(.primary):not(.active),body[data-theme] #gwSettings button:not(.primary):not(.gw-theme-choice){border-color:var(--line);color:var(--text)}
+body[data-theme] .gw-site-content .shell input:not([type=radio]):not([type=range]),body[data-theme] .gw-site-content .shell select,body[data-theme] #gwMdt input,body[data-theme] #gwMdt select,body[data-theme] #gwMdt textarea,body[data-theme] #gwSettings input,body[data-theme] #gwSettings select{background:var(--panel2)!important;border-color:var(--line)!important;color:var(--text)!important}
+body[data-theme] .gw-site-content .shell .price,body[data-theme] .gw-site-content .shell .grand b,body[data-theme] .gw-mdt-stat strong,body[data-theme] .gw-mdt-sales-figures strong,body[data-theme] .gw-category-heading h3{color:var(--accent)!important}
+body[data-theme] .gw-site-content .shell .gw-category-heading,body[data-theme] .gw-site-content .shell .totals,body[data-theme] .gw-site-content .shell .control{border-color:var(--line)!important}
+body[data-theme] .gw-site-content .shell small,body[data-theme] .gw-site-content .shell p,body[data-theme] .gw-mdt-employee p,body[data-theme] #gwMdt p,body[data-theme] .gw-category-heading span{color:var(--muted)}
+body[data-theme] .gw-site-content .shell .gw-product-name,body[data-theme] .gw-site-content .shell h2,body[data-theme] #gwMdt h2,body[data-theme] #gwMdt h3{color:var(--text)!important}
+body[data-theme] .gw-sales-chart button{background:var(--accent)!important}
+body[data-theme] .gw-theme-choice[aria-pressed=true]{outline:2px solid var(--accent)}
+body[data-theme] #gwSettings .gw-theme-choice{background:var(--panel2);color:var(--text);border-color:var(--line)}
+body[data-theme] #gwSettings .gw-theme-choice:hover{border-color:var(--accent)}
+body[data-theme] .gw-site-content .shell .empty{border-color:var(--line);color:var(--muted)}
+/* Light themes need legible button text even with a dark brand accent. */
+body[data-theme="light"] .primary,body[data-theme="arctic"] .primary,body[data-theme="cherry"] .primary,body[data-theme="sand"] .primary{color:#fff!important}
+
+/* Management layout refinement: inherit selected theme */
+body[data-theme] .gw-roster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body[data-theme] .gw-roster-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px;gap:12px}
+body[data-theme] .gw-roster-card>div:first-child{display:flex;flex-direction:column;align-items:center;gap:8px}
+body[data-theme] .gw-roster-avatar{width:60px;height:60px;border-radius:50%;background:var(--gw-accent-soft);color:var(--accent);display:grid;place-items:center;font-size:20px;font-weight:800}
+body[data-theme] .gw-role-picker{display:grid;gap:8px;margin:15px 0}
+body[data-theme] .gw-role-selector{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:12px}
+body[data-theme] .gw-permission-card[hidden]{display:none!important}
+@media(max-width:750px){body[data-theme] .gw-roster-grid{grid-template-columns:1fr}}
+
+body[data-theme] .gw-mdt-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body[data-theme] .gw-mdt-stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px;min-height:95px}
+body[data-theme] .gw-mdt-stat small{color:var(--muted);font-size:12px}
+body[data-theme] .gw-mdt-stat strong{color:var(--text);font-size:22px}
+body[data-theme] .gw-time-adjust-form{max-width:750px;margin:0 auto;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px}
+body[data-theme] .gw-time-adjust-form label{display:grid;gap:8px;color:var(--muted)}
+body[data-theme] .gw-time-adjust-form input,body[data-theme] .gw-time-adjust-form textarea{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px}
+body[data-theme] .gw-time-fields,body[data-theme] .gw-time-type{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+body[data-theme] .gw-time-type button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:12px}
+body[data-theme] .gw-time-type button.active{background:var(--gw-accent-soft);border-color:var(--accent)}
+body[data-theme] .gw-time-employee{color:var(--text);padding:12px;border:1px solid var(--line);border-radius:9px}
+@media(max-width:550px){body[data-theme] .gw-mdt-stats{grid-template-columns:1fr}}
+
+body[data-theme] #adminDialog{width:min(1100px,96vw);max-height:92vh;overflow-y:auto;background:var(--panel);color:var(--text)}
+body[data-theme] .gw-catalog-search{display:block;width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:12px;margin:12px 0}
+body[data-theme] #adminProducts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body[data-theme] .gw-catalog-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;min-width:0}
+body[data-theme] .gw-catalog-editor>input{width:100%;min-width:0;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}
+body[data-theme] .gw-catalog-editor>label:has([data-field="image_url"]),body[data-theme] .gw-catalog-editor>.gw-admin-image-row,body[data-theme] .gw-catalog-editor>.gw-editor-list{grid-column:1/-1}
+body[data-theme] .gw-catalog-editor .gw-admin-image-row img{max-width:100px;max-height:100px;object-fit:contain}
+@media(max-width:850px){body[data-theme] #adminProducts{grid-template-columns:1fr}}
+
+body[data-theme] .gw-leader-panel{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px;margin:16px 0}
+body[data-theme] .gw-leader-panel h3{margin:0 0 16px;color:var(--text)}
+body[data-theme] .gw-leader-item{display:grid;gap:7px;margin:12px 0}
+body[data-theme] .gw-leader-caption{display:flex;justify-content:space-between;gap:12px;color:var(--text);font-size:13px}
+body[data-theme] .gw-leader-caption strong{color:var(--muted)}
+body[data-theme] .gw-leader-track{height:8px;border-radius:20px;background:var(--line);overflow:hidden}
+body[data-theme] .gw-leader-fill{height:100%;background:var(--accent);border-radius:20px}
+
+body[data-theme] .gw-roster-section{margin:0 0 24px}
+body[data-theme] .gw-roster-section>h3{font-size:16px;font-weight:750;margin:0 0 12px;padding:0 0 10px;border-bottom:1px solid var(--line);color:var(--accent)}
+body[data-theme] .gw-roster-photo{width:60px;height:60px;object-fit:cover;border-radius:50%;border:2px solid var(--accent)}
+body[data-theme] .gw-roster-avatar[hidden]{display:none}
+body[data-theme] .gw-profile-settings{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0}
+body[data-theme] #gwProfilePreview{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)}
+body[data-theme] #gwProfilePreview[hidden]{display:none}
+body[data-theme] #gwProfileUrl{flex:1 1 230px;min-width:0;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:12px}
+body[data-theme] #gwProfileSection{border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:16px;margin:20px 0}
+body[data-theme] #gwProfileSection h3{margin:0 0 8px}
+
+/* Prominent rank group headers: theme-aware, with a distinct accent per rank */
+body[data-theme] .gw-roster-section{--rank-color:var(--accent);--rank-tint:color-mix(in srgb,var(--rank-color) 12%,var(--panel2));margin:0 0 28px}
+body[data-theme] .gw-roster-section:nth-child(1){--rank-color:#e8bd66}
+body[data-theme] .gw-roster-section:nth-child(2){--rank-color:#9aacf6}
+body[data-theme] .gw-roster-section:nth-child(3){--rank-color:#68c5b4}
+body[data-theme] .gw-roster-section:nth-child(4){--rank-color:#b9a1d9}
+body[data-theme] .gw-roster-section>h3{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 14px;padding:13px 16px;border:1px solid color-mix(in srgb,var(--rank-color) 45%,var(--line));border-left:5px solid var(--rank-color);border-radius:10px;background:var(--rank-tint);color:var(--rank-color)!important;font-size:16px;font-weight:800;letter-spacing:.35px;text-transform:uppercase}
+body[data-theme] .gw-roster-section>h3::before{content:'';width:8px;height:8px;flex-shrink:0;border-radius:50%;background:var(--rank-color);box-shadow:0 0 0 4px color-mix(in srgb,var(--rank-color) 16%,transparent)}
+body[data-theme] .gw-roster-section .gw-roster-card{border-color:color-mix(in srgb,var(--rank-color) 24%,var(--line))}
+
+/* Catalog list + focused product editor */
+body[data-theme] #adminProducts{display:block!important}
+body[data-theme] .gw-catalog-toolbar{display:grid;grid-template-columns:minmax(160px,2fr) minmax(120px,1fr) minmax(120px,1fr);gap:10px;margin:14px 0}
+body[data-theme] .gw-catalog-toolbar input,body[data-theme] .gw-catalog-toolbar select{width:100%;min-width:0;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text)}
+body[data-theme] .gw-catalog-table{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--panel2)}
+body[data-theme] .gw-catalog-heading,body[data-theme] .gw-catalog-product{display:grid;grid-template-columns:minmax(175px,2.3fr) minmax(125px,1.4fr) minmax(75px,.7fr) minmax(75px,.7fr) minmax(95px,.8fr);align-items:center;gap:10px;min-width:660px;padding:12px 14px}
+body[data-theme] .gw-catalog-heading{background:var(--panel);color:var(--muted);font-size:12px;font-weight:700}
+body[data-theme] .gw-catalog-product{border-top:1px solid var(--line);color:var(--text);font-size:13px}
+body[data-theme] .gw-catalog-product:hover{background:var(--gw-accent-soft)}
+body[data-theme] .gw-catalog-name{display:flex;align-items:center;gap:10px;min-width:0}
+body[data-theme] .gw-catalog-name img,body[data-theme] .gw-catalog-noimage{width:43px;height:43px;object-fit:contain;border-radius:8px;background:var(--panel);border:1px solid var(--line);flex-shrink:0}
+body[data-theme] .gw-catalog-noimage{display:grid;place-items:center;color:var(--muted)}
+body[data-theme] .gw-active-pill{color:var(--accent);font-weight:700}
+body[data-theme] .gw-inactive-pill{color:var(--muted)}
+body[data-theme] .gw-catalog-actions{display:flex;gap:7px}
+body[data-theme] .gw-catalog-actions button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:9px 12px;cursor:pointer}
+body[data-theme] .gw-catalog-actions button:hover{border-color:var(--accent);color:var(--accent)}
+body[data-theme] .gw-catalog-modal{width:min(710px,96vw);max-height:90vh;overflow-y:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;box-shadow:0 24px 70px #0009}
+body[data-theme] .gw-catalog-modal::backdrop{background:#000b;backdrop-filter:blur(3px)}
+body[data-theme] .gw-catalog-modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+body[data-theme] .gw-catalog-modal-head h2{margin:0;font-size:19px}
+body[data-theme] .gw-catalog-modal-head button{background:transparent;color:var(--muted);border:0;font-size:20px;cursor:pointer}
+body[data-theme] .gw-catalog-modal-body{padding:18px}
+body[data-theme] .gw-catalog-modal .gw-catalog-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;background:transparent;border:0;padding:0}
+body[data-theme] .gw-catalog-modal .gw-catalog-editor input:not([type=checkbox]){width:100%;min-width:0;padding:10px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px}
+body[data-theme] .gw-catalog-modal .gw-catalog-editor>label:has([data-field="image_url"]),body[data-theme] .gw-catalog-modal .gw-admin-image-row,body[data-theme] .gw-catalog-modal .gw-editor-list{grid-column:1/-1}
+body[data-theme] .gw-catalog-modal .gw-editor-list{background:var(--panel2)}
+body[data-theme] .gw-catalog-modal-actions{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;background:var(--panel);border-top:1px solid var(--line)}
+body[data-theme] .gw-catalog-modal-actions button{padding:11px 18px;border-radius:8px}
+body[data-theme] .gw-catalog-modal-actions .primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+@media(max-width:650px){body[data-theme] .gw-catalog-toolbar{grid-template-columns:1fr 1fr}body[data-theme] .gw-catalog-toolbar input{grid-column:1/-1}body[data-theme] .gw-catalog-modal .gw-catalog-editor{grid-template-columns:1fr}}
+
+/* Inline recipe/choice editing and high-contrast actions, across every user theme */
+body[data-theme] .gw-catalog-modal .gw-editor-list{padding:14px;border:1px solid var(--line);border-radius:10px;margin-top:4px}
+body[data-theme] .gw-catalog-modal .gw-editor-list>strong{display:block;margin-bottom:12px;font-size:14px}
+body[data-theme] .gw-catalog-modal .gw-editor-entries{display:grid;gap:9px;margin-bottom:12px}
+body[data-theme] .gw-catalog-modal .gw-editor-entry{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;margin:0}
+body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row{grid-template-columns:minmax(100px,2fr) minmax(65px,.65fr) minmax(75px,1fr) auto}
+body[data-theme] .gw-catalog-modal .gw-editor-entry input{min-width:0;width:100%;margin:0!important}
+body[data-theme] .gw-catalog-modal .gw-editor-remove,body[data-theme] .gw-catalog-actions button[data-delete-product]{background:#9c2933!important;border:1px solid #c94c58!important;color:#fff!important;font-weight:750;border-radius:8px;padding:10px 13px;white-space:nowrap}
+body[data-theme] .gw-catalog-modal .gw-editor-remove:hover,body[data-theme] .gw-catalog-actions button[data-delete-product]:hover{background:#bb3542!important}
+body[data-theme] .gw-catalog-modal .gw-editor-add,body[data-theme] .gw-catalog-modal-actions .primary,body[data-theme] .gw-catalog-actions button[data-edit-product]{background:#218451!important;border:1px solid #36ae6f!important;color:#fff!important;font-weight:750;border-radius:8px;padding:10px 13px}
+body[data-theme] .gw-catalog-modal .gw-editor-add:hover,body[data-theme] .gw-catalog-modal-actions .primary:hover,body[data-theme] .gw-catalog-actions button[data-edit-product]:hover{background:#2da266!important}
+body[data-theme] .gw-catalog-modal-actions button[data-cancel-editor]{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
+body[data-theme] .gw-catalog-modal button:focus-visible,body[data-theme] .gw-catalog-actions button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media(max-width:540px){body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row{grid-template-columns:minmax(0,1fr) 75px;gap:7px}body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row input:first-child{grid-column:1/-1}body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row input:nth-child(3){grid-column:1}body[data-theme] .gw-catalog-modal .gw-editor-ingredients-row .gw-editor-remove{grid-column:2;grid-row:3}}
+
+/* Product active status — accessible on/off switch */
+body[data-theme] .gw-catalog-modal .gw-active-toggle-field{display:flex!important;align-items:center;justify-content:flex-start;gap:12px;align-self:center;color:var(--text);font-weight:650;cursor:pointer;min-height:42px}
+body[data-theme] .gw-active-switch{position:relative;display:inline-flex;width:52px;height:28px;flex:0 0 52px;align-items:center}
+body[data-theme] .gw-active-switch input{position:absolute;inset:0;width:100%!important;height:100%;margin:0;opacity:0;cursor:pointer;z-index:1}
+body[data-theme] .gw-active-switch-track{display:block;width:52px;height:28px;border-radius:999px;background:#87343b;border:1px solid #b4555d;transition:background .18s}
+body[data-theme] .gw-active-switch-track::after{content:'';display:block;position:absolute;top:4px;left:4px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 1px 4px #0005;transition:transform .18s}
+body[data-theme] .gw-active-switch input:checked+.gw-active-switch-track{background:#238e59;border-color:#38b875}
+body[data-theme] .gw-active-switch input:checked+.gw-active-switch-track::after{transform:translateX(24px)}
+body[data-theme] .gw-active-switch input:focus-visible+.gw-active-switch-track{outline:3px solid var(--accent);outline-offset:3px}
+body[data-theme] .gw-active-state{font-size:12px;font-weight:800;min-width:25px;color:var(--muted)}
+body[data-theme] .gw-active-switch:has(input:checked)+.gw-active-state{color:#40bc7e}
+
+/* Boss panel — polished permissions interface, driven by the selected MDT theme */
+body[data-theme] .gw-permissions-intro{padding:6px 0 18px}
+body[data-theme] .gw-permissions-intro small{display:block;color:var(--accent);font-size:11px;font-weight:800;letter-spacing:1.3px}
+body[data-theme] .gw-permissions-intro h2{margin:8px 0 6px;font-size:clamp(24px,3vw,32px);font-weight:850;letter-spacing:-.6px;color:var(--text)}
+body[data-theme] .gw-permissions-intro p{margin:0;color:var(--muted);font-size:14px}
+body[data-theme] .gw-permissions-select-panel,body[data-theme] .gw-permissions-panel{background:var(--panel2);border:1px solid var(--line);border-radius:15px;box-shadow:0 8px 24px #0001}
+body[data-theme] .gw-permissions-select-panel{padding:18px;margin:0 0 16px}
+body[data-theme] .gw-permissions-select-label{display:grid;gap:10px;color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.8px}
+body[data-theme] .gw-permissions-select-panel .gw-role-selector{width:100%;min-height:48px;padding:12px 14px;border-radius:10px;background:var(--panel);color:var(--text);border:1px solid var(--line);font-size:15px;font-weight:700;letter-spacing:0;cursor:pointer}
+body[data-theme] .gw-permissions-select-panel .gw-role-selector:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body[data-theme] .gw-permissions-panel{padding:15px}
+body[data-theme] .gw-permissions-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:3px 6px 16px}
+body[data-theme] .gw-permissions-panel-head h3{font-size:18px;margin:0;color:var(--accent);font-weight:800}
+body[data-theme] .gw-permissions-panel-head p{font-size:12px;color:var(--muted);margin:0}
+body[data-theme] .gw-permissions-list{display:grid;gap:7px}
+body[data-theme] .gw-permissions-item{display:flex;align-items:center;gap:14px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:var(--panel);cursor:pointer;transition:border-color .15s,background .15s}
+body[data-theme] .gw-permissions-item:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+body[data-theme] .gw-permissions-icon{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border-radius:10px;background:color-mix(in srgb,var(--accent) 13%,var(--panel2));color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 32%,var(--line));font-size:23px;font-weight:800}
+body[data-theme] .gw-permissions-item:nth-child(5n + 2) .gw-permissions-icon{color:#a88af0;background:#a88af018;border-color:#a88af055}
+body[data-theme] .gw-permissions-item:nth-child(5n + 3) .gw-permissions-icon{color:#5caff2;background:#5caff218;border-color:#5caff255}
+body[data-theme] .gw-permissions-item:nth-child(5n + 4) .gw-permissions-icon{color:#f1ac54;background:#f1ac5418;border-color:#f1ac5455}
+body[data-theme] .gw-permissions-item:nth-child(5n) .gw-permissions-icon{color:#f07691;background:#f0769118;border-color:#f0769155}
+body[data-theme] .gw-permissions-detail{display:grid;gap:4px;min-width:0;flex:1}
+body[data-theme] .gw-permissions-detail strong{font-size:14px;color:var(--text);font-weight:750}
+body[data-theme] .gw-permissions-detail small{font-size:12px;color:var(--muted);line-height:1.35}
+body[data-theme] .gw-permissions-control{display:flex;align-items:center;gap:11px;position:relative;flex-shrink:0}
+body[data-theme] .gw-permissions-checkbox{position:absolute;left:0;top:0;width:52px;height:29px;opacity:0;cursor:pointer;z-index:1}
+body[data-theme] .gw-permissions-track{position:relative;display:block;width:52px;height:29px;border-radius:30px;background:#87343b;border:1px solid #b4555d;transition:background .2s}
+body[data-theme] .gw-permissions-track::after{content:'';position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 4px #0005;transition:transform .2s}
+body[data-theme] .gw-permissions-checkbox:checked+.gw-permissions-track{background:#218451;border-color:#36ae6f}
+body[data-theme] .gw-permissions-checkbox:checked+.gw-permissions-track::after{transform:translateX(23px)}
+body[data-theme] .gw-permissions-checkbox:focus-visible+.gw-permissions-track{outline:3px solid var(--accent);outline-offset:3px}
+body[data-theme] .gw-permissions-state{min-width:24px;color:#d86d77;font-size:12px;font-weight:800}
+body[data-theme] .gw-permissions-checkbox:checked~.gw-permissions-state{color:#41c77c}
+body[data-theme] .gw-permissions-footer{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+body[data-theme] .gw-permissions-footer button{border-radius:10px;min-height:48px;padding:12px 18px;font-size:14px;font-weight:800;cursor:pointer}
+body[data-theme] .gw-permissions-cancel{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
+body[data-theme] .gw-permissions-save{background:#218451;border:1px solid #36ae6f;color:#fff;box-shadow:0 5px 16px #21845133}
+body[data-theme] .gw-permissions-save:hover{background:#2da266}
+body[data-theme] .gw-permissions-footer button:disabled{opacity:.55;cursor:wait}
+@media(max-width:650px){body[data-theme] .gw-permissions-panel-head{display:block}body[data-theme] .gw-permissions-panel-head p{margin-top:5px}body[data-theme] .gw-permissions-item{gap:9px;padding:10px 8px}body[data-theme] .gw-permissions-icon{flex-basis:34px;width:34px;height:34px;font-size:18px}body[data-theme] .gw-permissions-detail small{font-size:11px}body[data-theme] .gw-permissions-control{gap:6px}}
+@media(max-width:420px){body[data-theme] .gw-permissions-footer{grid-template-columns:1fr}}
+
+/* Two-column boss permissions layout; retains one-column mobile layout */
+body[data-theme] .gw-permissions-list{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:10px 14px;
+ align-items:stretch;
+}
+body[data-theme] .gw-permissions-item{
+ min-width:0;
+ height:100%;
+ margin:0;
+}
+body[data-theme] .gw-permissions-detail{min-width:0}
+body[data-theme] .gw-permissions-detail strong{overflow-wrap:anywhere}
+body[data-theme] .gw-permissions-detail small{letter-spacing:normal;overflow-wrap:anywhere}
+@media(max-width:900px){
+ body[data-theme] .gw-permissions-list{grid-template-columns:1fr}
+}
+
