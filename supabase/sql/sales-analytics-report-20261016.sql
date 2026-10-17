@@ -25,28 +25,28 @@ BEGIN
  ),
  product_rows AS (
   SELECT coalesce(nullif(btrim(item.value->>'name'),''),'Unknown product') product_name,
-   coalesce(nullif(to_jsonb(p)->>'category',''), 'Uncategorized') category,
-   greatest(0,coalesce((item.value->>'qty')::numeric,0)) qty,
-   greatest(0,coalesce((item.value->>'total')::numeric,0)) line_total
+   coalesce(nullif(to_jsonb(p)->>'category',''), 'Uncategorized') AS category,
+   greatest(0,coalesce((item.value->>'qty')::numeric,0)) AS qty,
+   greatest(0,coalesce((item.value->>'total')::numeric,0)) AS line_total
   FROM period_sales s
   JOIN public.gw_sale_receipt_details d ON d.sale_id=s.id::text
   CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(d.items)='array' THEN d.items ELSE '[]'::jsonb END) item(value)
   LEFT JOIN public.products p ON p.id::text=item.value->>'id'
  ),
  daily_gross AS (
-  SELECT (created_at AT TIME ZONE 'UTC')::date day,sum(total) gross,count(*) orders
+  SELECT (created_at AT TIME ZONE 'UTC')::date AS day,sum(total) AS gross,count(*) AS orders
   FROM period_sales GROUP BY 1
  ),
  daily_refunds AS (
-  SELECT (created_at AT TIME ZONE 'UTC')::date day,sum(amount) refunded
+  SELECT (created_at AT TIME ZONE 'UTC')::date AS day,sum(amount) AS refunded
   FROM period_adjustments GROUP BY 1
  ),
  monthly_gross AS (
-  SELECT to_char(created_at AT TIME ZONE 'UTC','YYYY-MM') month,sum(total) gross,count(*) orders
+  SELECT to_char(created_at AT TIME ZONE 'UTC','YYYY-MM') AS month,sum(total) AS gross,count(*) AS orders
   FROM period_sales GROUP BY 1
  ),
  monthly_refunds AS (
-  SELECT to_char(created_at AT TIME ZONE 'UTC','YYYY-MM') month,sum(amount) refunded
+  SELECT to_char(created_at AT TIME ZONE 'UTC','YYYY-MM') AS month,sum(amount) AS refunded
   FROM period_adjustments GROUP BY 1
  )
  SELECT jsonb_build_object(
@@ -67,13 +67,13 @@ BEGIN
     FROM product_rows GROUP BY category ORDER BY gross_line_revenue DESC LIMIT 100
    ) z),
   'daily',(SELECT coalesce(jsonb_agg(to_jsonb(z) ORDER BY z.day),'[]'::jsonb) FROM (
-    SELECT coalesce(g.day,r.day) day,coalesce(g.gross,0) gross,coalesce(r.refunded,0) refunded,
-     coalesce(g.gross,0)-coalesce(r.refunded,0) net,coalesce(g.orders,0) orders
+    SELECT coalesce(g.day,r.day ) AS day,coalesce(g.gross,0) AS gross,coalesce(r.refunded,0) AS refunded,
+     coalesce(g.gross,0)-coalesce(r.refunded,0) AS net,coalesce(g.orders,0) AS orders
     FROM daily_gross g FULL OUTER JOIN daily_refunds r USING(day)
    ) z),
   'monthly',(SELECT coalesce(jsonb_agg(to_jsonb(z) ORDER BY z.month),'[]'::jsonb) FROM (
-    SELECT coalesce(g.month,r.month) month,coalesce(g.gross,0) gross,coalesce(r.refunded,0) refunded,
-     coalesce(g.gross,0)-coalesce(r.refunded,0) net,coalesce(g.orders,0) orders
+    SELECT coalesce(g.month,r.month ) AS month,coalesce(g.gross,0) AS gross,coalesce(r.refunded,0) AS refunded,
+     coalesce(g.gross,0)-coalesce(r.refunded,0) AS net,coalesce(g.orders,0) AS orders
     FROM monthly_gross g FULL OUTER JOIN monthly_refunds r USING(month)
    ) z),
   'itemized_sales',(SELECT count(*) FROM period_sales s JOIN public.gw_sale_receipt_details d ON d.sale_id=s.id::text)
