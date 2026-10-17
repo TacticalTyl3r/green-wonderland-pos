@@ -49,8 +49,8 @@ export async function showOffersManager(host,{call,token,make,cash}){
  };
  const includedNames=o=>{
   if(o.offer_type==='special'){
-   const ids=(Array.isArray(o.items)&&o.items.length?o.items:[{id:o.product_id}]).map(x=>x.id);
-   return ids.map(id=>byId.get(String(id))?.name||'Catalog product').join(' · ');
+   const items=Array.isArray(o.items)&&o.items.length?o.items:[{id:o.product_id,qty:1}];
+   return items.map(item=>(Number(item.qty)||1)+'× '+(byId.get(String(item.id))?.name||'Catalog product')).join(' · ');
   }
   const parts=(Array.isArray(o.items)?o.items:[]).map(x=>(Number(x.qty)||1)+'× '+(byId.get(String(x.id))?.name||'Catalog item'));
   const custom=(Array.isArray(o.custom_items)?o.custom_items:[]).map(x=>(Number(x.qty)||1)+'× '+String(x.name||'Custom item'));
@@ -149,32 +149,38 @@ export async function showOffersManager(host,{call,token,make,cash}){
   const special=make('section',undefined,'gw-offer-type-fields');
   const specialParts=make('div',undefined,'gw-offer-item-rows');
   let specialRows=[];
-  const addSpecialProduct=(id)=>{
+  const addSpecialProduct=(value={})=>{
    const wrap=make('div',undefined,'gw-offer-item-row gw-offer-special-item-row');
    const selector=document.createElement('select');selector.setAttribute('aria-label','Discounted product');
    for(const p of products)selector.add(new Option(p.name+' · '+cash(p.price),String(p.id)));
-   if(id!=null)selector.value=String(id);
+   if(value.id!=null)selector.value=String(value.id);
+   const quantity=document.createElement('input');
+   quantity.type='number';quantity.min='1';quantity.max='50';quantity.step='1';
+   quantity.value=String(value.qty??1);
+   quantity.setAttribute('aria-label','Required quantity for '+(byId.get(String(value.id))?.name||'discounted product'));
+   const qtyField=make('label',undefined,'gw-offer-special-quantity');
+   qtyField.append(make('span','Qty'),quantity);
    const remove=tinyButton('Remove','outline',()=>{
     if(specialRows.length<=1)return;
     specialRows=specialRows.filter(r=>r.wrap!==wrap);wrap.remove();
    },'Remove discounted product');
-   wrap.append(selector,remove);specialParts.append(wrap);
-   specialRows.push({wrap,selector});
+   wrap.append(selector,qtyField,remove);specialParts.append(wrap);
+   specialRows.push({wrap,selector,quantity});
   };
   const selectedSpecials=existing?.offer_type==='special'&&Array.isArray(existing.items)&&existing.items.length
-   ?existing.items.map(item=>item.id):[existing?.offer_type==='special'?existing.product_id:null];
+   ?existing.items:[{id:existing?.offer_type==='special'?existing.product_id:null,qty:1}];
   for(const id of selectedSpecials)addSpecialProduct(id);
   const addSpecial=tinyButton('+ Add Product','outline',()=>{
    if(specialRows.length>=15)return;
    const used=new Set(specialRows.map(r=>r.selector.value));
    const next=products.find(p=>!used.has(String(p.id)));
    if(!next){return;}
-   addSpecialProduct(next.id);
+   addSpecialProduct({id:next.id,qty:1});
   },'Add another discounted product');
   const percent=document.createElement('input');
   percent.type='number';percent.min='0.01';percent.max='100';percent.step='0.01';
   percent.value=String(existing?.percent_off??10);
-  special.append(field('Discounted Products',specialParts,'Add up to 15 products. Each selected product receives the same percentage discount.'),addSpecial,
+  special.append(field('Discounted Products',specialParts,'Choose a quantity from 1 to 50 for each product. The discount applies to complete groups of that quantity.'),addSpecial,
    field('Percent Off',percent,'A percentage from 0.01 to 100.'));
   const bundle=make('section',undefined,'gw-offer-type-fields');
   const bundlePrice=document.createElement('input');bundlePrice.type='number';
@@ -254,11 +260,12 @@ export async function showOffersManager(host,{call,token,make,cash}){
       throw Error('Enter a valid bundle price.');
     }else{
      const rate=Number(percent.value);
-     const ids=specialRows.map(row=>row.selector.value);
-     if(!ids.length||ids.length>15||ids.some(id=>!id))throw Error('Choose 1 to 15 products.');
-     if(new Set(ids).size!==ids.length)throw Error('Each product can only be added once.');
+     lines=specialRows.map(row=>({id:row.selector.value,qty:Number(row.quantity.value)}));
+     if(!lines.length||lines.length>15||lines.some(item=>!item.id))throw Error('Choose 1 to 15 products.');
+     if(new Set(lines.map(item=>item.id)).size!==lines.length)throw Error('Each product can only be added once. Use Quantity to add multiple units.');
+     if(lines.some(item=>!Number.isInteger(item.qty)||item.qty<1||item.qty>50))
+      throw Error('Each discounted product must have a whole-number quantity from 1 to 50.');
      if(!Number.isFinite(rate)||rate<=0||rate>100)throw Error('Enter a valid discount percentage.');
-     lines=ids.map(id=>({id,qty:1}));
     }
     if(start.value&&end.value&&new Date(end.value)<=new Date(start.value))
      throw Error('The ending date must be after the starting date.');
