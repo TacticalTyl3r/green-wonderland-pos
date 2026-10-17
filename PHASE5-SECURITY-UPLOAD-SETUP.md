@@ -11,10 +11,10 @@
 ## Setup: two SQL scripts
 In **Supabase Dashboard → SQL Editor**, run these files in order:
 
-1. `supabase-boss-image-upload-storage.sql` — configure the private-write/public-read image bucket and inspect existing storage policies.
-2. `supabase-checkout-security-audit.sql` — enforce authenticated checkout and revoke the old browser-priced sales functions.
+1. `supabase/sql/history/supabase-boss-image-upload-storage.sql` — configure the private-write/public-read image bucket and inspect existing storage policies.
+2. `supabase/sql/history/supabase-checkout-security-audit.sql` — enforce authenticated checkout and revoke the old browser-priced sales functions.
 
-The earlier `supabase-boss-pin-admin.sql` should already have been run. If not, run it first.
+The earlier `supabase/sql/history/supabase-boss-pin-admin.sql` should already have been run. If not, run it first.
 
 **Important:** The storage script prints existing policies. Check that no `INSERT`, `UPDATE`, or `DELETE` policy allows unrestricted anonymous uploads. The migration does not add any write policies.
 
