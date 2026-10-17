@@ -169,10 +169,25 @@ body[data-theme] .gw-offer-modal-actions button{min-width:124px;padding:11px 17p
  body[data-theme] .gw-offer-item-row>button{grid-column:2}
 }
 
-/* Multiple discounted products in a Product Special. */
-body[data-theme] .gw-offer-special-item-row{grid-template-columns:minmax(0,1fr) 88px;align-items:center}
-body[data-theme] .gw-offer-special-item-row>select{grid-column:auto}
+/* Product Special rows support a required quantity beside each catalog item. */
+body[data-theme] .gw-offer-special-item-row{
+ grid-template-columns:minmax(0,1fr) 80px 88px;align-items:center;
+}
+body[data-theme] .gw-offer-special-item-row>select,
 body[data-theme] .gw-offer-special-item-row>button{grid-column:auto}
+body[data-theme] .gw-offer-special-quantity{
+ display:flex;flex-direction:column;gap:4px;min-width:0;
+ color:var(--muted);font-size:10px;font-weight:750;
+}
+body[data-theme] .gw-offer-special-quantity>input{
+ width:100%;min-width:0;min-height:32px;
+ border:1px solid var(--line);background:var(--panel);color:var(--text);
+ padding:5px 7px;border-radius:7px;font-size:13px;font-weight:700;
+}
 body[data-theme] .gw-offer-type-fields>.outline{justify-self:start;min-height:39px;padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);cursor:pointer}
 body[data-theme] .gw-offer-type-fields>.outline:hover{border-color:var(--accent);color:var(--accent)}
-@media(max-width:690px){body[data-theme] .gw-offer-special-item-row{grid-template-columns:minmax(0,1fr) 88px}body[data-theme] .gw-offer-special-item-row>select,body[data-theme] .gw-offer-special-item-row>button{grid-column:auto}}
+@media(max-width:690px){
+ body[data-theme] .gw-offer-special-item-row{grid-template-columns:minmax(0,1fr) 70px 78px}
+ body[data-theme] .gw-offer-special-item-row>select,
+ body[data-theme] .gw-offer-special-item-row>button{grid-column:auto}
+}
