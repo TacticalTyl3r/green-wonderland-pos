@@ -1,6 +1,9 @@
 // Single optional, read-only security overview. Existing Boss session controls remain in phase3-tools.js.
 export async function showSessionHealth(host,{call,token,make}){
+ // A second navigation render must replace, never duplicate, the overview.
+ for(const previous of host.querySelectorAll('[data-gw-session-security-overview]'))previous.remove();
  const panel=make('section',undefined,'gw-feature-card');
+ panel.dataset.gwSessionSecurityOverview='true';
  const title=make('h3','Session & Security Overview');
  const description=make('p','One summary of current PIN sessions, failed attempts and lockouts. Manage individual sessions using the employee controls above.');
  const status=make('p','Loading security overview…','gw-mdt-message');
