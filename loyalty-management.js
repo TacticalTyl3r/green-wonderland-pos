@@ -123,6 +123,17 @@ export async function renderLoyaltyManagement(host,{call,token,canFeature,cash,m
    };
    profile.append(form);
   }
+  // Loaded on demand so an optional history-panel error cannot break POS navigation or clock-in.
+  const timelineHost=make('div',undefined,'gw-loyalty-timeline-host');
+  profile.append(timelineHost);
+  import('./loyalty-timeline.js?v=isolated-history-20261016')
+   .then(({renderPointsTimeline})=>renderPointsTimeline(timelineHost,{
+    member,call,token,make,download,isCurrent:()=>selectedId===member.id&&timelineHost.isConnected
+   }))
+   .catch(error=>{
+    if(selectedId===member.id&&timelineHost.isConnected)
+     timelineHost.append(make('p','Points timeline unavailable: '+(error?.message||String(error)),'gw-mdt-message'));
+   });
   const catalogHistory=make('div',undefined,'gw-loyalty-activity');
   catalogHistory.append(make('h3','Catalog Reward Redemptions'));
   const catalogEntries=make('div',undefined,'gw-loyalty-activity-list');
