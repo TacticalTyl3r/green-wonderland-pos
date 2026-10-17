@@ -1,0 +1,218 @@
+/* Personal theme builder and selectable header effects */
+body[data-theme] .gw-custom-theme-section,body[data-theme] .gw-header-effects-section{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--text)}
+body[data-theme] .gw-custom-theme-section h3,body[data-theme] .gw-header-effects-section h3{margin:0 0 8px;color:var(--text)}
+body[data-theme] .gw-custom-theme-section p,body[data-theme] .gw-header-effects-section p{color:var(--muted);font-size:13px}
+body[data-theme] .gw-custom-color-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin:15px 0}
+body[data-theme] .gw-custom-color{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:9px;font-size:12px;color:var(--text)}
+body[data-theme] .gw-custom-color input[type=color]{width:42px;height:32px;min-width:42px;border:1px solid var(--line);border-radius:6px;padding:2px;background:var(--panel2);cursor:pointer}
+body[data-theme] .gw-custom-actions{display:flex;gap:9px;flex-wrap:wrap}
+body[data-theme] .gw-custom-actions button{padding:10px 13px;border-radius:8px}
+body[data-theme] .gw-effects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin-top:15px}
+body[data-theme] .gw-effect-choice{min-height:55px;text-align:left;padding:11px 13px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;cursor:pointer;font-size:13px;font-weight:700}
+body[data-theme] .gw-effect-choice:hover,body[data-theme] .gw-effect-choice[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--panel));color:var(--text)}
+body[data-theme] .gw-effect-choice[aria-pressed=true]::before{content:'✓ ';color:var(--accent)}
+/* Header layers are behind content and never intercept clicks */
+body[data-theme] .gw-site-content .gw-global-header{position:relative;isolation:isolate;overflow:hidden}
+body[data-theme] .gw-site-content .gw-global-header::before,body[data-theme] .gw-site-content .gw-global-header::after{content:'';position:absolute;pointer-events:none;z-index:0;inset:0;opacity:0}
+body[data-header-effect=haze] .gw-site-content .gw-global-header::before,body[data-header-effect=combo] .gw-site-content .gw-global-header::before{opacity:.55;inset:-80%;background:radial-gradient(ellipse at 25% 45%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 55%);filter:blur(18px);animation:gw-header-drift 12s ease-in-out infinite alternate}
+body[data-header-effect=glow] .gw-site-content .gw-global-header::after,body[data-header-effect=combo] .gw-site-content .gw-global-header::after{opacity:.8;background:linear-gradient(110deg,transparent 30%,color-mix(in srgb,var(--accent) 18%,transparent) 50%,transparent 70%);background-size:230% 100%;animation:gw-header-sweep 8s linear infinite}
+body[data-header-effect=particles] .gw-site-content .gw-global-header::before{opacity:.45;background-image:radial-gradient(circle,var(--accent) 1px,transparent 2px);background-size:40px 35px;animation:gw-header-float 15s linear infinite}
+body[data-header-effect=aurora] .gw-site-content .gw-global-header::before{opacity:.55;inset:-110%;background:conic-gradient(transparent,color-mix(in srgb,var(--accent) 40%,transparent),transparent,color-mix(in srgb,var(--accent) 12%,var(--panel2)),transparent);filter:blur(30px);animation:gw-header-rotate 20s linear infinite}
+body[data-header-effect=neon] .gw-site-content .gw-global-header .brand h1{animation:gw-header-neon 5s ease-in-out infinite}
+body[data-header-effect=scan] .gw-site-content .gw-global-header::before{opacity:.3;background:repeating-linear-gradient(0deg,transparent 0px,transparent 5px,var(--accent) 6px,transparent 7px)}
+body[data-header-effect=scan] .gw-site-content .gw-global-header::after{opacity:.25;background:linear-gradient(transparent,var(--accent),transparent);height:35%;animation:gw-header-scan 6s linear infinite}
+body[data-header-effect=spotlight] .gw-site-content .gw-global-header::after{opacity:.65;background:linear-gradient(110deg,transparent 20%,color-mix(in srgb,var(--accent) 24%,transparent) 50%,transparent 80%);animation:gw-header-spot 9s ease-in-out infinite}
+body[data-header-effect=border] .gw-site-content .gw-global-header{box-shadow:inset 0 0 0 1px var(--accent),0 0 12px color-mix(in srgb,var(--accent) 20%,transparent);animation:gw-header-border 5s ease-in-out infinite}
+body[data-header-effect=botanical] .gw-site-content .gw-global-header::before{opacity:.35;background:repeating-radial-gradient(ellipse at 100% 110%,transparent 0px,transparent 20px,var(--accent) 21px,transparent 22px);animation:gw-header-breathe 9s ease-in-out infinite}
+@keyframes gw-header-drift{from{transform:translate(-12%,6%) scale(.85)}to{transform:translate(14%,-8%) scale(1.2)}}
+@keyframes gw-header-sweep{from{background-position:220% 0}to{background-position:-150% 0}}
+@keyframes gw-header-float{to{background-position:50px -120px}}
+@keyframes gw-header-rotate{to{transform:rotate(360deg)}}
+@keyframes gw-header-neon{0%,100%{text-shadow:0 0 6px var(--accent);opacity:1}50%{text-shadow:0 0 18px var(--accent);opacity:.85}}
+@keyframes gw-header-scan{from{transform:translateY(-110%)}to{transform:translateY(330%)}}
+@keyframes gw-header-spot{0%,10%{transform:translateX(-110%)}65%,100%{transform:translateX(120%)}}
+@keyframes gw-header-border{50%{box-shadow:inset 0 0 0 1px var(--accent),0 0 22px color-mix(in srgb,var(--accent) 38%,transparent)}}
+@keyframes gw-header-breathe{50%{transform:scale(1.1);opacity:.65}}
+@media(prefers-reduced-motion:reduce){body[data-theme] .gw-site-content .gw-global-header,body[data-theme] .gw-site-content .gw-global-header::before,body[data-theme] .gw-site-content .gw-global-header::after,body[data-theme] .gw-site-content .gw-global-header .brand h1{animation:none!important}}
+
+body[data-theme] .gw-history-intro{color:var(--muted);font-size:13px;margin-bottom:16px}
+body[data-theme] .gw-history-entry{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;margin:10px 0;border-radius:12px;border:1px solid var(--line);background:var(--panel2)}
+body[data-theme] .gw-history-entry.gw-history-added{border-left:4px solid #31c783}
+body[data-theme] .gw-history-entry.gw-history-removed{border-left:4px solid #f26d73}
+body[data-theme] .gw-history-details{min-width:0;flex:1}
+body[data-theme] .gw-history-details strong{display:block;color:var(--text);font-size:15px}
+body[data-theme] .gw-history-details p{margin:7px 0;color:var(--text);font-size:13px}
+body[data-theme] .gw-history-details small{color:var(--muted);font-size:12px}
+body[data-theme] .gw-history-amount{min-width:118px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+body[data-theme] .gw-history-amount strong{font-size:19px}
+body[data-theme] .gw-history-amount small{font-size:10px;font-weight:800;letter-spacing:.6px}
+body[data-theme] .gw-history-added .gw-history-amount{background:rgba(35,170,99,.12);border-color:#31c783;color:#31c783}
+body[data-theme] .gw-history-removed .gw-history-amount{background:rgba(207,55,70,.12);border-color:#f26d73;color:#f26d73}
+body[data-theme] .gw-history-added .gw-history-amount *,body[data-theme] .gw-history-removed .gw-history-amount *{color:inherit}
+@media(max-width:560px){body[data-theme] .gw-history-entry{flex-wrap:wrap}body[data-theme] .gw-history-amount{min-width:0}}
+
+/* Fix: effects must sit above the opaque header background, but below controls. */
+body[data-theme] .gw-site-content .gw-global-header{isolation:isolate}
+body[data-theme] .gw-site-content .gw-global-header>.brand,
+body[data-theme] .gw-site-content .gw-global-header>.actions{position:relative;z-index:2}
+body[data-theme] .gw-site-content .gw-global-header::before,
+body[data-theme] .gw-site-content .gw-global-header::after{z-index:1}
+body[data-theme] .gw-effect-actions{margin-top:15px}
+body[data-theme] #gwEffectMessage{min-height:18px;color:var(--accent)}
+body[data-header-effect=pulse] .gw-site-content .gw-global-header::before{opacity:.55;background:radial-gradient(ellipse at 50% 50%,color-mix(in srgb,var(--accent) 25%,transparent),transparent 75%);animation:gw-header-pulse 5s ease-in-out infinite}
+body[data-header-effect=shimmer] .gw-site-content .gw-global-header .brand h1{background:linear-gradient(110deg,var(--text) 20%,var(--accent) 45%,var(--text) 65%);background-size:250% 100%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gw-header-sweep 6s linear infinite}
+body[data-header-effect=waves] .gw-site-content .gw-global-header::before{opacity:.32;background:repeating-radial-gradient(ellipse at 50% 110%,transparent 0px,transparent 22px,var(--accent) 23px,transparent 25px);animation:gw-header-breathe 7s ease-in-out infinite}
+body[data-header-effect=grid] .gw-site-content .gw-global-header::before{opacity:.18;background-image:linear-gradient(var(--accent) 1px,transparent 1px),linear-gradient(90deg,var(--accent) 1px,transparent 1px);background-size:32px 32px;animation:gw-header-float 14s linear infinite}
+body[data-header-effect=stars] .gw-site-content .gw-global-header::before{opacity:.5;background-image:radial-gradient(circle,var(--accent) 1px,transparent 2px),radial-gradient(circle,var(--accent) 1px,transparent 2px);background-size:47px 39px,81px 63px;animation:gw-header-stars 4s ease-in-out infinite}
+body[data-header-effect=breathe] .gw-site-content .gw-global-header .brand .mark{animation:gw-header-icon 4s ease-in-out infinite}
+body[data-header-effect=gradient] .gw-site-content .gw-global-header::before{opacity:.35;background:linear-gradient(115deg,transparent,color-mix(in srgb,var(--accent) 48%,transparent),transparent,color-mix(in srgb,var(--accent) 25%,transparent));background-size:250% 100%;animation:gw-header-sweep 10s linear infinite}
+@keyframes gw-header-pulse{0%,100%{transform:scale(.8);opacity:.15}50%{transform:scale(1.4);opacity:.7}}
+@keyframes gw-header-stars{0%,100%{opacity:.15}50%{opacity:.6}}
+@keyframes gw-header-icon{0%,100%{box-shadow:0 0 0 transparent;transform:scale(1)}50%{box-shadow:0 0 18px var(--accent);transform:scale(1.05)}}
+@media(prefers-reduced-motion:reduce){body[data-header-effect] .gw-site-content .gw-global-header .brand .mark{animation:none!important}}
+
+/* Global header remains outside .shell after MDT navigation initializes. */
+body[data-theme] .gw-site-content .gw-global-header{position:sticky;isolation:isolate;overflow:hidden}
+body[data-theme] .gw-site-content .gw-global-header>.brand,
+body[data-theme] .gw-site-content .gw-global-header>.actions{position:relative;z-index:2}
+body[data-theme] .gw-site-content .gw-global-header::before,
+body[data-theme] .gw-site-content .gw-global-header::after{z-index:1}
+
+/* Paper-style sales receipt */
+body[data-theme] dialog.gw-paper-receipt{width:min(490px,calc(100vw - 24px));max-height:88vh;overflow:auto;padding:24px;background:#f3f0e9!important;color:#252723!important;border:1px solid #d5d1c6!important;border-radius:8px;box-shadow:0 20px 70px #0008;font-family:Arial,sans-serif}
+body[data-theme] .gw-paper-receipt h3{margin:0 0 4px;font:900 22px 'Barlow Condensed',Arial,sans-serif;letter-spacing:.4px;color:#222!important}
+body[data-theme] .gw-paper-receipt>p{color:#444!important;font-size:13px;margin:4px 0 12px}
+body[data-theme] .gw-paper-receipt .gw-paper-employee{padding-bottom:14px;border-bottom:1px dashed #aaa}
+body[data-theme] .gw-paper-section{display:block;font-size:14px;margin:16px 0 12px;color:#222}
+body[data-theme] .gw-paper-items{display:grid;gap:9px}
+body[data-theme] .gw-paper-item,body[data-theme] .gw-paper-total{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:13px;color:#292929}
+body[data-theme] .gw-paper-item span{flex:1}
+body[data-theme] .gw-paper-item strong,body[data-theme] .gw-paper-total strong{white-space:nowrap;color:#222}
+body[data-theme] .gw-paper-totals{display:grid;gap:9px;border-top:1px dashed #999;padding-top:15px;margin-top:17px}
+body[data-theme] .gw-paper-receipt .gw-receipt-note{font-size:12px;color:#6b665e!important}
+body[data-theme] .gw-paper-receipt .gw-receipt-actions{display:flex;gap:10px;margin-top:24px}
+body[data-theme] .gw-paper-receipt .gw-receipt-actions button{flex:1;border-radius:5px;padding:11px}
+body[data-theme] .gw-paper-receipt .gw-receipt-actions .outline{color:#262626!important;border:1px solid #b0b0a6!important;background:#e5e2da!important}
+
+/* Full audit log: theme-aware cards, actor/subject columns, and action colors */
+body[data-theme] .gw-audit-head{padding:8px 0 18px}
+body[data-theme] .gw-audit-head small{color:var(--accent);font-size:11px;font-weight:800;letter-spacing:1px}
+body[data-theme] .gw-audit-head h2{margin:8px 0;font-size:29px;color:var(--text)}
+body[data-theme] .gw-audit-head p{margin:0;color:var(--muted);font-size:13px}
+body[data-theme] .gw-audit-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:15px;background:var(--panel2);border:1px solid var(--line);border-radius:12px}
+body[data-theme] .gw-audit-controls input[type=search]{flex:1 1 260px;min-width:150px}
+body[data-theme] .gw-audit-controls select{flex:1 1 150px}
+body[data-theme] .gw-audit-controls input[type=date]{flex:0 1 160px;min-width:130px}
+body[data-theme] .gw-audit-controls input,body[data-theme] .gw-audit-controls select{padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+body[data-theme] .gw-audit-status{color:var(--muted);font-size:12px;margin:12px 0}
+body[data-theme] .gw-audit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 18px}
+body[data-theme] .gw-audit-stat{padding:15px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);display:flex;flex-direction:column;gap:6px}
+body[data-theme] .gw-audit-stat span{color:var(--muted);font-size:12px}
+body[data-theme] .gw-audit-stat strong{font-size:25px;color:var(--text)}
+body[data-theme] .gw-audit-stat.permission strong{color:#ab94ff}
+body[data-theme] .gw-audit-stat.time strong{color:#f2b86b}
+body[data-theme] .gw-audit-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body[data-theme] .gw-audit-card{--audit-color:var(--accent);display:flex;gap:13px;padding:16px;min-width:0;background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--audit-color);border-radius:12px}
+body[data-theme] .gw-audit-card.gw-audit-created{--audit-color:#42cb8a}
+body[data-theme] .gw-audit-card.gw-audit-removed{--audit-color:#f17880}
+body[data-theme] .gw-audit-card.gw-audit-updated{--audit-color:#64baff}
+body[data-theme] .gw-audit-card.gw-audit-permission{--audit-color:#b39aff}
+body[data-theme] .gw-audit-card.gw-audit-time{--audit-color:#f2b86b}
+body[data-theme] .gw-audit-icon{display:grid;place-items:center;flex-shrink:0;width:37px;height:37px;border:1px solid color-mix(in srgb,var(--audit-color) 40%,transparent);border-radius:9px;background:color-mix(in srgb,var(--audit-color) 12%,var(--panel));color:var(--audit-color);font-weight:900;font-size:19px}
+body[data-theme] .gw-audit-card-body{flex:1;min-width:0}
+body[data-theme] .gw-audit-card-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:2px 0 12px}
+body[data-theme] .gw-audit-card-title strong{font-size:14px;color:var(--text)}
+body[data-theme] .gw-audit-tag{font-size:9px;font-weight:900;letter-spacing:.6px;padding:5px 7px;border-radius:6px;background:color-mix(in srgb,var(--audit-color) 12%,var(--panel));color:var(--audit-color)}
+body[data-theme] .gw-audit-people{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+body[data-theme] .gw-audit-person{display:flex;flex-direction:column;gap:5px;min-width:0}
+body[data-theme] .gw-audit-person small{color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.6px}
+body[data-theme] .gw-audit-person strong{font-size:13px;color:var(--text);overflow-wrap:anywhere}
+body[data-theme] .gw-audit-details{font-size:12px;color:var(--text);line-height:1.6;overflow-wrap:anywhere;margin:12px 0}
+body[data-theme] .gw-audit-footer{font-size:11px;color:var(--muted);padding-top:9px;border-top:1px solid var(--line)}
+body[data-theme] .gw-audit-empty{color:var(--muted);padding:20px}
+@media(max-width:1050px){body[data-theme] .gw-audit-list{grid-template-columns:1fr}}
+@media(max-width:700px){body[data-theme] .gw-audit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}body[data-theme] .gw-audit-controls input[type=date]{flex:1 1 130px}}
+
+/* Consistent colorful icon badges for every Admin submenu item */
+body[data-theme] .gw-site-submenu .gw-admin-subitem{display:flex!important;align-items:center;gap:12px;text-align:left;min-height:48px;padding:7px 10px!important;border-radius:10px}
+body[data-theme] .gw-site-submenu .gw-admin-subitem .gw-site-icon{width:34px;height:34px;min-width:34px;display:grid;place-items:center;border-radius:9px;font-size:18px;font-weight:900;border:1px solid color-mix(in srgb,var(--sub-icon-color) 38%,transparent);background:color-mix(in srgb,var(--sub-icon-color) 15%,var(--panel));color:var(--sub-icon-color)!important}
+body[data-theme] .gw-site-submenu .gw-admin-subitem .gw-site-label{flex:1;min-width:0;font-weight:700;font-size:12px;color:var(--text)}
+body[data-theme] .gw-site-submenu .gw-admin-catalog{--sub-icon-color:#58baff}
+body[data-theme] .gw-site-submenu .gw-admin-branding{--sub-icon-color:#e6a0f8}
+body[data-theme] .gw-site-submenu .gw-admin-audit{--sub-icon-color:#f0ac62}
+body[data-theme] .gw-site-submenu .gw-admin-permissions{--sub-icon-color:#b39aff}
+body[data-theme] .gw-site-submenu .gw-admin-subitem:hover{background:color-mix(in srgb,var(--sub-icon-color) 10%,var(--panel2))!important}
+body[data-theme] .gw-site-submenu .gw-admin-subitem.active{background:color-mix(in srgb,var(--sub-icon-color) 15%,var(--panel2))!important;border-color:color-mix(in srgb,var(--sub-icon-color) 55%,transparent)!important}
+body[data-theme] .gw-site-submenu .gw-admin-subitem .gw-site-arrow{margin-left:auto;color:var(--muted)}
+
+/* Colorful sidebar navigation */
+body[data-theme] #gwSiteNav>button[data-site-page="pos"]{--nav-tint:#55cfa2}
+body[data-theme] #gwSiteNav>button[data-site-page="overview"]{--nav-tint:#64baff}
+body[data-theme] #gwSiteNav>button[data-site-page="employees"]{--nav-tint:#bc9bff}
+body[data-theme] #gwSiteNav>button[data-site-page="time"]{--nav-tint:#f4bd68}
+body[data-theme] #gwSiteNav>button[data-site-page="sales"]{--nav-tint:#65d8bf}
+body[data-theme] #gwSiteNav>button[data-site-page="admin"]{--nav-tint:#f29ebf}
+body[data-theme] #gwSiteNav>button .gw-site-icon{color:var(--nav-tint)!important;background:color-mix(in srgb,var(--nav-tint) 15%,var(--panel))!important;border:1px solid color-mix(in srgb,var(--nav-tint) 35%,var(--line))!important;border-radius:9px}
+body[data-theme] #gwSiteNav>button:hover{background:color-mix(in srgb,var(--nav-tint) 11%,var(--panel2))!important}
+body[data-theme] #gwSiteNav>button.active{background:color-mix(in srgb,var(--nav-tint) 19%,var(--panel2))!important;border-color:color-mix(in srgb,var(--nav-tint) 50%,var(--line))!important}
+body[data-theme] #gwSiteNav>button.active .gw-site-icon{background:color-mix(in srgb,var(--nav-tint) 25%,var(--panel))!important}
+body[data-theme] .gw-site-submenu button[data-site-page="history"]{--sales-tint:#59baff;--sales-symbol:"▤"}
+body[data-theme] .gw-site-submenu button[data-site-page="leaderboard"]{--sales-tint:#f1c16c;--sales-symbol:"★"}
+body[data-theme] .gw-site-submenu button[data-site-page="reports"]{--sales-tint:#ba9aff;--sales-symbol:"▥"}
+body[data-theme] .gw-site-submenu button[data-site-page="analytics"]{--sales-tint:#56d2ac;--sales-symbol:"◈"}
+body[data-theme] .gw-site-submenu button[data-site-page="history"],
+body[data-theme] .gw-site-submenu button[data-site-page="leaderboard"],
+body[data-theme] .gw-site-submenu button[data-site-page="reports"],
+body[data-theme] .gw-site-submenu button[data-site-page="analytics"]{display:flex!important;align-items:center;gap:10px;min-height:47px;padding:7px 10px!important;border-radius:10px;text-align:left}
+body[data-theme] .gw-site-submenu button[data-site-page="history"]::before,
+body[data-theme] .gw-site-submenu button[data-site-page="leaderboard"]::before,
+body[data-theme] .gw-site-submenu button[data-site-page="reports"]::before,
+body[data-theme] .gw-site-submenu button[data-site-page="analytics"]::before{content:var(--sales-symbol);display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:9px;font-size:17px;font-weight:800;color:var(--sales-tint);background:color-mix(in srgb,var(--sales-tint) 15%,var(--panel));border:1px solid color-mix(in srgb,var(--sales-tint) 35%,var(--line))}
+body[data-theme] .gw-site-submenu button[data-site-page="history"]:hover,
+body[data-theme] .gw-site-submenu button[data-site-page="leaderboard"]:hover,
+body[data-theme] .gw-site-submenu button[data-site-page="reports"]:hover,
+body[data-theme] .gw-site-submenu button[data-site-page="analytics"]:hover{background:color-mix(in srgb,var(--sales-tint) 11%,var(--panel2))!important}
+body[data-theme] .gw-site-submenu button[data-site-page="history"].active,
+body[data-theme] .gw-site-submenu button[data-site-page="leaderboard"].active,
+body[data-theme] .gw-site-submenu button[data-site-page="reports"].active,
+body[data-theme] .gw-site-submenu button[data-site-page="analytics"].active{background:color-mix(in srgb,var(--sales-tint) 18%,var(--panel2))!important;border-color:color-mix(in srgb,var(--sales-tint) 50%,var(--line))!important}
+
+/* Expanded sidebar must fit every submenu label without horizontal scrolling. */
+@media(min-width:721px){
+ body[data-theme] .gw-site-sidebar:not(.collapsed){width:328px!important;flex:0 0 328px!important;max-width:328px;overflow-x:hidden!important;overflow-y:auto}
+}
+body[data-theme] #gwSiteNav{min-width:0;width:100%;box-sizing:border-box}
+body[data-theme] #gwSiteNav .gw-site-submenu{min-width:0;max-width:100%;box-sizing:border-box;margin-left:35px;padding-left:8px}
+body[data-theme] #gwSiteNav .gw-site-submenu button{box-sizing:border-box;min-width:0;max-width:100%;width:100%;white-space:normal!important;overflow-wrap:break-word}
+body[data-theme] #gwSiteNav .gw-site-submenu .gw-site-label{min-width:0;white-space:normal!important;overflow-wrap:break-word;line-height:1.3}
+body[data-theme] #gwSiteNav .gw-site-submenu .gw-admin-subitem{gap:9px}
+body[data-theme] #gwSiteNav .gw-site-submenu .gw-admin-subitem .gw-site-icon{flex-shrink:0}
+@media(max-width:720px){
+ body[data-theme] .gw-site-sidebar:not(.collapsed){width:min(328px,85vw)!important;flex:0 0 min(328px,85vw)!important;overflow-x:hidden!important}
+ body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-brand span,
+ body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-label,
+ body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-arrow,
+ body[data-theme] .gw-site-sidebar:not(.collapsed) .gw-site-toggle span{display:initial!important}
+ body[data-theme] .gw-site-sidebar:not(.collapsed) #gwSiteNav>button{justify-content:flex-start;padding:8px 10px}
+}
+
+/* Keep Current Order visible in the right column as the catalog scrolls. */
+@media(min-width:951px){
+ body[data-theme] .gw-site-content .shell main>.order{
+  position:sticky!important;
+  top:clamp(92px,calc(50vh - 280px),180px)!important;
+  align-self:start;
+  max-height:calc(100vh - 112px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+ }
+}
+@media(max-width:950px){
+ body[data-theme] .gw-site-content .shell main>.order{
+  position:static!important;
+  max-height:none;
+  overflow:visible;
+ }
+}
+
