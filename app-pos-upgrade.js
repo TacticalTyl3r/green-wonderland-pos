@@ -63,8 +63,8 @@ function receiptLoyaltyRows(s){
  const rows=[];
  if(snapshot?.member_code||snapshot?.cid||d.member_code||d.cid)rows.push(['Customer CID',String(snapshot?.member_code||snapshot?.cid||d.member_code||d.cid)]);
  if(snapshot?.member_name||d.member_name)rows.push(['Loyalty customer',snapshot?.member_name||d.member_name]);
- if(d.points_earned!=null||snapshot?.points_earned!=null)rows.push(['Points earned',String(d.points_earned??snapshot.points_earned)]);
- if(d.points_redeemed!=null||snapshot?.points_redeemed!=null)rows.push(['Points redeemed',String(d.points_redeemed??snapshot.points_redeemed)]);
+ if(d.points_earned!=null||snapshot?.points_earned!=null)rows.push(['Points earned',((n)=>n>0?'+'+n:String(n))(Number(d.points_earned??snapshot.points_earned))]);
+ if(d.points_redeemed!=null||snapshot?.points_redeemed!=null)rows.push(['Points redeemed',((n)=>n>0?'−'+n:String(n))(Number(d.points_redeemed??snapshot.points_redeemed))]);
  if(snapshot?.points_remaining!=null||d.points_remaining!=null)rows.push(['Points balance after sale',String(snapshot?.points_remaining??d.points_remaining)]);
  else if(snapshot?.current_points!=null)rows.push(['Current points balance',String(snapshot.current_points)]);
  return rows;
