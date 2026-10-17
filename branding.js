@@ -94,7 +94,32 @@ function applyHeaderEffect(name){const selected=effects.some(e=>e[0]===name)?nam
 let branding={},authorized=false,canBrand=false,canProduct=false,boss=false;
 function applyTheme(name){const selected=activeThemeName(name);const t=selected==='custom'?(customPalette()||themes.wonderland):themes[selected];keys.forEach((key,i)=>document.documentElement.style.setProperty(key,t[i]));document.body.classList.remove('light');document.body.dataset.theme=selected;localStorage.setItem(storeKey,selected);document.querySelector('#themeBtn')?.setAttribute('aria-label','Open appearance settings');}
 function image(url,alt,css){const el=document.createElement('img');el.src=url;el.alt=alt;el.className=css;el.onerror=()=>el.remove();return el;}
-function renderFavicon(){const url=branding.favicon_url;let link=document.querySelector('link[data-gw-favicon]');if(!link){link=document.createElement('link');link.rel='icon';link.setAttribute('data-gw-favicon','');document.head.append(link);}if(url){link.type=url.toLowerCase().split('?')[0].endsWith('.png')?'image/png':url.toLowerCase().split('?')[0].endsWith('.webp')?'image/webp':'image/jpeg';link.href=url+(url.includes('?')?'&':'?')+'gwicon='+Date.now();}else{link.type='image/svg+xml';link.href='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#10271b"/><text x="32" y="46" font-size="44" text-anchor="middle" fill="#4cdb8c">✦</text></svg>');}}
+function renderFavicon(){
+ // Browsers may keep the static default favicon if a second icon link is
+ // appended later. Keep exactly one active favicon, replacing it when changed.
+ const url=String(branding.favicon_url||'').trim();
+ const fallbackSvg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#10271b"/><text x="32" y="46" font-size="44" text-anchor="middle" fill="#4cdb8c">✦</text></svg>';
+ const link=document.createElement('link');
+ link.rel='icon';
+ link.setAttribute('data-gw-favicon','');
+ if(/^https:\/\//i.test(url)){
+  const cleanUrl=url.split(/[?#]/)[0].toLowerCase();
+  if(cleanUrl.endsWith('.png'))link.type='image/png';
+  else if(cleanUrl.endsWith('.webp'))link.type='image/webp';
+  else if(cleanUrl.endsWith('.svg'))link.type='image/svg+xml';
+  else if(cleanUrl.endsWith('.ico'))link.type='image/x-icon';
+  else link.type='image/jpeg';
+  const separator=url.includes('?')?'&':'?';
+  link.href=url+separator+'gwicon='+Date.now();
+ }else{
+  link.type='image/svg+xml';
+  link.href='data:image/svg+xml,'+encodeURIComponent(fallbackSvg);
+ }
+ // Replace rather than mutate an existing href so Chromium/Opera, Firefox
+ // and Safari see a new favicon resource. Also remove the default static icon.
+ document.head.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(old=>old.remove());
+ document.head.append(link);
+}
 function renderLogo(){const el=document.querySelector('.mark');if(!el)return;el.replaceChildren();if(branding.main_logo_url)el.append(image(branding.main_logo_url,'Green Wonderland logo','gw-logo'));else el.textContent='✦';}
 function renderBrandImages(){
  for(const img of document.querySelectorAll('img[data-gw-image-slot]')){
