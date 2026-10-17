@@ -3,7 +3,7 @@ import {showAnalytics,showRecognition,showActivitySearch} from './mdt-insights.j
 import {renderBusinessPage} from './business-mdt.js?v=customer-cid-lookup-20261016';
 import {showSaleAdjustments} from './sale-adjustments.js?v=loyalty-adjustments-20261016';
 import {showOffersManager,showProductAnalytics} from './phase4-management.js?v=1';
-import {renderLoyaltyManagement} from './loyalty-management.js?v=reward-toggle-20261016';
+import {renderLoyaltyManagement} from './loyalty-management.js?v=isolated-history-20261016';
 import {showSecurityCenter,renderEmployeeAchievements,getDashboardSettings,dashboardSettingsEditor,isDashboardWidgetVisible} from './phase3-tools.js?v=1';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
