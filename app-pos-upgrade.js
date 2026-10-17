@@ -86,40 +86,34 @@ function receiptDiscountRows(s){
  return rows;
 }
 function receiptText(s){
- const d=s.created_at?new Date(s.created_at).toLocaleString('en-US',{year:'numeric',month:'long',day:'numeric',hour:'numeric',minute:'2-digit'}):'Unknown date';
+ const d=s.created_at?new Date(s.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'Unknown date';
  const items=saleLines(s);
  const rows=[
-  '**🌿 GREEN WONDERLAND**',
-  '*Official Sales Receipt*',
+  '**🌿 GREEN WONDERLAND | RECEIPT**',
+  '📅 '+d+'  •  👤 '+(s.employee_name||'Unknown'),
   '',
-  '**TRANSACTION DETAILS**',
-  '📅 '+d,
-  '👤 Served by: **'+(s.employee_name||'Unknown')+'**',
-  '',
-  '**🛍️ ITEMS PURCHASED**'
+  '**🛍️ ORDER**'
  ];
  if(items.length){
-  for(const x of items){
-   rows.push('• **'+x.qty+'× '+x.name+(x.choice?' ('+x.choice+')':'')+'** — '+money(x.total));
-  }
- }else rows.push('• Itemized products unavailable for this sale');
- rows.push('','━━━━━━━━━━━━━━━━━━━━','**💵 ORDER SUMMARY**');
+  for(const x of items)rows.push('• '+x.qty+'× '+x.name+(x.choice?' ('+x.choice+')':'')+' — **'+money(x.total)+'**');
+ }else rows.push('• Itemized products unavailable');
+ rows.push('','**💳 PAYMENT**');
  if(s.receipt_financials?.subtotal!=null)rows.push('Subtotal: '+money(s.receipt_financials.subtotal));
  for(const [label,value] of receiptDiscountRows(s))rows.push(label+': '+value);
  if(Number(s.receipt_financials?.delivery)>0)rows.push('Delivery: '+money(s.receipt_financials.delivery));
  rows.push('Fulfillment: '+(s.fulfillment||'pickup'));
- rows.push('**TOTAL PAID: '+money(s.total)+'**');
- if(s.store_share!=null||s.employee_share!=null){
-  rows.push('','**SALES BREAKDOWN**');
-  if(s.store_share!=null)rows.push('Store Share (10%): '+money(s.store_share));
-  if(s.employee_share!=null)rows.push('Employee Earnings: **'+money(s.employee_share)+'**');
- }
+ rows.push('**TOTAL: '+money(s.total)+'**');
  const loyalty=receiptLoyaltyRows(s);
  if(loyalty.length){
-  rows.push('','**⭐ LOYALTY REWARDS**');
+  rows.push('','**⭐ LOYALTY**');
   for(const [label,value] of loyalty)rows.push('• '+label+': '+value);
  }
- rows.push('━━━━━━━━━━━━━━━━━━━━','','*Thank you for shopping at Green Wonderland! 🌿*');
+ if(s.store_share!=null||s.employee_share!=null){
+  rows.push('','**💵 SALES BREAKDOWN**');
+  if(s.store_share!=null)rows.push('• Store (10%): '+money(s.store_share));
+  if(s.employee_share!=null)rows.push('• Employee keeps: **'+money(s.employee_share)+'**');
+ }
+ rows.push('','*Thanks for shopping at Green Wonderland! 🌿*');
  return rows.join('\n');
 }
 // Reuse the existing receipt modal from MDT Sales History without duplicating checkout logic.
