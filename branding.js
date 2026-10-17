@@ -96,7 +96,23 @@ function applyTheme(name){const selected=activeThemeName(name);const t=selected=
 function image(url,alt,css){const el=document.createElement('img');el.src=url;el.alt=alt;el.className=css;el.onerror=()=>el.remove();return el;}
 function renderFavicon(){const url=branding.favicon_url;let link=document.querySelector('link[data-gw-favicon]');if(!link){link=document.createElement('link');link.rel='icon';link.setAttribute('data-gw-favicon','');document.head.append(link);}if(url){link.type=url.toLowerCase().split('?')[0].endsWith('.png')?'image/png':url.toLowerCase().split('?')[0].endsWith('.webp')?'image/webp':'image/jpeg';link.href=url+(url.includes('?')?'&':'?')+'gwicon='+Date.now();}else{link.type='image/svg+xml';link.href='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#10271b"/><text x="32" y="46" font-size="44" text-anchor="middle" fill="#4cdb8c">✦</text></svg>');}}
 function renderLogo(){const el=document.querySelector('.mark');if(!el)return;el.replaceChildren();if(branding.main_logo_url)el.append(image(branding.main_logo_url,'Green Wonderland logo','gw-logo'));else el.textContent='✦';}
-async function loadBranding(){const {data,error}=await db.from('gw_branding').select('slot,image_url').eq('active',true);if(!error){branding=Object.fromEntries((data||[]).map(r=>[r.slot+'_url',r.image_url]));renderLogo();renderFavicon();}}
+function renderBrandImages(){
+ for(const img of document.querySelectorAll('img[data-gw-image-slot]')){
+  const url=branding[img.dataset.gwImageSlot+'_url']||'';
+  if(!url){img.hidden=true;img.removeAttribute('src');continue;}
+  if(img.getAttribute('src')!==url)img.src=url;
+  img.hidden=false;
+ }
+}
+window.gwRenderBrandingImages=renderBrandImages;
+async function loadBranding(){
+ const {data,error}=await db.from('gw_branding').select('slot,image_url').eq('active',true);
+ if(error){console.warn('Unable to load store branding:',error.message);return;}
+ branding=Object.fromEntries((data||[]).map(r=>[r.slot+'_url',r.image_url]));
+ window.gwBrandingImages={...branding};
+ renderLogo();renderFavicon();renderBrandImages();
+ window.dispatchEvent(new Event('gw-branding-updated'));
+}
 const root=document.createElement('dialog');root.id='gwSettings';root.innerHTML=`<div class="dialogHead"><h2>SETTINGS & APPEARANCE</h2><button class="outline" id="gwClose">✕</button></div><section class="gw-themes-section"><div class="gw-themes-intro"><div><h3>Personal Theme</h3><p>Choose a palette that suits your style. Each theme updates the POS, MDT, menus, and buttons.</p></div><span class="gw-themes-count">28 themes</span></div><div id="gwThemes" class="gw-theme-catalog"></div><p class="gw-theme-save-hint">Click any theme to apply it immediately. Your choice is saved on this browser.</p></section><section class="gw-custom-theme-section"><h3>Build Your Own Theme</h3><p>Customize all seven colors and save your own personal theme. Changes only affect this browser.</p><div class="gw-custom-color-grid" id="gwCustomColors"></div><div class="gw-custom-actions"><button type="button" id="gwCustomPreview" class="outline">Preview Theme</button><button type="button" id="gwCustomSave" class="primary">Save My Theme</button><button type="button" id="gwCustomReset" class="outline">Reset Colors</button></div><p id="gwCustomMessage" role="status"></p></section><section class="gw-header-buttons-section"><h3>Header Button Appearance</h3><p>Adjust the background transparency of the header buttons to reveal more of your selected animation. Button text remains fully readable.</p><div class="gw-header-opacity-head"><label for="gwButtonOpacity">Button Background Opacity</label><strong id="gwButtonOpacityValue">100%</strong></div><input id="gwButtonOpacity" type="range" min="0" max="100" step="5" value="100" aria-label="Header button background opacity"><div class="gw-header-opacity-preview" aria-hidden="true"><span class="gw-header-opacity-example">Admin Tools</span><span class="gw-header-opacity-example">Clock In</span><span class="gw-header-opacity-example">Settings</span></div><div class="gw-custom-actions gw-effect-actions"><button id="gwButtonOpacitySave" type="button" class="primary">Save Button Opacity</button><button id="gwButtonOpacityRevert" type="button" class="outline">Revert Preview</button></div><p id="gwButtonOpacityMessage" role="status"></p></section><section class="gw-header-effects-section"><div class="gw-effect-intro"><div><h3>Header Animations</h3><p>Pick an effect to preview it in the sample header and on the site. Save to keep it on this browser.</p></div><span class="gw-effect-total">17 choices</span></div><div class="gw-effect-live-preview" id="gwEffectLivePreview" data-preview-effect="none"><span class="gw-effect-live-logo">✦</span><span class="gw-effect-live-text"><strong>GREEN WONDERLAND</strong><small id="gwEffectPreviewName">No animation</small></span><span class="gw-effect-live-tag">POS / MDT</span></div><div class="gw-effect-saved" id="gwEffectSaved">Saved: None</div><div id="gwHeaderEffects" class="gw-effects-catalog"></div><label class="gw-effect-reduce-motion"><input type="checkbox" id="gwEffectReducedMotion"><span><strong>Reduce motion</strong><small>Show the design without continuous movement on this device.</small></span></label><div class="gw-custom-actions gw-effect-actions"><button type="button" class="primary" id="gwEffectSave">Save Header Animation</button><button type="button" class="outline" id="gwEffectCancel">Revert Preview</button></div><p id="gwEffectMessage" role="status"></p></section><section id="gwProfileSection"><h3>My Profile Picture</h3><p>Sign in using your employee PIN, then paste a public HTTPS image URL to display your photo on the Employee Roster.</p><div class="gw-profile-settings"><img id="gwProfilePreview" alt="Your profile picture preview" hidden><input id="gwProfileUrl" type="url" placeholder="https://example.com/my-photo.jpg"><button id="gwProfileSave" class="primary" type="button">Save Profile Picture</button></div><p id="gwProfileMessage" role="status"></p></section><div id="gwBrandingSection" hidden><h3>Branding & Images</h3><p>Only authorized administrators can upload images. Branding updates apply to all visitors.</p><div id="gwBrandingAdmin"></div></div><p id="gwSettingsMessage" role="status"></p>`;
 document.body.append(root);
 const themeGrid=root.querySelector('#gwThemes');
@@ -252,8 +268,15 @@ root.addEventListener('close',()=>{
 applyHeaderEffect(savedEffect());applyReducedMotion(savedReducedMotion());refreshEffects();syncCustomSwatch();
 function refreshSelection(){const selected=activeThemeName(localStorage.getItem(storeKey)||'wonderland');themeGrid.querySelectorAll('button[data-theme-name]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.themeName===selected)));}
 applyTheme(localStorage.getItem(storeKey)||'wonderland');refreshSelection();
-const trigger=document.createElement('button');trigger.className='outline';trigger.textContent='⚙ Settings';trigger.onclick=async()=>{root.querySelector('#gwBrandingSection').hidden=true;root.showModal();await refreshProfile();};
-window.gwOpenBrandingAdmin=async()=>{root.querySelector('#gwBrandingSection').hidden=false;root.showModal();await refreshAdmin();};
+function setSettingsMode(mode){
+ const brandingOnly=mode==='branding';
+ root.classList.toggle('gw-branding-only',brandingOnly);
+ root.querySelector('.dialogHead h2').textContent=brandingOnly?'BRANDING & IMAGES':'SETTINGS & APPEARANCE';
+ root.querySelector('#gwBrandingSection').hidden=!brandingOnly;
+}
+const trigger=document.createElement('button');trigger.className='outline';trigger.textContent='⚙ Settings';
+trigger.onclick=async()=>{setSettingsMode('settings');root.showModal();await refreshProfile();};
+window.gwOpenBrandingAdmin=async()=>{setSettingsMode('branding');root.showModal();await refreshAdmin();};
 document.querySelector('header .actions')?.append(trigger);
 document.querySelector('#themeBtn')?.remove();
 root.querySelector('#gwClose').onclick=()=>root.close();
@@ -283,17 +306,13 @@ async function refreshAdmin(){
  const {data:allowed,error}=await db.rpc('gw_boss_pin_check',{p_token:token});
  boss=allowed===true&&!error;canBrand=boss;canProduct=boss;authorized=boss;
  if(!boss){wrap.textContent='Boss employee PIN session required to manage store images.';return;}
- const {data:products,error:productsError}=await db.from('products').select('id,name').order('name');
- if(productsError){wrap.textContent=productsError.message;return;}
  const slot=document.createElement('select');
- for(const [id,label] of [['main_logo','Main website logo'],['login_logo','Login logo'],['receipt_logo','Receipt logo'],
- ['dashboard_logo','Dashboard logo'],['favicon','Browser icon'],['product','Product image']])slot.add(new Option(label,id));
- const product=document.createElement('select');
- for(const p of products||[])product.add(new Option(p.name,p.id));
+ for(const [id,label] of [['main_logo','Main website logo'],['login_logo','Employee login logo'],['receipt_logo','Sales receipt logo'],
+ ['dashboard_logo','Store dashboard logo'],['favicon','Browser tab icon']])slot.add(new Option(label,id));
  const input=document.createElement('input');input.type='url';input.placeholder='https://example.com/image.png';
  input.setAttribute('aria-label','Direct HTTPS image URL');
  const hint=document.createElement('p');
- hint.textContent='Upload PNG, JPG or WebP (up to 3 MB), or paste an HTTPS URL. Secure uploads verify your Boss PIN on the server. If boss-image-upload has not been deployed, the older browser method requires Supabase Anonymous Sign-Ins.';
+ hint.textContent='Upload PNG, JPG or WebP (up to 3 MB), or paste a direct HTTPS image URL. Uploads require an active Boss PIN session.';
  const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';
  file.setAttribute('aria-label','Choose an image to upload');file.className='gw-admin-image-file';
  const upload=document.createElement('button');upload.className='primary';upload.textContent='Upload Image';
@@ -311,7 +330,7 @@ async function refreshAdmin(){
    const payload=new FormData();
    payload.append('file',picked,picked.name);
    payload.append('slot',slot.value);
-   if(slot.value==='product')payload.append('product',String(product.value));
+   // All branding slots are website logos and browser icons.
    const edge=await db.functions.invoke('boss-image-upload',{
     body:payload,headers:{'x-gw-employee-token':token}
    });
@@ -351,7 +370,7 @@ async function refreshAdmin(){
      const {data:publicImage}=db.storage.from('gw-images').getPublicUrl(path);
      url=publicImage.publicUrl;
      const saved=await db.rpc('gw_boss_set_image_url',{p_token:token,p_slot:slot.value,
-      p_product:slot.value==='product'?String(product.value):null,p_url:url});
+      p_product:null,p_url:url});
      if(saved.error)throw Error('Uploaded, but could not assign image: '+saved.error.message);
     }else if(status===401&&/jwt|authorization|token/i.test(detail)){
      throw Error('The upload function requires JWT verification. Deploy boss-image-upload with JWT verification disabled; the function checks your Boss PIN session securely.');
@@ -362,15 +381,30 @@ async function refreshAdmin(){
     }
    }
    await loadBranding();
-   input.value=url;file.value='';
+   refreshSelectedImage();
+   file.value='';
    message('Image uploaded and saved. '+(slot.value==='favicon'?'Refresh the page to update the browser tab.':''));
   }catch(e){
    message('Upload failed: '+e.message);
   }
   finally{upload.disabled=false;}
  };
- const updateVisibility=()=>product.hidden=slot.value!=='product';
- slot.onchange=updateVisibility;updateVisibility();
+ const existing=document.createElement('div');existing.className='gw-branding-current';
+ const existingTitle=document.createElement('strong');existingTitle.textContent='Current image';
+ const existingPreview=document.createElement('img');existingPreview.className='gw-branding-current-img';existingPreview.alt='Selected branding image';
+ const existingMessage=document.createElement('p');existingMessage.className='gw-branding-image-note';
+ existingPreview.onerror=()=>{existingPreview.hidden=true;existingMessage.textContent='Saved image could not be displayed. Check the URL.';};
+ existing.append(existingTitle,existingPreview,existingMessage);
+ const refreshSelectedImage=()=>{
+  const url=branding[slot.value+'_url']||'';
+  existingPreview.hidden=!url;
+  if(url)existingPreview.src=url;
+  else existingPreview.removeAttribute('src');
+  existingMessage.textContent=url?'This image is currently saved for '+slot.options[slot.selectedIndex].text+'.':'No image saved for this location yet.';
+  input.value=url;
+ };
+ slot.onchange=refreshSelectedImage;
+ refreshSelectedImage();
  const save=document.createElement('button');save.className='primary';save.textContent='Save Image URL';
  const reset=document.createElement('button');reset.className='outline';reset.textContent='Reset Selected Image';
  const apply=async url=>{
@@ -378,16 +412,17 @@ async function refreshAdmin(){
   save.disabled=true;reset.disabled=true;
   try{
    const {error:e}=await db.rpc('gw_boss_set_image_url',{p_token:token,p_slot:slot.value,
-     p_product:slot.value==='product'?String(product.value):null,p_url:url||null});
+     p_product:null,p_url:url||null});
    if(e)throw e;
    await loadBranding();
-   message(url?'Image URL saved. Refresh to see your change.':'Image reset successfully.');
+   refreshSelectedImage();
+   message(url?'Image URL saved.':'Image reset successfully.');
   }catch(e){message('Unable to save image: '+e.message);}finally{save.disabled=false;reset.disabled=false;}
  };
  save.onclick=()=>apply(input.value.trim());
  reset.onclick=()=>{if(confirm('Reset the selected image?'))apply(null);};
  const label=document.createElement('label');label.textContent='Image location ';label.append(slot);
- wrap.append(label,product,file,upload,hint,input,save,reset);
+ wrap.append(label,existing,file,upload,hint,input,save,reset);
 }
 async function renderStaffManager(wrap){
  const heading=document.createElement('h3');heading.textContent='Boss • Staff permissions';wrap.append(heading);
