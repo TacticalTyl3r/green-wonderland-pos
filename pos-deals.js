@@ -158,25 +158,65 @@ export function createPosDeals({
   if(missing)card.append(el('small','gw-pos-deal-unavailable','Unavailable: one or more catalog items are inactive or missing.'));
   return card;
  };
+ const openSpecialQuantity=(offer,product,qty)=>{
+  if(qty===1){chooseProduct(product);return;}
+  const options=productChoices(product);
+  if(!options.length){
+   addBundleLines([{p:product,choice:'',qty}]);
+   status.textContent=qty+'× '+product.name+' added. Discount appears after the required quantity is reached.';
+   return;
+  }
+  const dialog=el('dialog','gw-pos-deal-modal');
+  const head=el('div','gw-pos-deal-modal-head');
+  const title=el('h2','',titleFor(offer));const close=el('button','outline','✕');close.type='button';
+  close.onclick=()=>dialog.close();head.append(title,close);
+  const body=el('div','gw-pos-deal-modal-body');
+  body.append(el('p','gw-pos-deal-modal-price',qty+'× '+product.name+' · '+Number(offer.percent_off)+'% off when the required quantity is in the order'));
+  const choices=el('div','gw-pos-deal-choice-grid');
+  const fields=[];
+  for(let i=0;i<qty;i++){
+   const label=el('label','gw-pos-deal-choice');
+   label.append(el('span','','Item '+(i+1)+' flavor / strain'));
+   const select=el('select');select.add(new Option('Select an option…',''));
+   for(const option of options)select.add(new Option(option,option));
+   label.append(select);choices.append(label);fields.push(select);
+  }
+  body.append(choices);
+  const error=el('p','gw-pos-deal-modal-error');body.append(error);
+  const actions=el('div','gw-pos-deal-modal-actions');
+  const cancel=el('button','outline','Cancel');cancel.type='button';cancel.onclick=()=>dialog.close();
+  const add=addButton('Add '+qty+' to Order',()=>{
+   if(fields.some(field=>!field.value)){error.textContent='Choose a flavor or strain for each item.';return;}
+   addBundleLines(fields.map(field=>({p:product,choice:field.value,qty:1})));
+   dialog.close();
+   status.textContent=qty+'× '+product.name+' added to the current order.';
+  });
+  actions.append(cancel,add);dialog.append(head,body,actions);
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  document.body.append(dialog);dialog.showModal();
+ };
  const specialCard=o=>{
-  const ids=(Array.isArray(o.items)&&o.items.length?o.items:[{id:o.product_id}]).map(x=>String(x.id));
-  const selected=[...new Set(ids)].map(id=>getProducts().find(p=>String(p.id)===id&&p.active)).filter(Boolean);
+  const specs=Array.isArray(o.items)&&o.items.length?o.items:[{id:o.product_id,qty:1}];
+  const selected=specs.map(item=>({
+   p:getProducts().find(p=>String(p.id)===String(item.id)&&p.active),
+   qty:Number(item.qty)||1
+  })).filter(x=>x.p);
   const card=el('article','gw-pos-deal-card');
   const meta=el('div','gw-pos-deal-card-top');
   meta.append(el('span','gw-pos-deal-kind','PRODUCT SPECIAL'),el('span','gw-pos-deal-save',Number(o.percent_off)+'% OFF'));
   card.append(meta,el('h3','',titleFor(o)));
   const list=el('div','gw-pos-deal-inclusions');
-  for(const p of selected)list.append(el('span','',p.name));
+  for(const x of selected)list.append(el('span','',x.qty+'× '+x.p.name));
   card.append(list);
-  const note=el('small','gw-pos-deal-special-note','Discount applies to each eligible product added, automatically at checkout.');
+  const note=el('small','gw-pos-deal-special-note','Buy the listed quantity of an eligible product to receive the percentage discount on complete groups.');
   card.append(note);
   const chooser=el('div','gw-pos-deal-special-choice');
   const select=el('select');select.setAttribute('aria-label','Select discounted product for '+titleFor(o));
   if(!selected.length)select.add(new Option('No eligible products available',''));
-  else for(const p of selected)select.add(new Option(p.name+' · '+money(p.price*(1-Number(o.percent_off)/100)),String(p.id)));
-  const add=addButton('+ Add Product',()=>{
-   const p=getProducts().find(p=>String(p.id)===select.value&&p.active);
-   if(p)chooseProduct(p);
+  else for(const x of selected)select.add(new Option(x.qty+'× '+x.p.name+' · '+money(x.p.price*x.qty*(1-Number(o.percent_off)/100)),String(x.p.id)));
+  const add=addButton('+ Add Special',()=>{
+   const selectedProduct=selected.find(x=>String(x.p.id)===select.value);
+   if(selectedProduct)openSpecialQuantity(o,selectedProduct.p,selectedProduct.qty);
   },!selected.length);
   chooser.append(select,add);card.append(chooser);
   return card;
