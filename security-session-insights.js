@@ -36,4 +36,9 @@ export async function showSessionHealth(host,{call,token,make}){
  };
  refresh.onclick=load;
  await load();
+ // Optional enhancement: errors here must never block the existing session controls.
+ try{
+  const {showSecurityMonitoring}=await import('./security-monitoring.js?v=security-monitoring-20261016');
+  await showSecurityMonitoring(host,{call,token,make});
+ }catch(error){console.warn('Optional security monitoring unavailable',error);}
 }
