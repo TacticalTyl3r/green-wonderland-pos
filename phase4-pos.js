@@ -17,7 +17,7 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  const preview=()=>{
   const lines=getLines(),subtotal=lines.reduce((n,l)=>n+Number(l.p.price)*l.qty,0);
   const specialDiscount=lines.reduce((n,l)=>n+Number(l.p.price)*l.qty*bestSpecial(l.p.id)/100,0);
-  let bestBundle=0;
+  let bestBundle=0,appliedBundle='';
   const bundleDetails=[];
   for(const o of eligibleBundles()){
    if(!o.items.length)continue;
@@ -30,11 +30,12 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
    }
    if(sets>0&&Number.isFinite(sets)){
     const discount=Math.max(0,(gross-Number(o.bundle_price))*sets);
-    bestBundle=Math.max(bestBundle,discount);
+    if(discount>bestBundle){bestBundle=discount;appliedBundle=o.title+' × '+sets;}
     bundleDetails.push(o.title+' × '+sets);
    }
   }
-  return{subtotal,discount:Math.min(subtotal,Math.round(Math.max(specialDiscount,bestBundle)*100)/100),bundles:bundleDetails};
+  return{subtotal,discount:Math.min(subtotal,Math.round(Math.max(specialDiscount,bestBundle)*100)/100),bundles:bundleDetails,
+   applied:bestBundle>specialDiscount?appliedBundle:specialDiscount>0?'Product specials':''};
  };
  const refreshCatalogRewards=async()=>{if(!token()){catalogRewards=[];catalogReady=false;return;}try{catalogRewards=await rpc('gw_pos_catalog_rewards',{p_token:token()});catalogReady=true;}catch(e){catalogRewards=[];catalogReady=false;}render();};
  const setMember=m=>{member=m;redeem=0;render();onCartChanged();if(m)refreshCatalogRewards();};
@@ -170,5 +171,5 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
   return result;
  };
  return {root,checkoutRewards,favoritesRoot,render,renderFavorites,refreshOffers,toggleFavorite,checkFavorite:id=>favorites.includes(String(id)),
-  bestSpecial,preview,estimateRedemption,checkout,refreshLoyaltyConfig,isReady:()=>ready,getMember:()=>member,getRedeem:()=>redeem,clearMember:()=>setMember(null)};
+  bestSpecial,preview,getOffers:()=>offers.slice(),estimateRedemption,checkout,refreshLoyaltyConfig,isReady:()=>ready,getMember:()=>member,getRedeem:()=>redeem,clearMember:()=>setMember(null)};
 }
