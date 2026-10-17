@@ -96,6 +96,17 @@ BEGIN
  JOIN public.gw_loyalty_members m ON m.id=a.member_id
  ORDER BY a.adjustment_id DESC LIMIT 1000;
 END $$;
+CREATE OR REPLACE FUNCTION public.gw_mdt_sale_adjustments_details(p_token text)
+RETURNS TABLE(id bigint,sale_id text,adjustment_type text,amount numeric,reason text,performed_by text,created_at timestamptz)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $
+BEGIN
+ IF NOT public.gw_mdt_can(p_token,'sales_history') AND NOT public.gw_mdt_can(p_token,'sales_adjust')
+ THEN RAISE EXCEPTION 'Sales history permission required';END IF;
+ RETURN QUERY SELECT a.id,a.sale_id,a.adjustment_type,a.amount,a.reason,a.performed_by,a.created_at
+ FROM public.gw_mdt_sale_adjustments a ORDER BY a.created_at DESC LIMIT 500;
+END $;
+REVOKE ALL ON FUNCTION public.gw_mdt_sale_adjustments_details(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.gw_mdt_sale_adjustments_details(text) TO anon,authenticated;
 REVOKE ALL ON FUNCTION public.gw_mdt_adjust_sale(text,text,text,numeric,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.gw_mdt_adjustment_loyalty_audit(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.gw_mdt_adjust_sale(text,text,text,numeric,text) TO anon,authenticated;
