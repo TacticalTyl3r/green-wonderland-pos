@@ -66,6 +66,7 @@ function receiptLoyaltyRows(s){
  if(d.points_earned!=null||snapshot?.points_earned!=null)rows.push(['Points earned',String(d.points_earned??snapshot.points_earned)]);
  if(d.points_redeemed!=null||snapshot?.points_redeemed!=null)rows.push(['Points redeemed',String(d.points_redeemed??snapshot.points_redeemed)]);
  if(snapshot?.points_remaining!=null||d.points_remaining!=null)rows.push(['Points balance after sale',String(snapshot?.points_remaining??d.points_remaining)]);
+ else if(snapshot?.current_points!=null)rows.push(['Current points balance',String(snapshot.current_points)]);
  return rows;
 }
 function receiptDiscountRows(s){
@@ -170,7 +171,15 @@ async function showSaleReceipt(s){
    if(error)throw Error(error.message);
    if(Array.isArray(data)&&data.length){s.loyalty_receipt=data[0];showLoyalty();}
   }).catch(error=>console.warn('Permanent loyalty receipt unavailable:',error.message));
-  const products=(async()=>{
+  const loyaltyMember=db.rpc('gw_pos_receipt_member_lookup',{p_token:token,p_sale:id}).then(({data,error})=>{
+   if(error)throw Error(error.message);
+   if(!Array.isArray(data)||!data.length)return;
+   const found=data[0],previous=localLoyaltyReceipt(s)||{};
+   s.loyalty_receipt={...previous,member_code:previous.member_code||found.member_code,
+    member_name:previous.member_name||found.member_name,current_points:found.current_points};
+   showLoyalty();
+  }).catch(error=>console.warn('Loyalty receipt member lookup unavailable:',error.message));
+    const products=(async()=>{
    let items=null;
    try{
     const {data,error}=await db.rpc('gw_pos_get_receipt_items',{p_token:token,p_sale:id});
@@ -195,7 +204,7 @@ async function showSaleReceipt(s){
    draw();
   })();
   if(!saleLines(s).length)note.textContent='Loading ordered products…';
-  await Promise.allSettled([financials,details,snapshot,products]);
+  await Promise.allSettled([financials,details,snapshot,loyaltyMember,products]);
  }
 
 }
