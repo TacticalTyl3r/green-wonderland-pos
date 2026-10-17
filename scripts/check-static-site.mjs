@@ -4,6 +4,7 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const entry = resolve(projectRoot, 'index.html');
@@ -79,6 +80,37 @@ for (const match of html.matchAll(/<(script|link)\b[^>]*>/gi)) {
 if (!scripts.includes('app-pos-upgrade.js')) errors.push('Active POS entry point is not included in index.html');
 if (scripts.some(path => /^app(?:-receipt-v\d+)?\.js$/.test(path))) {
   errors.push('index.html must not load a legacy POS entry point alongside app-pos-upgrade.js');
+}
+
+
+// The original monolithic theme stylesheet was split without editing rules.
+// Verify the concatenated bytes still equal its original Git blob and that the
+// four stylesheets load next to each other in original cascade order.
+const themeFiles = [
+  'styles/theme/theme-foundation.css',
+  'styles/theme/theme-header.css',
+  'styles/theme/theme-effects.css',
+  'styles/theme/theme-features.css'
+];
+const orderedStyles = [...html.matchAll(/<link\\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi)]
+  .map(match => match[1].split('?', 1)[0]);
+const firstThemeIndex = orderedStyles.indexOf(themeFiles[0]);
+if (firstThemeIndex < 0 ||
+  themeFiles.some((file, index) => orderedStyles[firstThemeIndex + index] !== file)) {
+  errors.push('Theme stylesheets must load consecutively in their original cascade order');
+}
+if (orderedStyles.includes('themes-global.css')) {
+  errors.push('The legacy monolithic theme CSS must not also load');
+}
+if (themeFiles.every(file => existsSync(resolve(projectRoot, file)))) {
+  const original = Buffer.concat(themeFiles.map(file => readFileSync(resolve(projectRoot, file))));
+  const blobHash = createHash('sha1')
+    .update('blob ' + original.length + '\\0')
+    .update(original)
+    .digest('hex');
+  if (blobHash !== 'cdb271771d6e3f12ccc8c52572a41bbcce7f0e36') {
+    errors.push('Theme CSS no longer matches the exact original styles, possibly changing appearance');
+  }
 }
 
 if (errors.length) {
