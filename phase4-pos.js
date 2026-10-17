@@ -9,7 +9,7 @@ export function createPhase4({db,money,getProducts,getLines,getToken,onCartChang
  const favoritesRoot=document.createElement('section');favoritesRoot.className='gw-pos-favorites';
  const token=()=>getToken();
  const rpc=async(name,args={})=>{if(!db)throw Error('Supabase is not configured');const {data,error}=await db.rpc(name,args);if(error)throw Error(error.message);return data;};
- const refreshOffers=async()=>{try{offers=await rpc('gw_pos_active_offers');ready=true;}catch(e){offers=[];ready=false;}onCartChanged();};
+ const refreshOffers=async()=>{try{try{offers=await rpc('gw_pos_active_offers_v2');}catch(e){offers=await rpc('gw_pos_active_offers');}ready=true;}catch(e){offers=[];ready=false;}onCartChanged();};
  const refreshLoyaltyConfig=async()=>{if(!token()){loyaltyConfigReady=false;return;}try{const rows=await rpc('gw_loyalty_checkout_config',{p_token:token()});const config=Array.isArray(rows)?rows[0]:rows;if(!config)throw Error('Missing loyalty configuration');loyaltyConfig=config;loyaltyConfigReady=true;}catch(e){loyaltyConfigReady=false;}render();onCartChanged();};
  const specials=id=>offers.filter(o=>o.offer_type==='special'&&(String(o.product_id)===String(id)||(Array.isArray(o.items)&&o.items.some(item=>String(item.id)===String(id)))));
  const bestSpecial=id=>Math.max(0,...specials(id).map(o=>Number(o.percent_off)||0));
