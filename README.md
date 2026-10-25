@@ -8,6 +8,7 @@ Green Wonderland's point-of-sale and management dashboard. This is a **static Ja
 - **`app-pos-upgrade.js`** — the active POS application, catalog, cart, receipts, and checkout UI.
 - **`phase4-pos.js`** and **`pos-deals.js`** — offer pricing, loyalty checkout support, and the Bundles & Deals POS section.
 - **`employees.js`**, **`business-mdt.js`**, **`mdt-insights.js`**, **`phase4-management.js`** — management and reporting screens.
+- **`help-guide.js`** and **`help-guide.css`** — public searchable How to Use page, accessible from the sidebar or by appending `#help` to the site URL. No PIN or additional database setup is required.
 - **`branding.js`** — logos, favicon, image slots, and related branding controls.
 - **`styles.css`**, **`pos-storefront.css`**, **`styles/theme/`**, and **`ui-polish.css`** — base styling, POS presentation, modular theme overrides, and a final shared layer for accessible controls and consistent cards. See [theme styles](styles/theme/README.md).
 - **`config.js`** — public Supabase client configuration. **Never put a service-role key, database password, or other secret here.**
