@@ -4,6 +4,7 @@ import {renderBusinessPage} from './business-mdt.js?v=mdt-receipt-button-2026101
 import {showSaleAdjustments} from './sale-adjustments.js?v=loyalty-adjustments-20261016';
 import {showOffersManager,showProductAnalytics} from './phase4-management.js?v=offers-safe-special-20261025';
 import {renderLoyaltyManagement} from './loyalty-management.js?v=isolated-history-20261016';
+import {renderHelpGuide} from './help-guide.js?v=20261025';
 import {showSecurityCenter,renderEmployeeAchievements,getDashboardSettings,dashboardSettingsEditor,isDashboardWidgetVisible} from './phase3-tools.js?v=1';
 import {SUPABASE_URL,SUPABASE_ANON_KEY} from './config.js';
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
@@ -615,7 +616,7 @@ async function showBackupCenter(){
   // Everyone can reach the time clock; staff adjustments remain Boss-only.
   const adminBtn=document.querySelector('#adminBtn');
   if(adminBtn){adminBtn.textContent=bossAllowed?'⚙ Admin Tools':'Admin Tools';adminBtn.hidden=false;adminBtn.title=bossAllowed?'Manage store catalog and settings':'Boss employee PIN required for store catalog and settings';}
-  if(currentPage!=='pos'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&currentPage!=='offers'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
+  if(currentPage!=='pos'&&currentPage!=='help'&&currentPage!=='permissions'&&currentPage!=='audit'&&currentPage!=='security'&&currentPage!=='backups'&&currentPage!=='offers'&&!grantedFeatures.has(featureForPage[currentPage])&&!bossAllowed)await showSite('pos');
    if(currentPage==='audit'&&!canFeature('activity_history'))await showSite('pos');
   if(currentPage==='offers'&&!canFeature('offers_manage'))await showSite('pos');
   if((currentPage==='permissions'||currentPage==='security'||currentPage==='backups')&&!bossAllowed)await showSite('pos');
@@ -633,9 +634,20 @@ async function showBackupCenter(){
   if(!['permissions','audit','security','backups','offers','bosshub'].includes(page))adminSubmenu.hidden=true;
   salesSubmenu.hidden=!(['sales','history','leaderboard','reports','analytics','adjustments','productanalytics'].includes(page));
   currentPage=page;
+  // Public guide deep link remains shareable while other views keep a clean URL.
+  if(page==='help'&&window.location.hash!=='#help'){
+   window.history.replaceState(null,'',window.location.pathname+window.location.search+'#help');
+  }else if(page!=='help'&&window.location.hash==='#help'){
+   window.history.replaceState(null,'',window.location.pathname+window.location.search);
+  }
   siteNav.querySelectorAll('[data-site-page]').forEach(b=>b.classList.toggle('active',b.dataset.sitePage===page));
   const pos=page==='pos';shell.hidden=!pos;siteHost.hidden=pos;
   if(pos)return;
+  if(page==='help'){
+   mdtMessage.textContent='';
+   renderHelpGuide(mdtContent,{navigate:showSite});
+   return;
+  }
   if(page==='permissions'){adminSubmenu.hidden=false;await showRolePermissions();return;}
   if(page==='bosshub'){
    adminSubmenu.hidden=false;mdtMessage.textContent='';
@@ -726,6 +738,11 @@ async function showBackupCenter(){
  document.querySelector('#adminBtn')?.addEventListener('click',()=>setTimeout(refreshNavigation,500));
  document.querySelector('#gwEmpClose')?.addEventListener('click',()=>{updateClockStatus();refreshNavigation();if(currentPage==='time')showSite('time');});
  refreshNavigation();updateClockStatus();refreshWeeklyHours();
+ if(window.location.hash==='#help')showSite('help');
+ window.addEventListener('hashchange',()=>{
+  if(window.location.hash==='#help'&&currentPage!=='help')showSite('help');
+  else if(window.location.hash!=='#help'&&currentPage==='help')showSite('pos');
+ });
  window.gwRefreshRoleNavigation=refreshNavigation;
  window.addEventListener('gw-employee-session-changed',async()=>{token=sessionStorage.getItem(key)||'';if(!token)me=null;await refreshNavigation();updateClockStatus();});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token)refreshWeeklyHours();});
