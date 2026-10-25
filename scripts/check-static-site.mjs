@@ -79,8 +79,8 @@ for (const match of html.matchAll(/<(script|link)\b[^>]*>/gi)) {
 }
 // Check embedded bootstrap scripts too; external module parsing alone misses errors here.
 let checkedInlineScripts = 0;
-for (const match of html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)) {
-  if (/\\bsrc\\s*=/.test(match[1]) || !match[2].trim()) continue;
+for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+  if (/\bsrc\s*=/.test(match[1]) || !match[2].trim()) continue;
   checkedInlineScripts++;
   const result = spawnSync(process.execPath, ['--input-type=module', '--check'], {
     input: match[2], encoding: 'utf8', maxBuffer: 2 * 1024 * 1024
@@ -92,20 +92,20 @@ for (const match of html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)
 }
 // Repeated element IDs break getElementById and accessibility label targets.
 const usedIds = new Set();
-for (const match of html.matchAll(/\\bid=["']([^"']+)["']/gi)) {
+for (const match of html.matchAll(/\bid=["']([^"']+)["']/gi)) {
   if (usedIds.has(match[1])) errors.push('Duplicate element ID in index.html: ' + match[1]);
   usedIds.add(match[1]);
 }
 // Catch typos such as ?v=revision?v=another-revision that defeat asset caching.
-for (const match of html.matchAll(/\\b(?:href|src)=["']([^"']+)["']/gi)) {
+for (const match of html.matchAll(/\b(?:href|src)=["']([^"']+)["']/gi)) {
   const url = match[1];
-  if (/\\.(?:js|css)\\?[^"']*\\?/.test(url)) {
+  if (/\.(?:js|css)\?[^"']*\?/.test(url)) {
     errors.push('Repeated query separator in asset URL: ' + url);
   }
 }
 if (!orderedUiStyles(html)) errors.push('ui-polish.css must load after other runtime stylesheets');
 function orderedUiStyles(markup) {
-  const styles = [...markup.matchAll(/<link\\b[^>]*href=["']([^"']+\\.css(?:\\?[^"']*)?)["'][^>]*>/gi)]
+  const styles = [...markup.matchAll(/<link\b[^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi)]
     .map(match => match[1].split('?', 1)[0]);
   return styles.at(-1) === 'ui-polish.css';
 }
