@@ -1,0 +1,202 @@
+/* Green Wonderland UI finish pass — theme-aware polish applied last.
+   Keep existing theme palettes and animations; avoid changes to POS calculations. */
+:root {
+  --gw-ui-radius: 14px;
+  --gw-ui-radius-sm: 9px;
+  --gw-ui-ring: color-mix(in srgb, var(--accent) 72%, transparent);
+  --gw-ui-wash: color-mix(in srgb, var(--accent) 6%, var(--panel));
+}
+body[data-theme] {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body[data-theme] :is(button, a, input, select, textarea) {
+  transition: border-color .17s ease, background-color .17s ease, box-shadow .17s ease, color .17s ease, transform .17s ease;
+}
+body[data-theme] :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--gw-ui-ring) !important;
+  outline-offset: 3px;
+}
+body[data-theme] :is(button, input, select, textarea):disabled {
+  opacity: .62;
+  cursor: not-allowed;
+}
+body[data-theme] :is(input, select, textarea) {
+  accent-color: var(--accent);
+}
+body[data-theme] button:not(:disabled) { cursor: pointer; }
+body[data-theme] :is(.gw-site-content, .gw-mdt-main, .gw-offer-editor-dialog) { min-width: 0; }
+body[data-theme] :is(.gw-site-content .shell .panel, .gw-mdt-stat, .gw-roster-card, .gw-offer-table, .gw-pos-deal-card) {
+  border-radius: var(--gw-ui-radius);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--bg) 25%, transparent);
+}
+body[data-theme] .gw-site-content .shell .section-head {
+  gap: 14px;
+  margin-bottom: 18px;
+}
+body[data-theme] .gw-site-content .shell .section-head small,
+body[data-theme] .gw-mdt-head > p,
+body[data-theme] .gw-offer-manager-top p {
+  color: var(--muted);
+  letter-spacing: .02em;
+}
+body[data-theme] #gwSiteNav button {
+  border-radius: 10px;
+  margin-block: 2px;
+}
+body[data-theme] #gwSiteNav button:not(.active):hover,
+body[data-theme] .gw-site-submenu button:hover {
+  background: color-mix(in srgb, var(--accent) 9%, var(--panel2)) !important;
+  color: var(--text) !important;
+}
+body[data-theme] :is(.gw-site-content .shell .product, .gw-catalog-product, .gw-roster-card, .gw-mdt-employee, .gw-offer-table-row, .gw-pos-deal-card) {
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+body[data-theme] :is(.gw-site-content .shell .product, .gw-pos-deal-card):hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line)) !important;
+}
+body[data-theme] .gw-site-content .shell .product :is(button, input) { max-width: 100%; }
+body[data-theme] .gw-mdt-head {
+  gap: 12px;
+  margin-bottom: 17px;
+}
+body[data-theme] .gw-mdt-head h2 {
+  margin-bottom: 3px;
+  letter-spacing: .015em;
+}
+body[data-theme] .gw-mdt-stats { gap: 14px; margin-bottom: 20px; }
+body[data-theme] .gw-mdt-stat {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+body[data-theme] .gw-mdt-stat::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: .75;
+}
+body[data-theme] .gw-mdt-stat strong { letter-spacing: -.025em; }
+body[data-theme] :is(.gw-mdt-form, .gw-time-adjust-form, .gw-permissions-panel) {
+  border-radius: var(--gw-ui-radius);
+}
+body[data-theme] :is(.gw-catalog-toolbar, .gw-offer-toolbar, .gw-pos-deals-toolbar) {
+  align-items: stretch;
+}
+body[data-theme] :is(.gw-catalog-toolbar, .gw-offer-toolbar, .gw-pos-deals-toolbar) :is(input, select) {
+  min-height: 43px;
+  border-radius: var(--gw-ui-radius-sm);
+}
+body[data-theme] :is(.gw-catalog-heading, .gw-offer-table-heading) {
+  letter-spacing: .065em;
+}
+body[data-theme] .gw-offer-manager-top {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+body[data-theme] .gw-offer-summary-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  min-height: 87px;
+  justify-content: center;
+}
+body[data-theme] .gw-offer-summary-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 88px;
+  height: 88px;
+  transform: translate(38px, -36px);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+body[data-theme] .gw-offer-summary-card strong { font-variant-numeric: tabular-nums; }
+body[data-theme] .gw-offer-table { overflow-x: auto; }
+body[data-theme] .gw-offer-table-row { padding-block: 13px; }
+body[data-theme] .gw-offer-identity-copy strong { font-size: 14px; }
+body[data-theme] .gw-offer-state { letter-spacing: .015em; }
+body[data-theme] .gw-offer-editor-dialog {
+  overscroll-behavior: contain;
+  scrollbar-color: var(--line) var(--panel);
+}
+body[data-theme] .gw-offer-editor-form { gap: 18px; }
+body[data-theme] .gw-offer-field > span { letter-spacing: .01em; }
+body[data-theme] .gw-offer-field > small { line-height: 1.55; }
+body[data-theme] .gw-offer-item-rows { gap: 10px; }
+body[data-theme] .gw-offer-item-row {
+  border-radius: 10px;
+  border-color: var(--line);
+  background: var(--gw-ui-wash);
+}
+body[data-theme] .gw-offer-item-row:focus-within {
+  border-color: var(--gw-ui-ring);
+}
+body[data-theme] .gw-offer-item-row button,
+body[data-theme] .gw-offer-row-actions button {
+  border-radius: 9px;
+}
+body[data-theme] .gw-offer-item-row .gw-offer-special-quantity.is-catalog {
+  opacity: .7;
+}
+body[data-theme] .gw-offer-custom-note {
+  border-radius: 10px;
+  line-height: 1.55;
+}
+body[data-theme] .gw-offer-add-actions {
+  gap: 10px;
+  margin-top: 2px;
+}
+body[data-theme] .gw-offer-modal-actions {
+  z-index: 2;
+  box-shadow: 0 -8px 18px color-mix(in srgb, var(--bg) 15%, transparent);
+}
+body[data-theme] .gw-pos-deal-card {
+  padding: 17px;
+  background: var(--panel2);
+}
+body[data-theme] .gw-pos-deals-panel .gw-pos-deal-inclusions {
+  line-height: 1.55;
+}
+body[data-theme] :is(.gw-pos-deal-modal, .gw-catalog-modal, #adminDialog, #gwSettings) {
+  border-radius: 15px;
+}
+body[data-theme] .gw-site-content .shell .checkout .primary {
+  font-weight: 850;
+  letter-spacing: .03em;
+}
+body[data-theme] .gw-site-content .shell .totals .grand {
+  border-top: 1px solid var(--line);
+  padding-top: 13px;
+}
+body[data-theme] :is(.gw-offer-editor-message, .gw-pos-deal-modal-error):not(:empty) {
+  line-height: 1.5;
+}
+@media (max-width: 1050px) {
+  body[data-theme] .gw-offer-table-heading,
+  body[data-theme] .gw-offer-table-row { min-width: 740px; }
+}
+@media (max-width: 760px) {
+  body[data-theme] .gw-mdt-main { padding: 17px !important; }
+  body[data-theme] .gw-mdt-stats { gap: 9px; }
+  body[data-theme] .gw-offer-manager-top .primary { width: 100%; }
+  body[data-theme] .gw-offer-summary-card strong { font-size: 20px; }
+}
+@media (max-width: 520px) {
+  body[data-theme] .gw-offer-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body[data-theme] .gw-offer-summary-card { padding: 11px 8px; min-height: 82px; }
+  body[data-theme] .gw-offer-summary-card small { font-size: 10px; }
+  body[data-theme] .gw-offer-time-fields { grid-template-columns: 1fr; }
+  body[data-theme] .gw-offer-modal-actions button { min-width: 0; flex: 1; }
+  body[data-theme] .gw-offer-item-row > select,
+  body[data-theme] .gw-offer-item-row > input[type="text"] { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme] :is(button, a, input, select, textarea, .gw-pos-deal-card, .gw-offer-table-row, .gw-roster-card) {
+    transition: none !important;
+  }
+}
