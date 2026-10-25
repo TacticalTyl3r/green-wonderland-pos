@@ -184,12 +184,14 @@ export async function showOffersManager(host,{call,token,make,cash}){
   const selectedExtras=existing?.offer_type==='special'&&Array.isArray(existing.custom_items)?existing.custom_items:[];
   for(const item of selectedSpecials)addSpecialProduct(item);
   for(const item of selectedExtras)addSpecialProduct({...item,custom:true});
+  // Specials remain one discounted catalog product. Checkout's server-side
+  // pricing currently applies one special by product_id, not multiple product
+  // groups or minimum-quantity thresholds.
   const addSpecial=tinyButton('+ Add Product','outline',()=>{
-   const used=new Set(specialRows.filter(r=>r.selector.value!=='__custom__').map(r=>r.selector.value));
-   const next=products.find(p=>!used.has(String(p.id)));
-   if(!next||used.size>=15)return;
-   addSpecialProduct({id:next.id,qty:1});
-  },'Add another discounted product');
+   if(specialRows.some(r=>r.selector.value!=='__custom__'))return;
+   const next=products[0];
+   if(next)addSpecialProduct({id:next.id,qty:1});
+  },'Add the discounted catalog product');
   const addCustomSpecial=tinyButton('+ Add Custom Item','outline',()=>{
    if(specialRows.filter(r=>r.selector.value==='__custom__').length>=15)return;
    addSpecialProduct({custom:true,qty:1});
@@ -199,7 +201,7 @@ export async function showOffersManager(host,{call,token,make,cash}){
   const percent=document.createElement('input');
   percent.type='number';percent.min='0.01';percent.max='100';percent.step='0.01';
   percent.value=String(existing?.percent_off??10);
-  const specialCustomNote=make('small','Custom items are descriptive extras, such as a free snack or gift bag. They are shown with the offer but are not catalog products, have no separate checkout charge and do not receive the percentage discount. Include at least one catalog product.','gw-offer-custom-note');
+  const specialCustomNote=make('small','Special discounts apply to one catalog product. Custom names are descriptive inclusions, not POS items or additional discounts. Bundle offers can include multiple catalog products.','gw-offer-custom-note');
   special.append(field('Discounted Products',specialParts,'Select catalog products or Custom Item. Set a quantity from 1 to 50 for each entry.'),specialActions,specialCustomNote,
    field('Percent Off',percent,'A percentage from 0.01 to 100; catalog discounts apply to complete quantity groups.'));
   const bundle=make('section',undefined,'gw-offer-type-fields');
@@ -293,9 +295,9 @@ export async function showOffersManager(host,{call,token,make,cash}){
        lines.push({id:row.selector.value,qty});
       }
      }
-     if(!lines.length)throw Error('Add at least one catalog product. Custom extras are descriptive only.');
-     if(lines.length>15||extras.length>15)throw Error('Product Specials allow up to 15 catalog products and 15 custom extras.');
-     if(new Set(lines.map(item=>item.id)).size!==lines.length)throw Error('Each catalog product can only appear once. Use Quantity for multiple units.');
+     if(lines.length!==1)throw Error('A Product Special discounts one catalog product. Use Product Bundle for multiple products.');
+     if(lines[0].qty!==1)throw Error('Product Specials currently apply to each unit; leave its quantity at 1.');
+     if(extras.length>15)throw Error('Use at most 15 custom extras.');
      if(!Number.isFinite(rate)||rate<=0||rate>100)throw Error('Enter a valid discount percentage.');
     }
     if(start.value&&end.value&&new Date(end.value)<=new Date(start.value))
