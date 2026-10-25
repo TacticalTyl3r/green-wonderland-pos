@@ -77,6 +77,39 @@ for (const match of html.matchAll(/<(script|link)\b[^>]*>/gi)) {
     checkFile(asset, entry);
   }
 }
+// Check embedded bootstrap scripts too; external module parsing alone misses errors here.
+let checkedInlineScripts = 0;
+for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+  if (/\bsrc\s*=/.test(match[1]) || !match[2].trim()) continue;
+  checkedInlineScripts++;
+  const result = spawnSync(process.execPath, ['--input-type=module', '--check'], {
+    input: match[2], encoding: 'utf8', maxBuffer: 2 * 1024 * 1024
+  });
+  if (result.status !== 0 || result.error) {
+    errors.push('Invalid embedded JavaScript block #' + checkedInlineScripts + ': ' +
+      (result.stderr || result.error?.message || 'syntax check failed').trim());
+  }
+}
+// Repeated element IDs break getElementById and accessibility label targets.
+const usedIds = new Set();
+for (const match of html.matchAll(/\bid=["']([^"']+)["']/gi)) {
+  if (usedIds.has(match[1])) errors.push('Duplicate element ID in index.html: ' + match[1]);
+  usedIds.add(match[1]);
+}
+// Catch typos such as ?v=revision?v=another-revision that defeat asset caching.
+for (const match of html.matchAll(/\b(?:href|src)=["']([^"']+)["']/gi)) {
+  const url = match[1];
+  if (/\.(?:js|css)\?[^"']*\?/.test(url)) {
+    errors.push('Repeated query separator in asset URL: ' + url);
+  }
+}
+if (!orderedUiStyles(html)) errors.push('ui-polish.css must load after other runtime stylesheets');
+function orderedUiStyles(markup) {
+  const styles = [...markup.matchAll(/<link\b[^>]*href=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi)]
+    .map(match => match[1].split('?', 1)[0]);
+  return styles.at(-1) === 'ui-polish.css';
+}
+
 if (!scripts.includes('app-pos-upgrade.js')) errors.push('Active POS entry point is not included in index.html');
 if (scripts.some(path => /^app(?:-receipt-v\d+)?\.js$/.test(path))) {
   errors.push('index.html must not load a legacy POS entry point alongside app-pos-upgrade.js');
@@ -120,5 +153,6 @@ if (errors.length) {
 } else {
   console.log('Static site verification passed: ' + checkedJavaScript +
     ' active JS modules and ' + checkedStylesheets + ' stylesheets; all local asset paths exist.');
+  console.log('Checked ' + checkedInlineScripts + ' inline bootstrap scripts and ' + usedIds.size + ' unique element IDs.');
   console.log('Note: live Supabase checkout, permissions, and browser behavior still need manual testing.');
 }

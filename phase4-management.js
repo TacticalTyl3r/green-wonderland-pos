@@ -21,7 +21,7 @@ export async function showOffersManager(host,{call,token,make,cash}){
  const kind=document.createElement('select');kind.setAttribute('aria-label','Filter offers by type');
  for(const [text,value] of [['All Offer Types','all'],['Product Specials','special'],['Product Bundles','bundle']])kind.add(new Option(text,value));
  const visibility=document.createElement('select');visibility.setAttribute('aria-label','Filter offers by status');
- for(const [text,value] of [['All Statuses','all'],['Active','active'],['Inactive','inactive']])visibility.add(new Option(text,value));
+ for(const [text,value] of [['All Statuses','all'],['Live Now','active'],['Scheduled','scheduled'],['Expired','expired'],['Inactive','inactive']])visibility.add(new Option(text,value));
  toolbar.append(search,kind,visibility);
  const list=make('div',undefined,'gw-offer-list');
  host.append(top,status,summary,toolbar,list);
@@ -78,7 +78,7 @@ export async function showOffersManager(host,{call,token,make,cash}){
   }
   const query=search.value.trim().toLowerCase();
   const rows=offers.filter(o=>(kind.value==='all'||o.offer_type===kind.value)&&
-   (visibility.value==='all'||(visibility.value==='active'?Boolean(o.active):!o.active))&&
+   (visibility.value==='all'||offerStatus(o)[1]===visibility.value)&&
    (!query||(o.title+' '+includedNames(o)).toLowerCase().includes(query)));
   list.replaceChildren();
   const table=make('div',undefined,'gw-offer-table');
@@ -151,6 +151,7 @@ export async function showOffersManager(host,{call,token,make,cash}){
   const special=make('section',undefined,'gw-offer-type-fields');
   const specialParts=make('div',undefined,'gw-offer-item-rows');
   let specialRows=[];
+  let updateSpecialActions=()=>{};
   const addSpecialProduct=(value={})=>{
    const wrap=make('div',undefined,'gw-offer-item-row gw-offer-special-item-row');
    const selector=document.createElement('select');selector.setAttribute('aria-label','Discounted product or custom extra');
@@ -167,43 +168,53 @@ export async function showOffersManager(host,{call,token,make,cash}){
    const qtyField=make('label',undefined,'gw-offer-special-quantity');
    qtyField.append(make('span','Qty'),quantity);
    const toggle=()=>{
-    input.hidden=selector.value!=='__custom__';
-    input.required=!input.hidden;
-    wrap.classList.toggle('is-custom',!input.hidden);
+    const custom=selector.value==='__custom__';
+    input.hidden=!custom;
+    input.required=custom;
+    quantity.disabled=!custom;
+    if(!custom)quantity.value='1'; // A special discounts each catalog unit, not a quantity threshold.
+    qtyField.classList.toggle('is-catalog',!custom);
+    wrap.classList.toggle('is-custom',custom);
+    updateSpecialActions();
    };
    selector.onchange=toggle;toggle();
    const remove=tinyButton('Remove','outline',()=>{
     if(specialRows.length<=1)return;
-    specialRows=specialRows.filter(r=>r.wrap!==wrap);wrap.remove();
+    specialRows=specialRows.filter(r=>r.wrap!==wrap);wrap.remove();updateSpecialActions();
    },'Remove discounted product or custom extra');
    wrap.append(selector,input,qtyField,remove);specialParts.append(wrap);
-   specialRows.push({wrap,selector,input,quantity});
+   specialRows.push({wrap,selector,input,quantity});updateSpecialActions();
   };
   const selectedSpecials=existing?.offer_type==='special'&&Array.isArray(existing.items)&&existing.items.length
    ?existing.items:[{id:existing?.offer_type==='special'?existing.product_id:null,qty:1}];
   const selectedExtras=existing?.offer_type==='special'&&Array.isArray(existing.custom_items)?existing.custom_items:[];
   for(const item of selectedSpecials)addSpecialProduct(item);
   for(const item of selectedExtras)addSpecialProduct({...item,custom:true});
-  // Specials remain one discounted catalog product. Checkout's server-side
-  // pricing currently applies one special by product_id, not multiple product
-  // groups or minimum-quantity thresholds.
-  const addSpecial=tinyButton('+ Add Product','outline',()=>{
-   if(specialRows.some(r=>r.selector.value!=='__custom__'))return;
-   const next=products[0];
-   if(next)addSpecialProduct({id:next.id,qty:1});
-  },'Add the discounted catalog product');
+  // Specials discount one catalog product per unit. Extra named inclusions
+  // are tracked separately; checkout does not price them as catalog items.
+  const addSpecial=tinyButton('+ Add Discounted Product','outline',()=>{
+   if(!specialRows.some(r=>r.selector.value!=='__custom__')&&products.length)
+    addSpecialProduct({id:products[0].id,qty:1});
+  },'Add one discounted catalog product');
   const addCustomSpecial=tinyButton('+ Add Custom Item','outline',()=>{
    if(specialRows.filter(r=>r.selector.value==='__custom__').length>=15)return;
    addSpecialProduct({custom:true,qty:1});
   },'Add a descriptive custom extra');
+  updateSpecialActions=()=>{
+   const hasCatalog=specialRows.some(r=>r.selector.value!=='__custom__');
+   addSpecial.disabled=hasCatalog||!products.length;
+   addSpecial.title=hasCatalog?'A special discounts one product. Use a bundle for multiple products.':'';
+   addCustomSpecial.disabled=specialRows.filter(r=>r.selector.value==='__custom__').length>=15;
+  };
+  updateSpecialActions();
   const specialActions=make('div',undefined,'gw-offer-add-actions');
   specialActions.append(addSpecial,addCustomSpecial);
   const percent=document.createElement('input');
   percent.type='number';percent.min='0.01';percent.max='100';percent.step='0.01';
   percent.value=String(existing?.percent_off??10);
-  const specialCustomNote=make('small','Special discounts apply to one catalog product. Custom names are descriptive inclusions, not POS items or additional discounts. Bundle offers can include multiple catalog products.','gw-offer-custom-note');
+  const specialCustomNote=make('small','Specials discount one catalog product per unit (quantity 1). Add Custom Item for optional included extras with their own quantities. Custom extras do not become separately charged POS items or receipt lines. For multiple discounted products, create a Bundle.','gw-offer-custom-note');
   special.append(field('Discounted Products',specialParts,'Select catalog products or Custom Item. Set a quantity from 1 to 50 for each entry.'),specialActions,specialCustomNote,
-   field('Percent Off',percent,'A percentage from 0.01 to 100; catalog discounts apply to complete quantity groups.'));
+   field('Percent Off',percent,'Discount each unit of the selected catalog product by 0.01–100%.'));
   const bundle=make('section',undefined,'gw-offer-type-fields');
   const bundlePrice=document.createElement('input');bundlePrice.type='number';
   bundlePrice.min='0';bundlePrice.step='0.01';bundlePrice.placeholder='e.g. 1100';
@@ -220,7 +231,7 @@ export async function showOffersManager(host,{call,token,make,cash}){
    const quantity=document.createElement('input');quantity.type='number';quantity.min='1';
    quantity.max='50';quantity.step='1';quantity.value=String(value.qty||1);
    quantity.setAttribute('aria-label','Bundle item quantity');
-   if(value.name){selector.value='__custom__';input.value=String(value.name);}
+   if(value.custom||value.name!=null){selector.value='__custom__';input.value=String(value.name||'');}
    else if(value.id!=null)selector.value=String(value.id);
    const toggle=()=>{input.hidden=selector.value!=='__custom__';input.required=!input.hidden;wrap.classList.toggle('is-custom',!input.hidden);};
    selector.onchange=toggle;toggle();
@@ -234,9 +245,11 @@ export async function showOffersManager(host,{call,token,make,cash}){
   for(const item of customParts)addPart(item);
   if(!existingParts.length&&!customParts.length)addPart();
   const add=tinyButton('+ Add Bundle Item','outline',()=>addPart(),'Add another bundle item');
+  const addCustom=tinyButton('+ Add Custom Item','outline',()=>addPart({custom:true,qty:1}),'Add a named extra to the bundle');
+  const bundleActions=make('div',undefined,'gw-offer-add-actions');bundleActions.append(add,addCustom);
   const bonusNote=make('small','Custom items are included extras (e.g. gift bag or bonus item). They do not become checkout catalog products. At least one catalog item is required for automatic bundle pricing.','gw-offer-custom-note');
   bundle.append(field('Bundle Price',bundlePrice,'Set the final price for one full bundle.'),
-   make('h3','Items Included'),parts,add,bonusNote);
+   make('h3','Items Included'),parts,bundleActions,bonusNote);
   const switchType=()=>{special.hidden=type.value!=='special';bundle.hidden=type.value!=='bundle';};
   type.onchange=switchType;switchType();
   const timing=make('div',undefined,'gw-offer-time-fields');

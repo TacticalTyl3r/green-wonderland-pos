@@ -6,7 +6,19 @@ const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('en-US',
 const configured=!!(SUPABASE_URL&&SUPABASE_ANON_KEY), db=configured?createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
 // Fallback demo items. Replace with verified live catalog using the admin panel.
 const demoProducts=[['Geek Bar (Plain & Flavored)','Geek Bars & Vapes',1000],['Geek Bar (THC)','Geek Bars & Vapes',1100],['Penjamin','Geek Bars & Vapes',500],['Bong','Geek Bars & Vapes',700],['Plain & Flavored Refill','Refills',400],['THC Refill','Refills',500],['Basic Joint','Flower',100],['Basic Blunt','Flower',125],['Premium Joint','Flower',150],['Premium Blunt','Flower',175],['Brownie (6 Pack)','Edibles',250],['Gummies (3 Pack)','Edibles',250],['Slushie','Edibles',250],['Lighter','Accessories & Snacks',13],['Wallet','Accessories & Snacks',650],['Lunch Box','Accessories & Snacks',715],['Green Rolls (8 papers)','Accessories & Snacks',300],['Almond Joy','Accessories & Snacks',25],['Rice Krispies','Accessories & Snacks',30],['Cocoa Powder','Accessories & Snacks',25],['Jolly Ranchers','Accessories & Snacks',25]].map((p,i)=>({id:`demo-${i}`,name:p[0],category:p[1],price:p[2],active:true,ingredients:[]}));
-let products=[],zones=[],settings={max_discount:100},cart=JSON.parse(localStorage.getItem('gw-cart')||'{}'),history=JSON.parse(localStorage.getItem('gw-history')||'[]'),category='All',tab='cart',session=null;
+// Stored browser state must never prevent the entire POS from starting.
+function readLocalJson(key,fallback,valid){
+ try{
+  const raw=localStorage.getItem(key);
+  if(raw===null)return fallback;
+  const parsed=JSON.parse(raw);
+  return valid(parsed)?parsed:fallback;
+ }catch{return fallback;}
+}
+let products=[],zones=[],settings={max_discount:100},
+ cart=readLocalJson('gw-cart',{},value=>value!==null&&typeof value==='object'&&!Array.isArray(value)),
+ history=readLocalJson('gw-history',[],Array.isArray),
+ category='All',tab='cart',session=null;
 const phase4=createPhase4({db,money,getProducts:()=>products,getLines:()=>lines(),
  getToken:()=>sessionStorage.getItem('gw-employee-token')||'',
  onCartChanged:()=>{if(products.length){renderCart();phase4.renderFavorites(chooseProduct);}}});
@@ -36,7 +48,12 @@ const dealsPos=createPosDeals({
  },
  refreshOffers:async()=>{await phase4.refreshOffers();render();}
 });
-function saveLocal(){localStorage.setItem('gw-cart',JSON.stringify(cart));localStorage.setItem('gw-history',JSON.stringify(history));}
+function saveLocal(){
+ try{
+  localStorage.setItem('gw-cart',JSON.stringify(cart));
+  localStorage.setItem('gw-history',JSON.stringify(history));
+ }catch(error){console.warn('Could not save local POS history or cart:',error);}
+}
 const setMdtStatus=(state,message)=>{const node=$('status');if(!node)return;node.dataset.connection=state;node.textContent=message;};
 async function load(){
  setMdtStatus('connecting','● MDT Connecting');
@@ -63,7 +80,12 @@ async function load(){
 function productCard(p){const special=phase4.bestSpecial(p.id),minQty=phase4.specialRequirement(p.id);return `<article class="product"><div>${p.image_url?`<img class="gw-product-photo" src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`:`<div class="gw-product-placeholder" aria-hidden="true">✦</div>`}<small>${esc(p.category)}</small>${special?`<span class="gw-special-tag">${special}% OFF${minQty>1?' · BUY '+minQty:''}</span>`:''}<div class="gw-product-name">${esc(p.name)}</div></div><div class="bottom"><span class="price">${money(p.price)}</span><button class="gw-favorite-toggle" type="button" title="Favorite" data-favorite="${esc(p.id)}">${phase4.checkFavorite(p.id)?'★':'☆'}</button><button data-add="${esc(p.id)}">+ ADD</button></div></article>`;}
 function render(){const cats=['All',...new Set(products.filter(p=>p.active).map(p=>p.category))];if(!cats.includes(category))category='All';$('categories').innerHTML=cats.map(c=>`<button class="${c===category?'active':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');const q=$('search').value.trim().toLowerCase();const filtered=products.filter(p=>p.active&&(category==='All'||p.category===category)&&p.name.toLowerCase().includes(q));if(category==='All'){const groups=[...new Set(filtered.map(p=>p.category))];$('products').classList.add('gw-products-grouped');$('products').innerHTML=groups.length?groups.map(name=>`<section class="gw-category-section"><div class="gw-category-heading"><h3>${esc(name)}</h3><span>${filtered.filter(p=>p.category===name).length} products</span></div><div class="${name.toLowerCase()==='flower'?'gw-flower-groups':'gw-category-grid'}">${(name.toLowerCase()==='flower'?['Basic','Premium'].map(tier=>{const items=filtered.filter(p=>p.category===name&&(tier==='Basic'?/basic|standard/i.test(p.name):!/basic|standard/i.test(p.name)));return items.length?`<div class="gw-flower-subgroup"><h4>${tier}</h4><div class="gw-category-grid">${items.map(productCard).join('')}</div></div>`:'';}).join(''):filtered.filter(p=>p.category===name).map(productCard).join(''))}</div></section>`).join(''):'<div class="empty">No matching products.</div>';}else{$('products').classList.remove('gw-products-grouped');$('products').innerHTML=filtered.length?filtered.map(productCard).join(''):'<div class="empty">No matching products.</div>';} $('zone').innerHTML=zones.map(z=>`<option value="${esc(z.id)}">${esc(z.name)} — ${money(z.fee)}</option>`).join('');$('discount').max=settings.max_discount??100;if(+$('discount').value>+$('discount').max)$('discount').value=$('discount').max;renderCart();renderIngredients();renderHistory();phase4.renderFavorites(chooseProduct);}
 
-function lines(){return Object.entries(cart).map(([id,qty])=>{const [productId,encoded]=id.split('::');return {id,p:products.find(p=>String(p.id)===productId),choice:encoded?decodeURIComponent(encoded):'',qty};}).filter(x=>x.p&&x.qty>0)}
+function lines(){return Object.entries(cart).map(([id,qty])=>{
+ const [productId,encoded]=id.split('::');
+ let choice='';try{choice=encoded?decodeURIComponent(encoded):'';}catch{return null;}
+ const amount=Number(qty);
+ return {id,p:products.find(p=>String(p.id)===productId),choice,qty:amount};
+}).filter(x=>x&&x.p&&Number.isInteger(x.qty)&&x.qty>0&&x.qty<=10000)}
 function totals(){const subtotal=lines().reduce((n,{p,qty})=>n+Number(p.price)*qty,0);const z=zones.find(z=>String(z.id)===$('zone').value);const delivery=document.querySelector('[name=fulfillment]:checked')?.value==='delivery'?Number(z?.fee||0):0;const offerDiscount=phase4.isReady()?phase4.preview().discount:0;const discount=(subtotal-offerDiscount)*Number($('discount').value)/100;const due=Math.max(0,subtotal-offerDiscount-discount+delivery);const rewards=phase4.isReady()?phase4.estimateRedemption(due):0;return{subtotal,delivery,discount,offerDiscount,rewards,total:Math.max(0,due-rewards)}}
 function renderCart(){const l=lines();$('count').textContent=`${l.reduce((n,x)=>n+x.qty,0)} ITEMS`;$('cart').innerHTML=l.length?l.map(({p,qty,id,choice})=>`<div class="cartline"><div><b>${esc(p.name)}</b>${choice?`<div class="gw-cart-choice">${esc(choice)}</div>`:''}<div class="meta">${money(p.price)} each · ${money(p.price*qty)}</div></div><div class="qty"><button data-qty="${esc(id)}" data-step="-1">−</button><b>${qty}</b><button data-qty="${esc(id)}" data-step="1">+</button></div></div>`).join(''):'<div class="empty">Your order is empty. Add products from the catalog.</div>';$('zone').hidden=document.querySelector('[name=fulfillment]:checked')?.value!=='delivery';$('discountLabel').textContent=$('discount').value+'%';const t=totals();for(const k of ['subtotal','delivery','discountAmount','total'])$(k).textContent=(k==='discountAmount'?'-':'')+money(t[k==='discountAmount'?'discount':k]);const offersOut=$('gwOfferDiscount'),loyaltyOut=$('gwRewardDiscount');if(offersOut)offersOut.textContent='-'+money(t.offerDiscount);if(loyaltyOut)loyaltyOut.textContent='-'+money(t.rewards);
  const offer=phase4.isReady()?phase4.preview():null;

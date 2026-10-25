@@ -9,7 +9,7 @@ Green Wonderland's point-of-sale and management dashboard. This is a **static Ja
 - **`phase4-pos.js`** and **`pos-deals.js`** — offer pricing, loyalty checkout support, and the Bundles & Deals POS section.
 - **`employees.js`**, **`business-mdt.js`**, **`mdt-insights.js`**, **`phase4-management.js`** — management and reporting screens.
 - **`branding.js`** — logos, favicon, image slots, and related branding controls.
-- **`styles.css`**, **`pos-storefront.css`**, and **`styles/theme/`** — base styling, POS presentation, and ordered modular theme overrides. See [theme styles](styles/theme/README.md).
+- **`styles.css`**, **`pos-storefront.css`**, **`styles/theme/`**, and **`ui-polish.css`** — base styling, POS presentation, modular theme overrides, and a final shared layer for accessible controls and consistent cards. See [theme styles](styles/theme/README.md).
 - **`config.js`** — public Supabase client configuration. **Never put a service-role key, database password, or other secret here.**
 - **`supabase/functions/`** — Supabase Edge Function source.
 - **`supabase/sql/`** — SQL migrations, patches, and historical setup scripts. See [SQL guidance](supabase/sql/README.md).
@@ -23,9 +23,21 @@ Run this from the repository root using Node.js 20 or newer:
 node scripts/check-static-site.mjs
 ```
 
-This checks active local asset references and JavaScript syntax without installing packages. GitHub Actions runs it on pull requests and pushes.
+This checks local assets, external and inline JavaScript syntax, duplicate page IDs, versioned asset URLs, and final stylesheet order without installing packages. GitHub Actions runs it on pull requests and pushes.
 
 Because this application depends on live Supabase functions and persisted data, static checks are **not sufficient** to confirm checkout, discounts, employee PIN permissions, or loyalty behavior. Before deploying important changes, use the [MDT release checklist](MDT-RELEASE-CHECKLIST.md), then test the POS in a browser with a safe test transaction.
+
+## Offers and custom items
+
+- **Product Specials** apply a percentage discount to one catalog product per unit. Add an optional custom item as a descriptive inclusion, with a quantity. Use **Product Bundle** for a fixed price covering multiple catalog products.
+- **Custom Items** are informational extras: they display in the offer and the POS deal details but **are not charged separately and do not create receipt item lines**. A bundle still needs at least one catalog product for server-side pricing.
+- Changes to discounts, checkout amounts, loyalty redemption or PIN permissions require validating the corresponding Supabase RPCs before deploying. The front end does not set authoritative prices.
+
+## UI and caching
+
+- `ui-polish.css` is intentionally loaded **last** so theme palettes and existing branded header effects remain intact; do not move it before the other stylesheets.
+- Static asset versions (`?v=...`) control cache refresh. The site does **not** force a second page reload on first visit; bump the version on a changed active asset when deploying.
+- Cart and local order history are stored in the browser for convenience. Corrupted or unavailable local storage should not stop the POS from loading, but local unsynced state may not persist.
 
 ## Safe changes
 
