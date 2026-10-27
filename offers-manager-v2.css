@@ -169,8 +169,8 @@ body[data-theme] .gw-offer-modal-actions button{min-width:124px;padding:11px 17p
  body[data-theme] .gw-offer-item-row>button{grid-column:2}
 }
 
-/* Product Special quantity fields are used for custom extras.
-   Catalog specials always apply to one unit, enforced in the editor. */
+/* Product Special quantities represent purchase thresholds for catalog products
+   or included counts for named custom extras. */
 body[data-theme] .gw-offer-special-quantity {
   display:flex;flex-direction:column;gap:4px;min-width:0;
   color:var(--muted);font-size:10px;font-weight:750;
