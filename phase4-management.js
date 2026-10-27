@@ -171,8 +171,9 @@ export async function showOffersManager(host,{call,token,make,cash}){
     const custom=selector.value==='__custom__';
     input.hidden=!custom;
     input.required=custom;
-    quantity.disabled=!custom;
-    if(!custom)quantity.value='1'; // A special discounts each catalog unit, not a quantity threshold.
+    quantity.disabled=false;
+    // For a catalog item, Qty is the minimum purchase group earning
+    // the discount (e.g. buy 2, get 10% off those 2 units).
     qtyField.classList.toggle('is-catalog',!custom);
     wrap.classList.toggle('is-custom',custom);
     updateSpecialActions();
@@ -190,20 +191,26 @@ export async function showOffersManager(host,{call,token,make,cash}){
   const selectedExtras=existing?.offer_type==='special'&&Array.isArray(existing.custom_items)?existing.custom_items:[];
   for(const item of selectedSpecials)addSpecialProduct(item);
   for(const item of selectedExtras)addSpecialProduct({...item,custom:true});
-  // Specials discount one catalog product per unit. Extra named inclusions
-  // are tracked separately; checkout does not price them as catalog items.
+  // The checkout and server validator accept multiple discounted
+  // catalog items and per-item quantity thresholds. Custom items are
+  // descriptive inclusions, not independently priced checkout products.
+  const unusedSpecialProduct=()=>{
+   const used=new Set(specialRows.filter(r=>r.selector.value!=='__custom__')
+    .map(r=>r.selector.value));
+   return products.find(p=>!used.has(String(p.id)));
+  };
   const addSpecial=tinyButton('+ Add Discounted Product','outline',()=>{
-   if(!specialRows.some(r=>r.selector.value!=='__custom__')&&products.length)
-    addSpecialProduct({id:products[0].id,qty:1});
-  },'Add one discounted catalog product');
+   const next=unusedSpecialProduct();
+   if(next)addSpecialProduct({id:next.id,qty:1});
+  },'Add another discounted catalog product');
   const addCustomSpecial=tinyButton('+ Add Custom Item','outline',()=>{
    if(specialRows.filter(r=>r.selector.value==='__custom__').length>=15)return;
    addSpecialProduct({custom:true,qty:1});
   },'Add a descriptive custom extra');
   updateSpecialActions=()=>{
-   const hasCatalog=specialRows.some(r=>r.selector.value!=='__custom__');
-   addSpecial.disabled=hasCatalog||!products.length;
-   addSpecial.title=hasCatalog?'A special discounts one product. Use a bundle for multiple products.':'';
+   const catalogCount=specialRows.filter(r=>r.selector.value!=='__custom__').length;
+   addSpecial.disabled=catalogCount>=15||!unusedSpecialProduct();
+   addSpecial.title=addSpecial.disabled?'Maximum 15 distinct catalog products, or none left to add.':'';
    addCustomSpecial.disabled=specialRows.filter(r=>r.selector.value==='__custom__').length>=15;
   };
   updateSpecialActions();
@@ -212,9 +219,9 @@ export async function showOffersManager(host,{call,token,make,cash}){
   const percent=document.createElement('input');
   percent.type='number';percent.min='0.01';percent.max='100';percent.step='0.01';
   percent.value=String(existing?.percent_off??10);
-  const specialCustomNote=make('small','Specials discount one catalog product per unit (quantity 1). Add Custom Item for optional included extras with their own quantities. Custom extras do not become separately charged POS items or receipt lines. For multiple discounted products, create a Bundle.','gw-offer-custom-note');
-  special.append(field('Discounted Products',specialParts,'Select catalog products or Custom Item. Set a quantity from 1 to 50 for each entry.'),specialActions,specialCustomNote,
-   field('Percent Off',percent,'Discount each unit of the selected catalog product by 0.01–100%.'));
+  const specialCustomNote=make('small','Each catalog item can have its own purchase quantity: Qty 1 discounts every unit, while Qty 2 discounts complete pairs. The same percent applies to all included catalog products. Custom items are descriptive extras, not separately charged POS items or receipt lines.','gw-offer-custom-note');
+  special.append(field('Discounted Products',specialParts,'Choose one or more catalog products, or Custom Item for a named extra. Qty is the purchase threshold for each discounted product.'),specialActions,specialCustomNote,
+   field('Percent Off',percent,'Apply this percent to eligible units of every selected catalog product (0.01–100%).'));
   const bundle=make('section',undefined,'gw-offer-type-fields');
   const bundlePrice=document.createElement('input');bundlePrice.type='number';
   bundlePrice.min='0';bundlePrice.step='0.01';bundlePrice.placeholder='e.g. 1100';
@@ -291,6 +298,8 @@ export async function showOffersManager(host,{call,token,make,cash}){
      }
      if(!lines.length)throw Error('Add at least one catalog product. Custom inclusions are added as extras.');
      if(lines.length>15||extras.length>15)throw Error('Bundles can include at most 15 catalog items and 15 custom extras.');
+     if(new Set(lines.map(x=>x.id)).size!==lines.length)
+      throw Error('Each catalog product can appear only once in a bundle. Adjust its quantity instead.');
      if(!Number.isFinite(Number(bundlePrice.value))||bundlePrice.value.trim()===''||Number(bundlePrice.value)<0)
       throw Error('Enter a valid bundle price.');
     }else{
@@ -308,9 +317,10 @@ export async function showOffersManager(host,{call,token,make,cash}){
        lines.push({id:row.selector.value,qty});
       }
      }
-     if(lines.length!==1)throw Error('A Product Special discounts one catalog product. Use Product Bundle for multiple products.');
-     if(lines[0].qty!==1)throw Error('Product Specials currently apply to each unit; leave its quantity at 1.');
-     if(extras.length>15)throw Error('Use at most 15 custom extras.');
+     if(!lines.length)throw Error('Add at least one catalog product to receive the percentage discount.');
+     if(lines.length>15||extras.length>15)throw Error('Use at most 15 discounted products and 15 custom extras.');
+     if(new Set(lines.map(x=>x.id)).size!==lines.length)
+      throw Error('Each catalog product can appear only once. Increase its quantity rather than adding it twice.');
      if(!Number.isFinite(rate)||rate<=0||rate>100)throw Error('Enter a valid discount percentage.');
     }
     if(start.value&&end.value&&new Date(end.value)<=new Date(start.value))
